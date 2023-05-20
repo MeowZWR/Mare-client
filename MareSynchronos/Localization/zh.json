@@ -1,0 +1,46 @@
+{
+  "LanguageLabel": {
+    "message": "语言",
+    "description": "ToSStrings..ctor"
+  },
+  "AgreementLabel": {
+    "message": "使用条款",
+    "description": "ToSStrings..ctor"
+  },
+  "ReadLabel": {
+    "message": "仔细阅读",
+    "description": "ToSStrings..ctor"
+  },
+  "Paragraph1": {
+    "message": "当前在您的角色上处于活动状态的所有 mod 文件以及您当前的角色状态都将自动上传到您自己注册的服务。该插件将专门上传必要的 mod 文件，而不是整个 mod。",
+    "description": "ToSStrings..ctor"
+  },
+  "Paragraph2": {
+    "message": "如果您使用的是数据上限互联网连接，则可能会因数据使用量而产生更高的费用，具体取决于下载和上传的 mod 文件的数量。 Mod 文件将在上传和下载时被压缩以节省带宽使用。 由于上传和下载速度不同，角色的变化可能不会立即可见。 服务上已经存在的您的活动 mod 文件的文件将不会重复上传。",
+    "description": "ToSStrings..ctor"
+  },
+  "Paragraph3": {
+    "message": "您上传的 mod 文件是保密的，不会分发给请求完全相同 mod 文件的人以外的各方。 请考虑您要与谁配对，因为他们不可避免地会收到并在本地缓存您当前正在使用的必要 mod 文件。 本地缓存的 mod 文件将具有任意文件名，以阻止复制原始 mod 的尝试。",
+    "description": "ToSStrings..ctor"
+  },
+  "Paragraph4": {
+    "message": "插件创建者尽力确保您的安全。 但是，不能保证 100% 安全。 不要盲目地将您的角色与所有人配对。",
+    "description": "ToSStrings..ctor"
+  },
+  "Paragraph5": {
+    "message": "只要有来自客户端的文件请求，保存在服务上的 Mod 文件将保留在服务上。 一段时间不使用后，mod 文件将自动删除。 您还可以根据要求擦除您个人上传的所有文件。 该服务不包含有关哪些 mod 文件属于哪个 mod 的信息。”",
+    "description": "ToSStrings..ctor"
+  },
+  "Paragraph6": {
+    "message": "此服务按原样提供。 如有滥用，请加入 Mare Synchronos Discord。",
+    "description": "ToSStrings..ctor"
+  },
+  "AgreeLabel": {
+    "message": "我同意",
+    "description": "ToSStrings..ctor"
+  },
+  "ButtonWillBeAvailableIn": {
+    "message": "“我同意”按钮将显示于",
+    "description": "ToSStrings..ctor"
+  }
+}

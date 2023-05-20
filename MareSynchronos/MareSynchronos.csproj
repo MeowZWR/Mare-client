@@ -26,6 +26,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Localization\zh.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Dalamud.ContextMenu" Version="1.2.2" />
     <PackageReference Include="DalamudPackager" Version="2.1.11" />
     <PackageReference Include="lz4net" Version="1.0.15.93" />
@@ -94,6 +98,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <EmbeddedResource Include="Localization\de.json" />
+    <EmbeddedResource Include="Localization\zh.json" />
     <EmbeddedResource Include="Localization\fr.json" />
   </ItemGroup>
 
