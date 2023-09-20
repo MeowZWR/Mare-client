@@ -2,7 +2,6 @@
 using Dalamud.Plugin.Ipc;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
-using Action = System.Action;
 using System.Collections.Concurrent;
 using System.Text;
 using Penumbra.Api.Enums;
@@ -12,27 +11,29 @@ using Microsoft.Extensions.Logging;
 using MareSynchronos.PlayerData.Handlers;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services;
+using Dalamud.Utility;
 
 namespace MareSynchronos.Interop;
 
 public sealed class IpcManager : DisposableMediatorSubscriberBase
 {
-    private readonly ICallGateSubscriber<string> _customizePlusApiVersion;
-    private readonly ICallGateSubscriber<string, string> _customizePlusGetBodyScale;
-    private readonly ICallGateSubscriber<string?, object> _customizePlusOnScaleUpdate;
-    private readonly ICallGateSubscriber<Character?, object> _customizePlusRevert;
+    private readonly ICallGateSubscriber<(int, int)> _customizePlusApiVersion;
+    private readonly ICallGateSubscriber<Character?, string?> _customizePlusGetBodyScale;
+    private readonly ICallGateSubscriber<string?, string?, object> _customizePlusOnScaleUpdate;
+    private readonly ICallGateSubscriber<Character?, object> _customizePlusRevertCharacter;
     private readonly ICallGateSubscriber<string, Character?, object> _customizePlusSetBodyScaleToCharacter;
     private readonly DalamudUtilService _dalamudUtil;
     private readonly ICallGateSubscriber<int> _glamourerApiVersion;
+    private readonly ICallGateSubscriber<(int, int)> _glamourerApiVersions;
     private readonly ICallGateSubscriber<string, GameObject?, object>? _glamourerApplyAll;
     private readonly ICallGateSubscriber<string, GameObject?, object>? _glamourerApplyOnlyCustomization;
     private readonly ICallGateSubscriber<string, GameObject?, object>? _glamourerApplyOnlyEquipment;
     private readonly ICallGateSubscriber<GameObject?, string>? _glamourerGetAllCustomization;
-    private readonly ConcurrentQueue<Action> _gposeActionQueue = new();
-    private readonly ICallGateSubscriber<string> _heelsGetApiVersion;
-    private readonly ICallGateSubscriber<float> _heelsGetOffset;
-    private readonly ICallGateSubscriber<float, object?> _heelsOffsetUpdate;
-    private readonly ICallGateSubscriber<GameObject, float, object?> _heelsRegisterPlayer;
+    private readonly ICallGateSubscriber<Character?, object?> _glamourerRevert;
+    private readonly ICallGateSubscriber<(int, int)> _heelsGetApiVersion;
+    private readonly ICallGateSubscriber<string> _heelsGetOffset;
+    private readonly ICallGateSubscriber<string, object?> _heelsOffsetUpdate;
+    private readonly ICallGateSubscriber<GameObject, string, object?> _heelsRegisterPlayer;
     private readonly ICallGateSubscriber<GameObject, object?> _heelsUnregisterPlayer;
     private readonly ICallGateSubscriber<(uint major, uint minor)> _honorificApiVersion;
     private readonly ICallGateSubscriber<Character, object> _honorificClearCharacterTitle;
@@ -41,7 +42,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private readonly ICallGateSubscriber<string, object> _honorificLocalCharacterTitleChanged;
     private readonly ICallGateSubscriber<object> _honorificReady;
     private readonly ICallGateSubscriber<Character, string, object> _honorificSetCharacterTitle;
-    private readonly ConcurrentQueue<Action> _normalQueue = new();
     private readonly ICallGateSubscriber<string> _palettePlusApiVersion;
     private readonly ICallGateSubscriber<Character, string> _palettePlusBuildCharaPalette;
     private readonly ICallGateSubscriber<Character, string, object> _palettePlusPaletteChanged;
@@ -57,6 +57,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private readonly FuncSubscriber<string> _penumbraGetMetaManipulations;
     private readonly EventSubscriber _penumbraInit;
     private readonly EventSubscriber<ModSettingChange, string, string, bool> _penumbraModSettingChanged;
+    private readonly FuncSubscriber<string, string, TextureType, bool, Task> _penumbraConvertTextureFile;
     private readonly EventSubscriber<nint, int> _penumbraObjectIsRedrawn;
     private readonly ActionSubscriber<string, RedrawType> _penumbraRedraw;
     private readonly ActionSubscriber<GameObject, RedrawType> _penumbraRedrawObject;
@@ -69,9 +70,9 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private bool _customizePlusAvailable = false;
     private CancellationTokenSource _disposalCts = new();
     private bool _glamourerAvailable = false;
+    private bool _glamourerTestingAvailable = false;
     private bool _heelsAvailable = false;
     private bool _honorificAvailable = false;
-    private bool _inGposeQueueMode = false;
     private bool _palettePlusAvailable = false;
     private bool _penumbraAvailable = false;
     private bool _shownGlamourerUnavailable = false;
@@ -101,28 +102,31 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (change == ModSettingChange.EnableState)
                 Mediator.Publish(new PenumbraModSettingChangedMessage());
         });
+        _penumbraConvertTextureFile = Penumbra.Api.Ipc.ConvertTextureFile.Subscriber(pi);
 
         _penumbraGameObjectResourcePathResolved = Penumbra.Api.Ipc.GameObjectResourcePathResolved.Subscriber(pi, ResourceLoaded);
 
         _glamourerApiVersion = pi.GetIpcSubscriber<int>("Glamourer.ApiVersion");
+        _glamourerApiVersions = pi.GetIpcSubscriber<(int, int)>("Glamourer.ApiVersions");
         _glamourerGetAllCustomization = pi.GetIpcSubscriber<GameObject?, string>("Glamourer.GetAllCustomizationFromCharacter");
         _glamourerApplyAll = pi.GetIpcSubscriber<string, GameObject?, object>("Glamourer.ApplyAllToCharacter");
         _glamourerApplyOnlyCustomization = pi.GetIpcSubscriber<string, GameObject?, object>("Glamourer.ApplyOnlyCustomizationToCharacter");
         _glamourerApplyOnlyEquipment = pi.GetIpcSubscriber<string, GameObject?, object>("Glamourer.ApplyOnlyEquipmentToCharacter");
+        _glamourerRevert = pi.GetIpcSubscriber<Character?, object?>("Glamourer.RevertCharacter");
 
-        _heelsGetApiVersion = pi.GetIpcSubscriber<string>("HeelsPlugin.ApiVersion");
-        _heelsGetOffset = pi.GetIpcSubscriber<float>("HeelsPlugin.GetOffset");
-        _heelsRegisterPlayer = pi.GetIpcSubscriber<GameObject, float, object?>("HeelsPlugin.RegisterPlayer");
-        _heelsUnregisterPlayer = pi.GetIpcSubscriber<GameObject, object?>("HeelsPlugin.UnregisterPlayer");
-        _heelsOffsetUpdate = pi.GetIpcSubscriber<float, object?>("HeelsPlugin.OffsetChanged");
+        _heelsGetApiVersion = pi.GetIpcSubscriber<(int, int)>("SimpleHeels.ApiVersion");
+        _heelsGetOffset = pi.GetIpcSubscriber<string>("SimpleHeels.GetLocalPlayer");
+        _heelsRegisterPlayer = pi.GetIpcSubscriber<GameObject, string, object?>("SimpleHeels.RegisterPlayer");
+        _heelsUnregisterPlayer = pi.GetIpcSubscriber<GameObject, object?>("SimpleHeels.UnregisterPlayer");
+        _heelsOffsetUpdate = pi.GetIpcSubscriber<string, object?>("SimpleHeels.LocalChanged");
 
         _heelsOffsetUpdate.Subscribe(HeelsOffsetChange);
 
-        _customizePlusApiVersion = pi.GetIpcSubscriber<string>("CustomizePlus.GetApiVersion");
-        _customizePlusGetBodyScale = pi.GetIpcSubscriber<string, string>("CustomizePlus.GetBodyScale");
-        _customizePlusRevert = pi.GetIpcSubscriber<Character?, object>("CustomizePlus.RevertCharacter");
-        _customizePlusSetBodyScaleToCharacter = pi.GetIpcSubscriber<string, Character?, object>("CustomizePlus.SetBodyScaleToCharacter");
-        _customizePlusOnScaleUpdate = pi.GetIpcSubscriber<string?, object>("CustomizePlus.OnScaleUpdate");
+        _customizePlusApiVersion = pi.GetIpcSubscriber<(int, int)>("CustomizePlus.GetApiVersion");
+        _customizePlusGetBodyScale = pi.GetIpcSubscriber<Character?, string?>("CustomizePlus.GetProfileFromCharacter");
+        _customizePlusRevertCharacter = pi.GetIpcSubscriber<Character?, object>("CustomizePlus.RevertCharacter");
+        _customizePlusSetBodyScaleToCharacter = pi.GetIpcSubscriber<string, Character?, object>("CustomizePlus.SetProfileToCharacter");
+        _customizePlusOnScaleUpdate = pi.GetIpcSubscriber<string?, string?, object>("CustomizePlus.OnProfileUpdate");
 
         _customizePlusOnScaleUpdate.Subscribe(OnCustomizePlusScaleChange);
 
@@ -151,9 +155,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             Mediator.Publish(new PenumbraInitializedMessage());
         }
 
-        Mediator.Subscribe<FrameworkUpdateMessage>(this, (_) => HandleActionQueue());
-        Mediator.Subscribe<CutsceneFrameworkUpdateMessage>(this, (_) => HandleGposeActionQueue());
-        Mediator.Subscribe<ZoneSwitchEndMessage>(this, (_) => ClearActionQueue());
         Mediator.Subscribe<DelayedFrameworkUpdateMessage>(this, (_) => PeriodicApiStateCheck());
 
         PeriodicApiStateCheck();
@@ -161,11 +162,12 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
     public bool Initialized => CheckPenumbraApiInternal() && CheckGlamourerApiInternal();
     public string? PenumbraModDirectory { get; private set; }
-    private ConcurrentQueue<Action> ActionQueue => _inGposeQueueMode ? _gposeActionQueue : _normalQueue;
 
     public bool CheckCustomizePlusApi() => _customizePlusAvailable;
 
     public bool CheckGlamourerApi() => _glamourerAvailable;
+
+    public bool CheckGlamourerTestingApi() => _glamourerTestingAvailable;
 
     public bool CheckHeelsApi() => _heelsAvailable;
 
@@ -184,14 +186,14 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (gameObj is Character c)
             {
                 Logger.LogTrace("CustomizePlus reverting for {chara}", c.Address.ToString("X"));
-                _customizePlusRevert!.InvokeAction(c);
+                _customizePlusRevertCharacter!.InvokeAction(c);
             }
         }).ConfigureAwait(false);
     }
 
     public async Task CustomizePlusSetBodyScaleAsync(IntPtr character, string scale)
     {
-        if (!CheckCustomizePlusApi() || string.IsNullOrEmpty(scale)) return;
+        if (!CheckCustomizePlusApi()) return;
         await _dalamudUtil.RunOnFrameworkThread(() =>
         {
             var gameObj = _dalamudUtil.CreateGameObject(character);
@@ -199,22 +201,38 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             {
                 string decodedScale = Encoding.UTF8.GetString(Convert.FromBase64String(scale));
                 Logger.LogTrace("CustomizePlus applying for {chara}", c.Address.ToString("X"));
-                _customizePlusSetBodyScaleToCharacter!.InvokeAction(decodedScale, c);
+                if (scale.IsNullOrEmpty())
+                {
+                    _customizePlusRevertCharacter!.InvokeAction(c);
+                }
+                else
+                {
+                    _customizePlusSetBodyScaleToCharacter!.InvokeAction(decodedScale, c);
+                }
             }
         }).ConfigureAwait(false);
     }
 
-    public async Task<string> GetCustomizePlusScaleAsync()
+    public async Task<string?> GetCustomizePlusScaleAsync(IntPtr character)
     {
-        if (!CheckCustomizePlusApi()) return string.Empty;
-        var scale = await _dalamudUtil.RunOnFrameworkThread(() => _customizePlusGetBodyScale.InvokeFunc(_dalamudUtil.GetPlayerName())).ConfigureAwait(false);
+        if (!CheckCustomizePlusApi()) return null;
+        var scale = await _dalamudUtil.RunOnFrameworkThread(() =>
+        {
+            var gameObj = _dalamudUtil.CreateGameObject(character);
+            if (gameObj is Character c)
+            {
+                return _customizePlusGetBodyScale.InvokeFunc(c);
+            }
+
+            return string.Empty;
+        }).ConfigureAwait(false);
         if (string.IsNullOrEmpty(scale)) return string.Empty;
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(scale));
     }
 
-    public async Task<float> GetHeelsOffsetAsync()
+    public async Task<string> GetHeelsOffsetAsync()
     {
-        if (!CheckHeelsApi()) return 0.0f;
+        if (!CheckHeelsApi()) return string.Empty;
         return await _dalamudUtil.RunOnFrameworkThread(_heelsGetOffset.InvokeFunc).ConfigureAwait(false);
     }
 
@@ -227,8 +245,42 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
 
             await PenumbraRedrawInternalAsync(logger, handler, applicationId, (chara) =>
             {
-                logger.LogDebug("[{appid}] Calling on IPC: GlamourerApplyAll", applicationId);
-                _glamourerApplyAll!.InvokeAction(customization, chara);
+                try
+                {
+                    logger.LogDebug("[{appid}] Calling on IPC: GlamourerApplyAll", applicationId);
+                    _glamourerApplyAll!.InvokeAction(customization, chara);
+                }
+                catch (Exception)
+                {
+                    logger.LogWarning("[{appid}] Failed to apply Glamourer data", applicationId);
+                }
+                if (_glamourerTestingAvailable)
+                {
+                    logger.LogDebug("[{appid}] Calling on IPC: PenumbraRedraw", applicationId);
+
+                    _penumbraRedrawObject.Invoke(chara, RedrawType.Redraw);
+                }
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            _redrawSemaphore.Release();
+        }
+    }
+
+    public async Task GlamourerRevert(ILogger logger, GameObjectHandler handler, Guid applicationId, CancellationToken token)
+    {
+        if ((!CheckGlamourerApi() && !CheckGlamourerTestingApi()) || _dalamudUtil.IsZoning) return;
+        try
+        {
+            await _redrawSemaphore.WaitAsync(token).ConfigureAwait(false);
+            await PenumbraRedrawInternalAsync(logger, handler, applicationId, (chara) =>
+            {
+                logger.LogDebug("[{appid}] Calling On IPC: GlamourerRevert", applicationId);
+                _glamourerRevert.InvokeAction(chara);
+                logger.LogDebug("[{appid}] Calling On IPC: PenumbraRedraw", applicationId);
+                _penumbraRedrawObject.Invoke(chara, RedrawType.Redraw);
+
             }).ConfigureAwait(false);
         }
         finally
@@ -300,7 +352,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         }).ConfigureAwait(false);
     }
 
-    public async Task HeelsSetOffsetForPlayerAsync(IntPtr character, float offset)
+    public async Task HeelsSetOffsetForPlayerAsync(IntPtr character, string data)
     {
         if (!CheckHeelsApi()) return;
         await _dalamudUtil.RunOnFrameworkThread(() =>
@@ -309,7 +361,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
             if (gameObj != null)
             {
                 Logger.LogTrace("Applying Heels data to {chara}", character.ToString("X"));
-                _heelsRegisterPlayer.InvokeAction(gameObj, offset);
+                _heelsRegisterPlayer.InvokeAction(gameObj, data);
             }
         }).ConfigureAwait(false);
     }
@@ -503,9 +555,41 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         }).ConfigureAwait(false);
     }
 
-    public void ToggleGposeQueueMode(bool on)
+    public async Task PenumbraConvertTextureFiles(ILogger logger, Dictionary<string, string[]> textures, IProgress<(string, int)> progress, CancellationToken token)
     {
-        _inGposeQueueMode = on;
+        if (!CheckPenumbraApi()) return;
+
+        Mediator.Publish(new HaltScanMessage("TextureConversion"));
+        int currentTexture = 0;
+        foreach (var texture in textures)
+        {
+            if (token.IsCancellationRequested) break;
+
+            progress.Report((texture.Key, ++currentTexture));
+
+            logger.LogInformation("Converting Texture {path} to {type}", texture.Key, TextureType.Bc7Tex);
+            var convertTask = _penumbraConvertTextureFile.Invoke(texture.Key, texture.Key, TextureType.Bc7Tex, true);
+            await convertTask.ConfigureAwait(false);
+            if (convertTask.IsCompletedSuccessfully && texture.Value.Any())
+            {
+                foreach (var duplicatedTexture in texture.Value)
+                {
+                    logger.LogInformation("Migrating duplicate {dup}", duplicatedTexture);
+                    try
+                    {
+                        File.Copy(texture.Key, duplicatedTexture, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to copy duplicate {dup}", duplicatedTexture);
+                    }
+                }
+            }
+        }
+        Mediator.Publish(new ResumeScanMessage("TextureConversion"));
+
+        var gameObject = await _dalamudUtil.CreateGameObjectAsync(await _dalamudUtil.GetPlayerPointerAsync());
+        _penumbraRedrawObject.Invoke(gameObject!, RedrawType.Redraw);
     }
 
     protected override void Dispose(bool disposing)
@@ -513,26 +597,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         base.Dispose(disposing);
 
         _disposalCts.Cancel();
-
-        int totalSleepTime = 0;
-        while (!ActionQueue.IsEmpty && totalSleepTime < 2000)
-        {
-            Logger.LogTrace("Waiting for actionqueue to clear...");
-            PeriodicApiStateCheck();
-            if (CheckPenumbraApi())
-            {
-                HandleActionQueue();
-            }
-            Thread.Sleep(16);
-            totalSleepTime += 16;
-        }
-
-        if (totalSleepTime >= 2000)
-        {
-            Logger.LogTrace("Action queue clear or not, disposing");
-        }
-
-        ActionQueue.Clear();
 
         _penumbraModSettingChanged.Dispose();
         _penumbraGameObjectResourcePathResolved.Dispose();
@@ -551,7 +615,9 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     {
         try
         {
-            return string.Equals(_customizePlusApiVersion.InvokeFunc(), "2.0", StringComparison.Ordinal);
+            var version = _customizePlusApiVersion.InvokeFunc();
+            if (version.Item1 == 3 && version.Item2 >= 0) return true;
+            return false;
         }
         catch
         {
@@ -582,11 +648,29 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         }
     }
 
+    private bool CheckGlamourerTestingApiInternal()
+    {
+        bool apiAvailable = false;
+        try
+        {
+            var version = _glamourerApiVersions.InvokeFunc();
+            if (version.Item1 == 0 && version.Item2 >= 1)
+            {
+                apiAvailable = true;
+            }
+            return apiAvailable;
+        }
+        catch
+        {
+            return apiAvailable;
+        }
+    }
+
     private bool CheckHeelsApiInternal()
     {
         try
         {
-            return string.Equals(_heelsGetApiVersion.InvokeFunc(), "1.0.1", StringComparison.Ordinal);
+            return _heelsGetApiVersion.InvokeFunc() is { Item1: 1, Item2: >= 0 };
         }
         catch
         {
@@ -623,7 +707,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         bool apiAvailable = false;
         try
         {
-            apiAvailable = _penumbraApiVersion.Invoke() is { Item1: 4, Item2: >= 19 } && _penumbraEnabled.Invoke();
+            apiAvailable = _penumbraApiVersion.Invoke() is { Item1: 4, Item2: >= 21 } && _penumbraEnabled.Invoke();
             _shownPenumbraUnavailable = _shownPenumbraUnavailable && !apiAvailable;
             return apiAvailable;
         }
@@ -641,46 +725,20 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         }
     }
 
-    private void ClearActionQueue()
-    {
-        ActionQueue.Clear();
-        _gposeActionQueue.Clear();
-    }
-
     private string? GetPenumbraModDirectoryInternal()
     {
         if (!CheckPenumbraApi()) return null;
         return _penumbraResolveModDir!.Invoke().ToLowerInvariant();
     }
 
-    private void HandleActionQueue()
-    {
-        if (ActionQueue.TryDequeue(out var action))
-        {
-            if (action == null) return;
-            Logger.LogDebug("Execution action in queue: {method}", action.Method);
-            action();
-        }
-    }
-
-    private void HandleGposeActionQueue()
-    {
-        if (_gposeActionQueue.TryDequeue(out var action))
-        {
-            if (action == null) return;
-            Logger.LogDebug("Execution action in gpose queue: {method}", action.Method);
-            action();
-        }
-    }
-
-    private void HeelsOffsetChange(float offset)
+    private void HeelsOffsetChange(string offset)
     {
         Mediator.Publish(new HeelsOffsetMessage());
     }
 
-    private void OnCustomizePlusScaleChange(string? scale)
+    private void OnCustomizePlusScaleChange(string? profileName, string? scale)
     {
-        Mediator.Publish(new CustomizePlusMessage());
+        Mediator.Publish(new CustomizePlusMessage(profileName ?? string.Empty));
     }
 
     private void OnHonorificDisposing()
@@ -710,7 +768,6 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
         _disposalCts.Cancel();
         _disposalCts.Dispose();
         Mediator.Publish(new PenumbraDisposedMessage());
-        ActionQueue.Clear();
         _disposalCts = new();
     }
 
@@ -748,6 +805,7 @@ public sealed class IpcManager : DisposableMediatorSubscriberBase
     private void PeriodicApiStateCheck()
     {
         _glamourerAvailable = CheckGlamourerApiInternal();
+        _glamourerTestingAvailable = CheckGlamourerTestingApiInternal();
         _penumbraAvailable = CheckPenumbraApiInternal();
         _heelsAvailable = CheckHeelsApiInternal();
         _customizePlusAvailable = CheckCustomizePlusApiInternal();

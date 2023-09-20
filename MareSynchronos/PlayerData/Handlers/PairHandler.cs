@@ -59,6 +59,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         Mediator.Subscribe<FrameworkUpdateMessage>(this, (_) => FrameworkUpdate());
         Mediator.Subscribe<ZoneSwitchStartMessage>(this, (_) =>
         {
+            _downloadCancellationTokenSource?.CancelDispose();
             MediatorUnsubscribeFromCharacterChanged();
             _charaHandler?.Invalidate();
             IsVisible = false;
@@ -110,6 +111,8 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             Logger.LogInformation("[BASE-{appbase}] Application of data for {player} while in cutscene/gpose or Penumbra/Glamourer unavailable, returning", applicationBase, this);
             return;
         }
+
+        _forceApplyMods |= forceApplyCustomization;
 
         var charaDataToUpdate = characterData.CheckUpdatedData(applicationBase, _cachedData?.DeepClone() ?? new(), Logger, this, forceApplyCustomization, _forceApplyMods);
 
@@ -229,11 +232,18 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                         break;
 
                     case PlayerChanges.Customize:
-                        await _ipcManager.CustomizePlusSetBodyScaleAsync(handler.Address, charaData.CustomizePlusData).ConfigureAwait(false);
+                        if (charaData.CustomizePlusData.TryGetValue(changes.Key, out var customizePlusData))
+                        {
+                            await _ipcManager.CustomizePlusSetBodyScaleAsync(handler.Address, customizePlusData).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await _ipcManager.CustomizePlusRevertAsync(handler.Address).ConfigureAwait(false);
+                        }
                         break;
 
                     case PlayerChanges.Heels:
-                        await _ipcManager.HeelsSetOffsetForPlayerAsync(handler.Address, charaData.HeelsOffset).ConfigureAwait(false);
+                        await _ipcManager.HeelsSetOffsetForPlayerAsync(handler.Address, charaData.HeelsData).ConfigureAwait(false);
                         break;
 
                     case PlayerChanges.Honorific:
@@ -278,7 +288,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         _downloadCancellationTokenSource = _downloadCancellationTokenSource?.CancelRecreate() ?? new CancellationTokenSource();
         var downloadToken = _downloadCancellationTokenSource.Token;
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             Dictionary<string, string> moddedPaths = new(StringComparer.Ordinal);
 
@@ -403,7 +413,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             {
                 Logger.LogTrace("[BASE-{appBase}] {this} visibility changed, now: {visi}, cached data exists", appData, this, IsVisible);
 
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     _lastGlamourerData = await _ipcManager.GlamourerGetCharacterCustomizationAsync(PlayerCharacter).ConfigureAwait(false);
                     ApplyCharacterData(appData, _cachedData!, true);
@@ -420,6 +430,8 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         {
             IsVisible = false;
             _charaHandler?.Invalidate();
+            _downloadCancellationTokenSource?.CancelDispose();
+            _downloadCancellationTokenSource = null;
             MediatorUnsubscribeFromCharacterChanged();
             Logger.LogTrace("{this} visibility changed, now: {visi}", this, IsVisible);
         }
@@ -441,8 +453,6 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         });
 
         _ipcManager.PenumbraAssignTemporaryCollectionAsync(Logger, _penumbraCollection, _charaHandler.GetGameObject()!.ObjectIndex).GetAwaiter().GetResult();
-
-        _downloadManager.Initialize();
     }
 
     private void IpcManagerOnPenumbraRedrawEvent(PenumbraRedrawMessage msg)
@@ -453,7 +463,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         _redrawCts.CancelAfter(TimeSpan.FromSeconds(30));
         var token = _redrawCts.Token;
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             var applicationId = Guid.NewGuid();
             await _dalamudUtil.WaitWhileCharacterIsDrawing(Logger, _charaHandler!, applicationId, ct: token).ConfigureAwait(false);
@@ -509,7 +519,14 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.Player, () => address, false).ConfigureAwait(false);
             tempHandler.CompareNameAndThrow(name);
             Logger.LogDebug("[{applicationId}] Restoring Customization and Equipment for {alias}/{name}: {data}", applicationId, OnlineUser.User.AliasOrUID, name, _originalGlamourerData);
-            await _ipcManager.GlamourerApplyCustomizationAndEquipmentAsync(Logger, tempHandler, _originalGlamourerData, _lastGlamourerData, applicationId, cancelToken.Token, fireAndForget: false).ConfigureAwait(false);
+            if (!_ipcManager.CheckGlamourerTestingApi())
+            {
+                await _ipcManager.GlamourerApplyCustomizationAndEquipmentAsync(Logger, tempHandler, _originalGlamourerData, _lastGlamourerData, applicationId, cancelToken.Token, fireAndForget: false).ConfigureAwait(false);
+            }
+            else
+            {
+                await _ipcManager.GlamourerRevert(Logger, tempHandler, applicationId, cancelToken.Token).ConfigureAwait(false);
+            }
             tempHandler.CompareNameAndThrow(name);
             Logger.LogDebug("[{applicationId}] Restoring Heels for {alias}/{name}", applicationId, OnlineUser.User.AliasOrUID, name);
             await _ipcManager.HeelsRestoreOffsetForPlayerAsync(address).ConfigureAwait(false);
@@ -528,7 +545,9 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             var minionOrMount = await _dalamudUtil.GetMinionOrMountAsync(address).ConfigureAwait(false);
             if (minionOrMount != nint.Zero)
             {
+                await _ipcManager.CustomizePlusRevertAsync(minionOrMount).ConfigureAwait(false);
                 using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.MinionOrMount, () => minionOrMount, false).ConfigureAwait(false);
+                await _ipcManager.GlamourerRevert(Logger, tempHandler, applicationId, cancelToken.Token).ConfigureAwait(false);
                 await _ipcManager.PenumbraRedrawAsync(Logger, tempHandler, applicationId, cancelToken.Token).ConfigureAwait(false);
             }
         }
@@ -537,7 +556,9 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             var pet = await _dalamudUtil.GetPetAsync(address).ConfigureAwait(false);
             if (pet != nint.Zero)
             {
+                await _ipcManager.CustomizePlusRevertAsync(pet).ConfigureAwait(false);
                 using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.Pet, () => pet, false).ConfigureAwait(false);
+                await _ipcManager.GlamourerRevert(Logger, tempHandler, applicationId, cancelToken.Token).ConfigureAwait(false);
                 await _ipcManager.PenumbraRedrawAsync(Logger, tempHandler, applicationId, cancelToken.Token).ConfigureAwait(false);
             }
         }
@@ -546,16 +567,20 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             var companion = await _dalamudUtil.GetCompanionAsync(address).ConfigureAwait(false);
             if (companion != nint.Zero)
             {
+                await _ipcManager.CustomizePlusRevertAsync(companion).ConfigureAwait(false);
                 using GameObjectHandler tempHandler = await _gameObjectHandlerFactory.Create(ObjectKind.Pet, () => companion, false).ConfigureAwait(false);
+                await _ipcManager.GlamourerRevert(Logger, tempHandler, applicationId, cancelToken.Token).ConfigureAwait(false);
                 await _ipcManager.PenumbraRedrawAsync(Logger, tempHandler, applicationId, cancelToken.Token).ConfigureAwait(false);
             }
         }
+
+        cancelToken.CancelDispose();
     }
 
     private List<FileReplacementData> TryCalculateModdedDictionary(Guid applicationBase, CharacterData charaData, out Dictionary<string, string> moddedDictionary, CancellationToken token)
     {
         Stopwatch st = Stopwatch.StartNew();
-        List<FileReplacementData> missingFiles = new();
+        ConcurrentBag<FileReplacementData> missingFiles = new();
         moddedDictionary = new Dictionary<string, string>(StringComparer.Ordinal);
         ConcurrentDictionary<string, string> outputDict = new(StringComparer.Ordinal);
         bool hasMigrationChanges = false;
@@ -609,6 +634,6 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         if (hasMigrationChanges) _fileDbManager.WriteOutFullCsv();
         st.Stop();
         Logger.LogDebug("[BASE-{appBase}] ModdedPaths calculated in {time}ms, missing files: {count}, total files: {total}", applicationBase, st.ElapsedMilliseconds, missingFiles.Count, moddedDictionary.Keys.Count);
-        return missingFiles;
+        return missingFiles.ToList();
     }
 }

@@ -20,6 +20,7 @@ using MareSynchronos.WebAPI.Files;
 using MareSynchronos.WebAPI.Files.Models;
 using MareSynchronos.PlayerData.Handlers;
 using System.Collections.Concurrent;
+using MareSynchronos.FileCache;
 
 namespace MareSynchronos.UI;
 
@@ -29,6 +30,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
     private readonly ConcurrentDictionary<GameObjectHandler, Dictionary<string, FileDownloadStatus>> _currentDownloads = new();
     private readonly FileUploadManager _fileTransferManager;
     private readonly FileTransferOrchestrator _fileTransferOrchestrator;
+    private readonly FileCompactor _fileCompactor;
     private readonly MareCharaFileManager _mareCharaFileManager;
     private readonly PairManager _pairManager;
     private readonly PerformanceCollectorService _performanceCollector;
@@ -50,7 +52,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
         ServerConfigurationManager serverConfigurationManager,
         MareMediator mediator, PerformanceCollectorService performanceCollector,
         FileUploadManager fileTransferManager,
-        FileTransferOrchestrator fileTransferOrchestrator) : base(logger, mediator, "Mare Synchronos Settings")
+        FileTransferOrchestrator fileTransferOrchestrator,
+        FileCompactor fileCompactor) : base(logger, mediator, "Mare Synchronos Settings")
     {
         _configService = configService;
         _mareCharaFileManager = mareCharaFileManager;
@@ -59,6 +62,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _performanceCollector = performanceCollector;
         _fileTransferManager = fileTransferManager;
         _fileTransferOrchestrator = fileTransferOrchestrator;
+        _fileCompactor = fileCompactor;
         _uiShared = uiShared;
 
         SizeConstraints = new WindowSizeConstraints()
@@ -310,12 +314,11 @@ public class SettingsUi : WindowMediatorSubscriberBase
 #if DEBUG
         if (LastCreatedCharacterData != null && ImGui.TreeNode("Last created character data"))
         {
-            
             foreach (var l in JsonSerializer.Serialize(LastCreatedCharacterData, new JsonSerializerOptions() { WriteIndented = true }).Split('\n'))
             {
                 ImGui.Text($"{l}");
             }
-            
+
             ImGui.TreePop();
         }
 #endif
@@ -366,7 +369,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         UiSharedService.FontText("Export MCDF", _uiShared.UidFont);
 
         UiSharedService.TextWrapped("This feature allows you to pack your character into a MCDF file and manually send it to other people. MCDF files can officially only be imported during GPose through Mare. " +
-            "Be aware that the possibility exists that people write unoffocial custom exporters to extract the containing data.");
+            "Be aware that the possibility exists that people write unofficial custom exporters to extract the containing data.");
 
         ImGui.Checkbox("##readExport", ref _readExport);
         ImGui.SameLine();
@@ -391,7 +394,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                         _configService.Current.ExportFolder = Path.GetDirectoryName(path) ?? string.Empty;
                         _configService.Save();
 
-                        Task.Run(() =>
+                        _ = Task.Run(() =>
                         {
                             try
                             {
@@ -434,6 +437,42 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _uiShared.DrawTimeSpanBetweenScansSetting();
         _uiShared.DrawCacheDirectorySetting();
         ImGui.Text($"Currently utilized local storage: {UiSharedService.ByteToString(_uiShared.FileCacheSize)}");
+        bool isLinux = Util.IsLinux();
+        if (isLinux) ImGui.BeginDisabled();
+        bool useFileCompactor = _configService.Current.UseCompactor;
+        if (ImGui.Checkbox("Use file compactor", ref useFileCompactor))
+        {
+            _configService.Current.UseCompactor = useFileCompactor;
+            _configService.Save();
+        }
+        UiSharedService.DrawHelpText("The file compactor can massively reduce your saved files. It might incur a minor penalty on loading files on a slow CPU." + Environment.NewLine
+            + "It is recommended to leave it enabled to save on space.");
+        ImGui.SameLine();
+        if (!_fileCompactor.MassCompactRunning)
+        {
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.FileArchive, "Compact all files in storage"))
+            {
+                _ = Task.Run(() => _fileCompactor.CompactStorage(true));
+            }
+            UiSharedService.AttachToolTip("This will run compression on all files in your current Mare Storage." + Environment.NewLine
+                + "You do not need to run this manually if you keep the file compactor enabled.");
+            ImGui.SameLine();
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.File, "Decompact all files in storage"))
+            {
+                _ = Task.Run(() => _fileCompactor.CompactStorage(false));
+            }
+            UiSharedService.AttachToolTip("This will run decompression on all files in your current Mare Storage.");
+        }
+        else
+        {
+            UiSharedService.ColorText($"File compactor currently running ({_fileCompactor.Progress})", ImGuiColors.DalamudYellow);
+        }
+        if (isLinux)
+        {
+            ImGui.EndDisabled();
+            ImGui.Text("The file compactor is only available on Windows.");
+        }
+
         ImGui.Dummy(new Vector2(10, 10));
         ImGui.Text("To clear the local storage accept the following disclaimer");
         ImGui.Indent();
@@ -446,7 +485,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             ImGui.BeginDisabled();
         if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Clear local storage") && UiSharedService.CtrlPressed() && _readClearCache)
         {
-            Task.Run(() =>
+            _ = Task.Run(() =>
             {
                 foreach (var file in Directory.GetFiles(_configService.Current.CacheFolder))
                 {
@@ -516,6 +555,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var profileDelay = _configService.Current.ProfileDelay;
         var profileOnRight = _configService.Current.ProfilePopoutRight;
         var enableRightClickMenu = _configService.Current.EnableRightClickMenus;
+        var enableDtrEntry = _configService.Current.EnableDtrEntry;
         var preferNotesInsteadOfName = _configService.Current.PreferNotesOverNamesForVisible;
 
         if (ImGui.Checkbox("Enable Game Right Click Menu Entries", ref enableRightClickMenu))
@@ -524,6 +564,13 @@ public class SettingsUi : WindowMediatorSubscriberBase
             _configService.Save();
         }
         UiSharedService.DrawHelpText("This will add Mare related right click menu entries in the game UI on paired players.");
+
+        if (ImGui.Checkbox("Display status and visible pair count in Server Info Bar", ref enableDtrEntry))
+        {
+            _configService.Current.EnableDtrEntry = enableDtrEntry;
+            _configService.Save();
+        }
+        UiSharedService.DrawHelpText("This will add Mare connection status and visible pair count in the Server Info Bar.\nYou can further configure this through your Dalamud Settings.");
 
         if (ImGui.Checkbox("Show separate Visible group", ref showVisibleSeparate))
         {
@@ -761,82 +808,89 @@ public class SettingsUi : WindowMediatorSubscriberBase
         {
             if (ImGui.BeginTabItem("Character Management"))
             {
-                UiSharedService.ColorTextWrapped("Characters listed here will automatically connect to the selected Mare service with the settings as provided below." +
-                    " Make sure to enter the character names correctly or use the 'Add current character' button at the bottom.", ImGuiColors.DalamudYellow);
-                int i = 0;
-                foreach (var item in selectedServer.Authentications.ToList())
+                if (selectedServer.SecretKeys.Any())
                 {
-                    UiSharedService.DrawWithID("selectedChara" + i, () =>
+                    UiSharedService.ColorTextWrapped("Characters listed here will automatically connect to the selected Mare service with the settings as provided below." +
+                        " Make sure to enter the character names correctly or use the 'Add current character' button at the bottom.", ImGuiColors.DalamudYellow);
+                    int i = 0;
+                    foreach (var item in selectedServer.Authentications.ToList())
                     {
-                        var worldIdx = (ushort)item.WorldId;
-                        var data = _uiShared.WorldData.OrderBy(u => u.Value, StringComparer.Ordinal).ToDictionary(k => k.Key, k => k.Value);
-                        if (!data.TryGetValue(worldIdx, out string? worldPreview))
+                        UiSharedService.DrawWithID("selectedChara" + i, () =>
                         {
-                            worldPreview = data.First().Value;
-                        }
-
-                        var secretKeyIdx = item.SecretKeyIdx;
-                        var keys = selectedServer.SecretKeys;
-                        if (!keys.TryGetValue(secretKeyIdx, out var secretKey))
-                        {
-                            secretKey = new();
-                        }
-                        var friendlyName = secretKey.FriendlyName;
-
-                        if (ImGui.TreeNode($"chara", $"Character: {item.CharacterName}, World: {worldPreview}, Secret Key: {friendlyName}"))
-                        {
-                            var charaName = item.CharacterName;
-                            if (ImGui.InputText("Character Name", ref charaName, 64))
+                            var worldIdx = (ushort)item.WorldId;
+                            var data = _uiShared.WorldData.OrderBy(u => u.Value, StringComparer.Ordinal).ToDictionary(k => k.Key, k => k.Value);
+                            if (!data.TryGetValue(worldIdx, out string? worldPreview))
                             {
-                                item.CharacterName = charaName;
-                                _serverConfigurationManager.Save();
+                                worldPreview = data.First().Value;
                             }
 
-                            _uiShared.DrawCombo("World##" + item.CharacterName + i, data, (w) => w.Value,
-                                (w) =>
+                            var secretKeyIdx = item.SecretKeyIdx;
+                            var keys = selectedServer.SecretKeys;
+                            if (!keys.TryGetValue(secretKeyIdx, out var secretKey))
+                            {
+                                secretKey = new();
+                            }
+                            var friendlyName = secretKey.FriendlyName;
+
+                            if (ImGui.TreeNode($"chara", $"Character: {item.CharacterName}, World: {worldPreview}, Secret Key: {friendlyName}"))
+                            {
+                                var charaName = item.CharacterName;
+                                if (ImGui.InputText("Character Name", ref charaName, 64))
                                 {
-                                    if (item.WorldId != w.Key)
+                                    item.CharacterName = charaName;
+                                    _serverConfigurationManager.Save();
+                                }
+
+                                _uiShared.DrawCombo("World##" + item.CharacterName + i, data, (w) => w.Value,
+                                    (w) =>
                                     {
-                                        item.WorldId = w.Key;
-                                        _serverConfigurationManager.Save();
-                                    }
-                                }, EqualityComparer<KeyValuePair<ushort, string>>.Default.Equals(data.FirstOrDefault(f => f.Key == worldIdx), default) ? data.First() : data.First(f => f.Key == worldIdx));
+                                        if (item.WorldId != w.Key)
+                                        {
+                                            item.WorldId = w.Key;
+                                            _serverConfigurationManager.Save();
+                                        }
+                                    }, EqualityComparer<KeyValuePair<ushort, string>>.Default.Equals(data.FirstOrDefault(f => f.Key == worldIdx), default) ? data.First() : data.First(f => f.Key == worldIdx));
 
-                            _uiShared.DrawCombo("Secret Key##" + item.CharacterName + i, keys, (w) => w.Value.FriendlyName,
-                                (w) =>
-                                {
-                                    if (w.Key != item.SecretKeyIdx)
+                                _uiShared.DrawCombo("Secret Key##" + item.CharacterName + i, keys, (w) => w.Value.FriendlyName,
+                                    (w) =>
                                     {
-                                        item.SecretKeyIdx = w.Key;
-                                        _serverConfigurationManager.Save();
-                                    }
-                                }, EqualityComparer<KeyValuePair<int, SecretKey>>.Default.Equals(keys.FirstOrDefault(f => f.Key == item.SecretKeyIdx), default) ? keys.First() : keys.First(f => f.Key == item.SecretKeyIdx));
+                                        if (w.Key != item.SecretKeyIdx)
+                                        {
+                                            item.SecretKeyIdx = w.Key;
+                                            _serverConfigurationManager.Save();
+                                        }
+                                    }, EqualityComparer<KeyValuePair<int, SecretKey>>.Default.Equals(keys.FirstOrDefault(f => f.Key == item.SecretKeyIdx), default) ? keys.First() : keys.First(f => f.Key == item.SecretKeyIdx));
 
-                            if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Character") && UiSharedService.CtrlPressed())
-                                _serverConfigurationManager.RemoveCharacterFromServer(idx, item);
-                            UiSharedService.AttachToolTip("Hold CTRL to delete this entry.");
+                                if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Character") && UiSharedService.CtrlPressed())
+                                    _serverConfigurationManager.RemoveCharacterFromServer(idx, item);
+                                UiSharedService.AttachToolTip("Hold CTRL to delete this entry.");
 
-                            ImGui.TreePop();
-                        }
-                    });
+                                ImGui.TreePop();
+                            }
+                        });
 
-                    i++;
-                }
-
-                ImGui.Separator();
-                if (!selectedServer.Authentications.Any(c => string.Equals(c.CharacterName, _uiShared.PlayerName, StringComparison.Ordinal)
-                    && c.WorldId == _uiShared.WorldId))
-                {
-                    if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Add current character"))
-                    {
-                        _serverConfigurationManager.AddCurrentCharacterToServer(idx);
+                        i++;
                     }
-                    ImGui.SameLine();
-                }
 
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Add new character"))
+                    ImGui.Separator();
+                    if (!selectedServer.Authentications.Any(c => string.Equals(c.CharacterName, _uiShared.PlayerName, StringComparison.Ordinal)
+                        && c.WorldId == _uiShared.WorldId))
+                    {
+                        if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Add current character"))
+                        {
+                            _serverConfigurationManager.AddCurrentCharacterToServer(idx);
+                        }
+                        ImGui.SameLine();
+                    }
+
+                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Add new character"))
+                    {
+                        _serverConfigurationManager.AddEmptyCharacterToServer(idx);
+                    }
+                }
+                else
                 {
-                    _serverConfigurationManager.AddEmptyCharacterToServer(idx);
+                    UiSharedService.ColorTextWrapped("You need to add a Secret Key first before adding Characters.", ImGuiColors.DalamudYellow);
                 }
 
                 ImGui.EndTabItem();
@@ -860,12 +914,19 @@ public class SettingsUi : WindowMediatorSubscriberBase
                             item.Value.Key = key;
                             _serverConfigurationManager.Save();
                         }
-                        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Secret Key") && UiSharedService.CtrlPressed())
+                        if (!selectedServer.Authentications.Any(p => p.SecretKeyIdx == item.Key))
                         {
-                            selectedServer.SecretKeys.Remove(item.Key);
-                            _serverConfigurationManager.Save();
+                            if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Secret Key") && UiSharedService.CtrlPressed())
+                            {
+                                selectedServer.SecretKeys.Remove(item.Key);
+                                _serverConfigurationManager.Save();
+                            }
+                            UiSharedService.AttachToolTip("Hold CTRL to delete this secret key entry");
                         }
-                        UiSharedService.AttachToolTip("Hold CTRL to delete this secret key entry");
+                        else
+                        {
+                            UiSharedService.ColorTextWrapped("This key is in use and cannot be deleted", ImGuiColors.DalamudYellow);
+                        }
                     });
 
                     if (item.Key != selectedServer.SecretKeys.Keys.LastOrDefault())

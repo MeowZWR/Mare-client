@@ -313,7 +313,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         return ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
     }
 
-    public static bool IconTextButton(FontAwesomeIcon icon, string text)
+    public static bool IconTextButton(FontAwesomeIcon icon, string text, float? width = null)
     {
         var buttonClicked = false;
 
@@ -322,9 +322,18 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         var padding = ImGui.GetStyle().FramePadding;
         var spacing = ImGui.GetStyle().ItemSpacing;
 
-        var buttonSizeX = iconSize.X + textSize.X + padding.X * 2 + spacing.X;
+        Vector2 buttonSize;
         var buttonSizeY = (iconSize.Y > textSize.Y ? iconSize.Y : textSize.Y) + padding.Y * 2;
-        var buttonSize = new Vector2(buttonSizeX, buttonSizeY);
+
+        if (width == null)
+        {
+            var buttonSizeX = iconSize.X + textSize.X + padding.X * 2 + spacing.X;
+            buttonSize = new Vector2(buttonSizeX, buttonSizeY);
+        }
+        else
+        {
+            buttonSize = new Vector2(width.Value, buttonSizeY);
+        }
 
         if (ImGui.Button("###" + icon.ToIconString() + text, buttonSize))
         {
@@ -474,7 +483,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
                 _isPenumbraDirectory = string.Equals(path.ToLowerInvariant(), _ipcManager.PenumbraModDirectory?.ToLowerInvariant(), StringComparison.Ordinal);
                 _isDirectoryWritable = IsDirectoryWritable(path);
-                _cacheDirectoryHasOtherFilesThanCache = Directory.GetFiles(path, "*", SearchOption.AllDirectories).Any(f => new FileInfo(f).Name.Length != 40);
+                _cacheDirectoryHasOtherFilesThanCache = Directory.GetFiles(path, "*", SearchOption.AllDirectories).Any(f => Path.GetFileNameWithoutExtension(f).Length != 40);
                 _cacheDirectoryIsValidPath = PathRegex().IsMatch(path);
 
                 if (!string.IsNullOrEmpty(path)
@@ -569,7 +578,10 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
             ImGui.SameLine();
             ImGui.Text(_cacheScanner.TotalFiles == 1
                 ? "Collecting files"
-                : $"Processing {_cacheScanner.CurrentFileProgress} / {_cacheScanner.TotalFiles} files");
+                : $"Processing {_cacheScanner.CurrentFileProgress}/{_cacheScanner.TotalFilesStorage} from storage ({_cacheScanner.TotalFiles} scanned in)");
+            AttachToolTip("Note: it is possible to have more files in storage than scanned in, " +
+                "this is due to the scanner normally ignoring those files but the game loading them in and using them on your character, so they get " +
+                "added to the local storage.");
         }
         else if (_configService.Current.FileScanPaused)
         {
@@ -612,7 +624,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.TextColored(glamourerColor, _glamourerExists ? "Available" : "Unavailable");
         ImGui.Text("Optional Addons");
         ImGui.SameLine();
-        ImGui.Text("Heels:");
+        ImGui.Text("SimpleHeels:");
         ImGui.SameLine();
         ImGui.TextColored(heelsColor, _heelsExists ? "Available" : "Unavailable");
         ImGui.SameLine();

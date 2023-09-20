@@ -106,13 +106,6 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
         return await response.Content.ReadFromJsonAsync<List<UploadFileDto>>(cancellationToken: ct).ConfigureAwait(false) ?? new List<UploadFileDto>();
     }
 
-    private async Task<(string, byte[])> GetCompressedFileData(string fileHash, CancellationToken uploadToken)
-    {
-        var fileCache = _fileDbManager.GetFileCacheByHash(fileHash)!.ResolvedFilepath;
-        return (fileHash, LZ4Codec.WrapHC(await File.ReadAllBytesAsync(fileCache, uploadToken).ConfigureAwait(false), 0,
-            (int)new FileInfo(fileCache).Length));
-    }
-
     private HashSet<string> GetUnverifiedFiles(CharacterData data)
     {
         HashSet<string> unverifiedUploadHashes = new(StringComparer.Ordinal);
@@ -152,10 +145,7 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
 
         try
         {
-            if (!_mareConfigService.Current.UseAlternativeFileUpload)
-                await UploadFileStream(compressedFile, fileHash, uploadToken).ConfigureAwait(false);
-            else
-                await UploadFileFull(compressedFile, fileHash, uploadToken).ConfigureAwait(false);
+            await UploadFileStream(compressedFile, fileHash, _mareConfigService.Current.UseAlternativeFileUpload, uploadToken).ConfigureAwait(false);
             _verifiedUploadedHashes[fileHash] = DateTime.UtcNow;
         }
         catch (Exception ex)
@@ -163,7 +153,7 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
             if (!_mareConfigService.Current.UseAlternativeFileUpload && ex is not OperationCanceledException)
             {
                 Logger.LogWarning(ex, "[{hash}] Error during file upload, trying alternative file upload", fileHash);
-                await UploadFileFull(compressedFile, fileHash, uploadToken).ConfigureAwait(false);
+                await UploadFileStream(compressedFile, fileHash, true, uploadToken).ConfigureAwait(false);
             }
             else
             {
@@ -172,18 +162,13 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
         }
     }
 
-    private async Task UploadFileFull(byte[] compressedFile, string fileHash, CancellationToken uploadToken)
+    private async Task UploadFileStream(byte[] compressedFile, string fileHash, bool munged, CancellationToken uploadToken)
     {
-        using var content = new ByteArrayContent(compressedFile);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        if (munged)
+        {
+            FileDownloadManager.MungeBuffer(compressedFile.AsSpan());
+        }
 
-        var response = await _orchestrator.SendRequestAsync(HttpMethod.Post, MareFiles.ServerFilesUploadFullPath(_orchestrator.FilesCdnUri!, fileHash), content, uploadToken).ConfigureAwait(false);
-        Logger.LogDebug("[{hash}] Upload Status: {status}", fileHash, response.StatusCode);
-        CurrentUploads.Single(f => string.Equals(f.Hash, fileHash, StringComparison.Ordinal)).Transferred = compressedFile.Length;
-    }
-
-    private async Task UploadFileStream(byte[] compressedFile, string fileHash, CancellationToken uploadToken)
-    {
         using var ms = new MemoryStream(compressedFile);
 
         Progress<UploadProgress> prog = new((prog) =>
@@ -199,8 +184,11 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
         });
         var streamContent = new ProgressableStreamContent(ms, prog);
         streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-
-        var response = await _orchestrator.SendRequestStreamAsync(HttpMethod.Post, MareFiles.ServerFilesUploadFullPath(_orchestrator.FilesCdnUri!, fileHash), streamContent, uploadToken).ConfigureAwait(false);
+        HttpResponseMessage response;
+        if (!munged)
+            response = await _orchestrator.SendRequestStreamAsync(HttpMethod.Post, MareFiles.ServerFilesUploadFullPath(_orchestrator.FilesCdnUri!, fileHash), streamContent, uploadToken).ConfigureAwait(false);
+        else
+            response = await _orchestrator.SendRequestStreamAsync(HttpMethod.Post, MareFiles.ServerFilesUploadMunged(_orchestrator.FilesCdnUri!, fileHash), streamContent, uploadToken).ConfigureAwait(false);
         Logger.LogDebug("[{hash}] Upload Status: {status}", fileHash, response.StatusCode);
     }
 
@@ -245,7 +233,7 @@ public sealed class FileUploadManager : DisposableMediatorSubscriberBase
         foreach (var file in CurrentUploads.Where(f => f.CanBeTransferred && !f.IsTransferred).ToList())
         {
             Logger.LogDebug("[{hash}] Compressing", file);
-            var data = await GetCompressedFileData(file.Hash, uploadToken).ConfigureAwait(false);
+            var data = await _fileDbManager.GetCompressedFileData(file.Hash, uploadToken).ConfigureAwait(false);
             CurrentUploads.Single(e => string.Equals(e.Hash, data.Item1, StringComparison.Ordinal)).Total = data.Item2.Length;
             Logger.LogDebug("[{hash}] Starting upload for {filePath}", data.Item1, _fileDbManager.GetFileCacheByHash(data.Item1)!.ResolvedFilepath);
             await uploadTask.ConfigureAwait(false);
