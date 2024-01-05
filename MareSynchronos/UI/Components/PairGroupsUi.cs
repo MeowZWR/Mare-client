@@ -65,11 +65,11 @@ public class PairGroupsUi
         }
         if (allArePaused)
         {
-            UiSharedService.AttachToolTip($"Resume pairing with all pairs in {tag}");
+            UiSharedService.AttachToolTip($"恢复 {tag} 中的所有配对。");
         }
         else
         {
-            UiSharedService.AttachToolTip($"Pause pairing with all pairs in {tag}");
+            UiSharedService.AttachToolTip($"暂停 {tag} 中的所有配对");
         }
 
         var buttonDeleteOffset = windowX + windowWidth - flyoutMenuX;
@@ -126,31 +126,31 @@ public class PairGroupsUi
 
     private void DrawGroupMenu(string tag)
     {
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Users, "Add people to " + tag))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Users, "添加用户到 " + tag))
         {
             _selectGroupForPairUi.Open(tag);
         }
-        UiSharedService.AttachToolTip($"Add more users to Group {tag}");
+        UiSharedService.AttachToolTip($"添加更多用户到组 {tag}");
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete " + tag) && UiSharedService.CtrlPressed())
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "删除 " + tag) && UiSharedService.CtrlPressed())
         {
             _tagHandler.RemoveTag(tag);
         }
-        UiSharedService.AttachToolTip($"Delete Group {tag} (Will not delete the pairs)" + Environment.NewLine + "Hold CTRL to delete");
+        UiSharedService.AttachToolTip($"删除组 {tag} （不会删除其中的配对）" + Environment.NewLine + "按住CTRL建来删除");
     }
 
     private void DrawName(string tag, bool isSpecialTag, int visible, int online, int? total)
     {
         string displayedName = tag switch
         {
-            TagHandler.CustomUnpairedTag => "Unpaired",
-            TagHandler.CustomOfflineTag => "Offline",
-            TagHandler.CustomOnlineTag => _mareConfig.Current.ShowOfflineUsersSeparately ? "Online/Paused" : "Contacts",
-            TagHandler.CustomVisibleTag => "Visible",
+            TagHandler.CustomUnpairedTag => "未配对",
+            TagHandler.CustomOfflineTag => "已离线",
+            TagHandler.CustomOnlineTag => _mareConfig.Current.ShowOfflineUsersSeparately ? "在线/已暂停" : "Contacts",
+            TagHandler.CustomVisibleTag => "可见",
             _ => tag
         };
 
-        string resultFolderName = !isSpecialTag ? $"{displayedName} ({visible}/{online}/{total} Pairs)" : $"{displayedName} ({online} Pairs)";
+        string resultFolderName = !isSpecialTag ? $"{displayedName} ({visible}/{online}/{total} 个配对)" : $"{displayedName} ({online} 个配对)";
 
         //  FontAwesomeIcon.CaretSquareDown : FontAwesomeIcon.CaretSquareRight
         var icon = _tagHandler.IsTagOpen(tag) ? FontAwesomeIcon.CaretSquareDown : FontAwesomeIcon.CaretSquareRight;
@@ -169,11 +169,11 @@ public class PairGroupsUi
         if (!isSpecialTag && ImGui.IsItemHovered())
         {
             ImGui.BeginTooltip();
-            ImGui.TextUnformatted($"Group {tag}");
+            ImGui.TextUnformatted($"组 {tag}");
             ImGui.Separator();
-            ImGui.TextUnformatted($"{visible} Pairs visible");
-            ImGui.TextUnformatted($"{online} Pairs online/paused");
-            ImGui.TextUnformatted($"{total} Pairs total");
+            ImGui.TextUnformatted($"{visible} 个配对可见");
+            ImGui.TextUnformatted($"{online} 个配对 已在线/已暂停");
+            ImGui.TextUnformatted($"{total} 个配对总数");
             ImGui.EndTooltip();
         }
     }

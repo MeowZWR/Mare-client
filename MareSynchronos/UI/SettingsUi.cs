@@ -53,7 +53,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         MareMediator mediator, PerformanceCollectorService performanceCollector,
         FileUploadManager fileTransferManager,
         FileTransferOrchestrator fileTransferOrchestrator,
-        FileCompactor fileCompactor) : base(logger, mediator, "Mare Synchronos Settings")
+        FileCompactor fileCompactor) : base(logger, mediator, "Mare Synchronos 设置")
     {
         _configService = configService;
         _mareCharaFileManager = mareCharaFileManager;
@@ -99,16 +99,16 @@ public class SettingsUi : WindowMediatorSubscriberBase
     private void DrawBlockedTransfers()
     {
         _lastTab = "BlockedTransfers";
-        UiSharedService.ColorTextWrapped("Files that you attempted to upload or download that were forbidden to be transferred by their creators will appear here. " +
-                             "If you see file paths from your drive here, then those files were not allowed to be uploaded. If you see hashes, those files were not allowed to be downloaded. " +
-                             "Ask your paired friend to send you the mod in question through other means, acquire the mod yourself or pester the mod creator to allow it to be sent over Mare.",
+        UiSharedService.ColorTextWrapped("您试图上传或下载但创建者禁止传输的文件将显示在此处。 " +
+                             "如果您在此处看到驱动器中的文件路径，则不允许上载这些文件。如果你看到哈希值，那么这些文件是不允许下载的。 " +
+                             "让与您配对的朋友通过其他方式向你发送有问题的mod、自己获取mod或去纠缠mod创建者允许其通过月海发送。",
             ImGuiColors.DalamudGrey);
 
         if (ImGui.BeginTable("TransfersTable", 2, ImGuiTableFlags.SizingStretchProp))
         {
             ImGui.TableSetupColumn(
-                $"Hash/Filename");
-            ImGui.TableSetupColumn($"Forbidden by");
+                $"哈希/文件名");
+            ImGui.TableSetupColumn($"被禁止");
 
             ImGui.TableHeadersRow();
 
@@ -133,41 +133,41 @@ public class SettingsUi : WindowMediatorSubscriberBase
     private void DrawCurrentTransfers()
     {
         _lastTab = "Transfers";
-        UiSharedService.FontText("Transfer Settings", _uiShared.UidFont);
+        UiSharedService.FontText("传输设置", _uiShared.UidFont);
 
         int maxParallelDownloads = _configService.Current.ParallelDownloads;
         bool useAlternativeUpload = _configService.Current.UseAlternativeFileUpload;
-        if (ImGui.SliderInt("Maximum Parallel Downloads", ref maxParallelDownloads, 1, 10))
+        if (ImGui.SliderInt("最大并行下载量", ref maxParallelDownloads, 1, 10))
         {
             _configService.Current.ParallelDownloads = maxParallelDownloads;
             _configService.Save();
         }
 
-        if (ImGui.Checkbox("Use Alternative Upload Method", ref useAlternativeUpload))
+        if (ImGui.Checkbox("使用其他上传方法", ref useAlternativeUpload))
         {
             _configService.Current.UseAlternativeFileUpload = useAlternativeUpload;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will attempt to upload files in one go instead of a stream. Typically not necessary to enable. Use if you have upload issues.");
+        UiSharedService.DrawHelpText("尝试一次性上传文件，而不是流式上传。通常不需要启用。如果您有上传问题，那么请使用这个功能。");
 
         ImGui.Separator();
-        UiSharedService.FontText("Transfer UI", _uiShared.UidFont);
+        UiSharedService.FontText("传输UI", _uiShared.UidFont);
 
         bool showTransferWindow = _configService.Current.ShowTransferWindow;
-        if (ImGui.Checkbox("Show separate transfer window", ref showTransferWindow))
+        if (ImGui.Checkbox("显示单独的传输窗口", ref showTransferWindow))
         {
             _configService.Current.ShowTransferWindow = showTransferWindow;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText($"The download window will show the current progress of outstanding downloads.{Environment.NewLine}{Environment.NewLine}" +
-            $"What do W/Q/P/D stand for?{Environment.NewLine}W = Waiting for Slot (see Maximum Parallel Downloads){Environment.NewLine}" +
-            $"Q = Queued on Server, waiting for queue ready signal{Environment.NewLine}" +
-            $"P = Processing download (aka downloading){Environment.NewLine}" +
-            $"D = Decompressing download");
+        UiSharedService.DrawHelpText($"下载窗口将显示未完成下载的当前进度。{Environment.NewLine}{Environment.NewLine}" +
+            $"W/Q/P/D代表什么？{Environment.NewLine}W = 等待下载（请参阅最大并行下载量）{Environment.NewLine}" +
+            $"Q = 在服务器上排队，等待队列就绪信号{Environment.NewLine}" +
+            $"P = 正在处理下载（即下载中）{Environment.NewLine}" +
+            $"D = 解压缩下载");
         if (!_configService.Current.ShowTransferWindow) ImGui.BeginDisabled();
         ImGui.Indent();
         bool editTransferWindowPosition = _uiShared.EditTrackerPosition;
-        if (ImGui.Checkbox("Edit Transfer Window position", ref editTransferWindowPosition))
+        if (ImGui.Checkbox("编辑传输窗口位置", ref editTransferWindowPosition))
         {
             _uiShared.EditTrackerPosition = editTransferWindowPosition;
         }
@@ -175,54 +175,54 @@ public class SettingsUi : WindowMediatorSubscriberBase
         if (!_configService.Current.ShowTransferWindow) ImGui.EndDisabled();
 
         bool showTransferBars = _configService.Current.ShowTransferBars;
-        if (ImGui.Checkbox("Show transfer bars rendered below players", ref showTransferBars))
+        if (ImGui.Checkbox("在玩家下方显示的传输条", ref showTransferBars))
         {
             _configService.Current.ShowTransferBars = showTransferBars;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will render a progress bar during the download at the feet of the player you are downloading from.");
+        UiSharedService.DrawHelpText("这将在下载过程中在您下载的玩家脚下呈现进度条。");
 
         if (!showTransferBars) ImGui.BeginDisabled();
         ImGui.Indent();
         bool transferBarShowText = _configService.Current.TransferBarsShowText;
-        if (ImGui.Checkbox("Show Download Text", ref transferBarShowText))
+        if (ImGui.Checkbox("显示下载文本", ref transferBarShowText))
         {
             _configService.Current.TransferBarsShowText = transferBarShowText;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Shows download text (amount of MiB downloaded) in the transfer bars");
+        UiSharedService.DrawHelpText("在传输条中显示下载文本（下载的MiB大小）");
         int transferBarWidth = _configService.Current.TransferBarsWidth;
-        if (ImGui.SliderInt("Transfer Bar Width", ref transferBarWidth, 10, 500))
+        if (ImGui.SliderInt("传输条宽度", ref transferBarWidth, 10, 500))
         {
             _configService.Current.TransferBarsWidth = transferBarWidth;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Width of the displayed transfer bars (will never be less wide than the displayed text)");
+        UiSharedService.DrawHelpText("显示的传输条的宽度（永远不会小于显示的文本的宽度）");
         int transferBarHeight = _configService.Current.TransferBarsHeight;
-        if (ImGui.SliderInt("Transfer Bar Height", ref transferBarHeight, 2, 50))
+        if (ImGui.SliderInt("传输条高度", ref transferBarHeight, 2, 50))
         {
             _configService.Current.TransferBarsHeight = transferBarHeight;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Height of the displayed transfer bars (will never be less tall than the displayed text)");
+        UiSharedService.DrawHelpText("显示的传输条的高度（永远不会低于显示的文本）");
         bool showUploading = _configService.Current.ShowUploading;
-        if (ImGui.Checkbox("Show 'Uploading' text below players that are currently uploading", ref showUploading))
+        if (ImGui.Checkbox("在当前正在上传的玩家下方显示“上传”文本", ref showUploading))
         {
             _configService.Current.ShowUploading = showUploading;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will render an 'Uploading' text at the feet of the player that is in progress of uploading data.");
+        UiSharedService.DrawHelpText("这将在正在上传数据的玩家脚下呈现一个“上传”文本。");
 
         ImGui.Unindent();
         if (!showUploading) ImGui.BeginDisabled();
         ImGui.Indent();
         bool showUploadingBigText = _configService.Current.ShowUploadingBigText;
-        if (ImGui.Checkbox("Large font for 'Uploading' text", ref showUploadingBigText))
+        if (ImGui.Checkbox("大字体“上传”文本", ref showUploadingBigText))
         {
             _configService.Current.ShowUploadingBigText = showUploadingBigText;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will render an 'Uploading' text in a larger font.");
+        UiSharedService.DrawHelpText("这将以更大的字体呈现“上传”文本。");
 
         ImGui.Unindent();
 
@@ -230,18 +230,18 @@ public class SettingsUi : WindowMediatorSubscriberBase
         if (!showTransferBars) ImGui.EndDisabled();
 
         ImGui.Separator();
-        UiSharedService.FontText("Current Transfers", _uiShared.UidFont);
+        UiSharedService.FontText("当前传输", _uiShared.UidFont);
 
         if (ImGui.BeginTabBar("TransfersTabBar"))
         {
-            if (ApiController.ServerState is ServerState.Connected && ImGui.BeginTabItem("Transfers"))
+            if (ApiController.ServerState is ServerState.Connected && ImGui.BeginTabItem("传输"))
             {
-                ImGui.TextUnformatted("Uploads");
+                ImGui.TextUnformatted("上传");
                 if (ImGui.BeginTable("UploadsTable", 3))
                 {
-                    ImGui.TableSetupColumn("File");
-                    ImGui.TableSetupColumn("Uploaded");
-                    ImGui.TableSetupColumn("Size");
+                    ImGui.TableSetupColumn("文件");
+                    ImGui.TableSetupColumn("已上传");
+                    ImGui.TableSetupColumn("大小");
                     ImGui.TableHeadersRow();
                     foreach (var transfer in _fileTransferManager.CurrentUploads.ToArray())
                     {
@@ -260,13 +260,13 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     ImGui.EndTable();
                 }
                 ImGui.Separator();
-                ImGui.TextUnformatted("Downloads");
+                ImGui.TextUnformatted("下载");
                 if (ImGui.BeginTable("DownloadsTable", 4))
                 {
-                    ImGui.TableSetupColumn("User");
-                    ImGui.TableSetupColumn("Server");
-                    ImGui.TableSetupColumn("Files");
-                    ImGui.TableSetupColumn("Download");
+                    ImGui.TableSetupColumn("用户");
+                    ImGui.TableSetupColumn("服务器");
+                    ImGui.TableSetupColumn("文件");
+                    ImGui.TableSetupColumn("下载");
                     ImGui.TableHeadersRow();
 
                     foreach (var transfer in _currentDownloads.ToArray())
@@ -296,7 +296,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Blocked Transfers"))
+            if (ImGui.BeginTabItem("被阻止的传输"))
             {
                 DrawBlockedTransfers();
                 ImGui.EndTabItem();
@@ -310,7 +310,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
     {
         _lastTab = "Debug";
 
-        UiSharedService.FontText("Debug", _uiShared.UidFont);
+        UiSharedService.FontText("调试", _uiShared.UidFont);
 #if DEBUG
         if (LastCreatedCharacterData != null && ImGui.TreeNode("Last created character data"))
         {
@@ -322,7 +322,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             ImGui.TreePop();
         }
 #endif
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Copy, "[DEBUG] Copy Last created Character Data to clipboard"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Copy, "[DEBUG] 将上次创建的角色数据复制到剪贴板"))
         {
             if (LastCreatedCharacterData != null)
             {
@@ -330,32 +330,32 @@ public class SettingsUi : WindowMediatorSubscriberBase
             }
             else
             {
-                ImGui.SetClipboardText("ERROR: No created character data, cannot copy.");
+                ImGui.SetClipboardText("ERROR: 没有创建角色数据，无法复制。");
             }
         }
-        UiSharedService.AttachToolTip("Use this when reporting mods being rejected from the server.");
+        UiSharedService.AttachToolTip("在报告被服务器拒绝的mod时使用此选项。");
 
-        _uiShared.DrawCombo("Log Level", Enum.GetValues<LogLevel>(), (l) => l.ToString(), (l) =>
+        _uiShared.DrawCombo("日志等级", Enum.GetValues<LogLevel>(), (l) => l.ToString(), (l) =>
         {
             _configService.Current.LogLevel = l;
             _configService.Save();
         }, _configService.Current.LogLevel);
 
         bool logPerformance = _configService.Current.LogPerformance;
-        if (ImGui.Checkbox("Log Performance Counters", ref logPerformance))
+        if (ImGui.Checkbox("日志性能计数器", ref logPerformance))
         {
             _configService.Current.LogPerformance = logPerformance;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Enabling this can incur a (slight) performance impact. Enabling this for extended periods of time is not recommended.");
+        UiSharedService.DrawHelpText("启用此功能可能会对性能产生（轻微）影响。不建议长时间启用此功能。");
 
         if (!logPerformance) ImGui.BeginDisabled();
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "Print Performance Stats to /xllog"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "将性能统计信息打印到 /xllog"))
         {
             _performanceCollector.PrintPerformanceStats();
         }
         ImGui.SameLine();
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "Print Performance Stats (last 60s) to /xllog"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "将性能统计信息（最近60秒）打印到 /xllog"))
         {
             _performanceCollector.PrintPerformanceStats(60);
         }
@@ -366,14 +366,14 @@ public class SettingsUi : WindowMediatorSubscriberBase
     {
         _lastTab = "FileCache";
 
-        UiSharedService.FontText("Export MCDF", _uiShared.UidFont);
+        UiSharedService.FontText("导出MCDF", _uiShared.UidFont);
 
-        UiSharedService.TextWrapped("This feature allows you to pack your character into a MCDF file and manually send it to other people. MCDF files can officially only be imported during GPose through Mare. " +
-            "Be aware that the possibility exists that people write unofficial custom exporters to extract the containing data.");
+        UiSharedService.TextWrapped("此功能允许您将角色导出到MCDF文件中，并手动将其发送给其他人。MCDF文件只能在集体动作期间通过月海同步器导入。 " +
+            "请注意，他人可以自制一个非官方的导出工具来提取其中包含的数据，存在这种可能。");
 
         ImGui.Checkbox("##readExport", ref _readExport);
         ImGui.SameLine();
-        UiSharedService.TextWrapped("I understand that by exporting my character data and sending it to other people I am giving away my current character appearance irrevocably. People I am sharing my data with have the ability to share it with other people without limitations.");
+        UiSharedService.TextWrapped("我已了解，导出我的角色数据并将其发送给其他人会不可避免地泄露我当前的角色外观。与我共享数据的人可以不受限制地与其他人共享我的数据。");
 
         if (_readExport)
         {
@@ -381,13 +381,13 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
             if (!_mareCharaFileManager.CurrentlyWorking)
             {
-                ImGui.InputTextWithHint("Export Descriptor", "This description will be shown on loading the data", ref _exportDescription, 255);
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Save, "Export Character as MCDF"))
+                ImGui.InputTextWithHint("导出描述器", "此描述将在加载数据时显示", ref _exportDescription, 255);
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Save, "导出角色为MCDF文件"))
                 {
                     string defaultFileName = string.IsNullOrEmpty(_exportDescription)
                         ? "export.mcdf"
                         : string.Join('_', $"{_exportDescription}.mcdf".Split(Path.GetInvalidFileNameChars()));
-                    _uiShared.FileDialogManager.SaveFileDialog("Export Character to file", ".mcdf", defaultFileName, ".mcdf", (success, path) =>
+                    _uiShared.FileDialogManager.SaveFileDialog("导出角色数据文件", ".mcdf", defaultFileName, ".mcdf", (success, path) =>
                     {
                         if (!success) return;
 
@@ -403,87 +403,87 @@ public class SettingsUi : WindowMediatorSubscriberBase
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogCritical(ex, "Error saving data");
+                                _logger.LogCritical(ex, "保存数据时出错");
                             }
                         });
                     }, Directory.Exists(_configService.Current.ExportFolder) ? _configService.Current.ExportFolder : null);
                 }
-                UiSharedService.ColorTextWrapped("Note: For best results make sure you have everything you want to be shared as well as the correct character appearance" +
-                    " equipped and redraw your character before exporting.", ImGuiColors.DalamudYellow);
+                UiSharedService.ColorTextWrapped("注意：为了获得最佳效果，请确保您拥有想要共享的所有内容以及正确的角色外观，" +
+                    " 并在导出之前重新绘制角色。", ImGuiColors.DalamudYellow);
             }
             else
             {
-                UiSharedService.ColorTextWrapped("Export in progress", ImGuiColors.DalamudYellow);
+                UiSharedService.ColorTextWrapped("正在导出", ImGuiColors.DalamudYellow);
             }
 
             ImGui.Unindent();
         }
         bool openInGpose = _configService.Current.OpenGposeImportOnGposeStart;
-        if (ImGui.Checkbox("Open MCDF import window when GPose loads", ref openInGpose))
+        if (ImGui.Checkbox("当GPose加载时打开MCDF导入窗口", ref openInGpose))
         {
             _configService.Current.OpenGposeImportOnGposeStart = openInGpose;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will automatically open the import menu when loading into Gpose. If unchecked you can open the menu manually with /mare gpose");
+        UiSharedService.DrawHelpText("这将在加载到Gpose时自动打开导入菜单。如果未选中，您可以使用“/mare gpose”手动打开菜单");
 
         ImGui.Separator();
 
-        UiSharedService.FontText("Storage", _uiShared.UidFont);
+        UiSharedService.FontText("存储", _uiShared.UidFont);
 
-        UiSharedService.TextWrapped("Mare stores downloaded files from paired people permanently. This is to improve loading performance and requiring less downloads. " +
-            "The storage governs itself by clearing data beyond the set storage size. Please set the storage size accordingly. It is not necessary to manually clear the storage.");
+        UiSharedService.TextWrapped("月海将永久存储配对用户所下载的文件。这是为了提高加载性能并减少下载量。" +
+            "是否清除文件将通过设置的最大存储大小数值进行自我管理。请酌情地设置存储大小。无需手动清除存储文件。");
 
         _uiShared.DrawFileScanState();
         _uiShared.DrawTimeSpanBetweenScansSetting();
         _uiShared.DrawCacheDirectorySetting();
-        ImGui.Text($"Currently utilized local storage: {UiSharedService.ByteToString(_uiShared.FileCacheSize)}");
+        ImGui.Text($"当前使用的本地存储： {UiSharedService.ByteToString(_uiShared.FileCacheSize)}");
         bool isLinux = Util.IsLinux();
         if (isLinux) ImGui.BeginDisabled();
         bool useFileCompactor = _configService.Current.UseCompactor;
-        if (ImGui.Checkbox("Use file compactor", ref useFileCompactor))
+        if (ImGui.Checkbox("使用文件系统压缩", ref useFileCompactor))
         {
             _configService.Current.UseCompactor = useFileCompactor;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("The file compactor can massively reduce your saved files. It might incur a minor penalty on loading files on a slow CPU." + Environment.NewLine
-            + "It is recommended to leave it enabled to save on space.");
+        UiSharedService.DrawHelpText("文件系统压缩可以大幅减少文件在硬盘上占用的空间。在性能较低的CPU上可能会产生轻微的负荷。" + Environment.NewLine
+            + "建议保持启用状态以节省空间。");
         ImGui.SameLine();
         if (!_fileCompactor.MassCompactRunning)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.FileArchive, "Compact all files in storage"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.FileArchive, "压缩存储中的所有文件"))
             {
                 _ = Task.Run(() => _fileCompactor.CompactStorage(true));
             }
-            UiSharedService.AttachToolTip("This will run compression on all files in your current Mare Storage." + Environment.NewLine
-                + "You do not need to run this manually if you keep the file compactor enabled.");
+            UiSharedService.AttachToolTip("这将对您当前本地存储的所有月海同步文件进行压缩。" + Environment.NewLine
+                + "如果您保持启用文件系统压缩，则不需要手动运行此操作。");
             ImGui.SameLine();
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.File, "Decompact all files in storage"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.File, "解压缩存储中的所有文件"))
             {
                 _ = Task.Run(() => _fileCompactor.CompactStorage(false));
             }
-            UiSharedService.AttachToolTip("This will run decompression on all files in your current Mare Storage.");
+            UiSharedService.AttachToolTip("这将对当前本地存储的所有月海同步文件进行解压缩。");
         }
         else
         {
-            UiSharedService.ColorText($"File compactor currently running ({_fileCompactor.Progress})", ImGuiColors.DalamudYellow);
+            UiSharedService.ColorText($"文件压缩程序当前正在运行 ({_fileCompactor.Progress})", ImGuiColors.DalamudYellow);
         }
         if (isLinux)
         {
             ImGui.EndDisabled();
-            ImGui.Text("The file compactor is only available on Windows.");
+            ImGui.Text("文件系统压缩仅在Windows系统上可用。");
         }
 
         ImGui.Dummy(new Vector2(10, 10));
-        ImGui.Text("To clear the local storage accept the following disclaimer");
+        ImGui.Text("要清除本地存储，请接受以下免责声明：");
         ImGui.Indent();
         ImGui.Checkbox("##readClearCache", ref _readClearCache);
         ImGui.SameLine();
-        UiSharedService.TextWrapped("I understand that: " + Environment.NewLine + "- By clearing the local storage I put the file servers of my connected service under extra strain by having to redownload all data."
-            + Environment.NewLine + "- This is not a step to try to fix sync issues."
-            + Environment.NewLine + "- This can make the situation of not getting other players data worse in situations of heavy file server load.");
+        UiSharedService.TextWrapped("我已了解： " + Environment.NewLine + "- 通过清除本地存储，我不得不重新下载所有数据，从而使连接服务的文件服务器承受了额外的压力。"
+            + Environment.NewLine + "- 这不是试图解决同步问题的步骤。"
+            + Environment.NewLine + "- 在文件服务器负载繁重的情况下，这可能会使无法获取其他玩家数据的情况变得更糟。");
         if (!_readClearCache)
             ImGui.BeginDisabled();
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Clear local storage") && UiSharedService.CtrlPressed() && _readClearCache)
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "清除本地存储") && UiSharedService.CtrlPressed() && _readClearCache)
         {
             _ = Task.Run(() =>
             {
@@ -495,10 +495,10 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 _uiShared.RecalculateFileCacheSize();
             });
         }
-        UiSharedService.AttachToolTip("You normally do not need to do this. THIS IS NOT SOMETHING YOU SHOULD BE DOING TO TRY TO FIX SYNC ISSUES." + Environment.NewLine
-            + "This will solely remove all downloaded data from all players and will require you to re-download everything again." + Environment.NewLine
-            + "Mares storage is self-clearing and will not surpass the limit you have set it to." + Environment.NewLine
-            + "If you still think you need to do this hold CTRL while pressing the button.");
+        UiSharedService.AttachToolTip("您通常不需要这样做。为了解决同步问题，您也不应该这样做。" + Environment.NewLine
+            + "这将仅删除下载的所有玩家同步的数据，并要求您重新下载所有的内容。" + Environment.NewLine
+            + "月海的存储是自动清除的，存储空间不会超过您设置的限制。" + Environment.NewLine
+            + "如果你仍然认为你需要这样做，按住CTRL键的同时点击这个按钮。");
         if (!_readClearCache)
             ImGui.EndDisabled();
         ImGui.Unindent();
@@ -512,12 +512,12 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
 
         _lastTab = "General";
-        UiSharedService.FontText("Notes", _uiShared.UidFont);
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "Export all your user notes to clipboard"))
+        UiSharedService.FontText("备注", _uiShared.UidFont);
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "将所有用户备注导出到剪贴板"))
         {
             ImGui.SetClipboardText(UiSharedService.GetNotes(_pairManager.DirectPairs.UnionBy(_pairManager.GroupPairs.SelectMany(p => p.Value), p => p.UserData, UserDataComparer.Instance).ToList()));
         }
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.FileImport, "Import notes from clipboard"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.FileImport, "从剪贴板导入备注"))
         {
             _notesSuccessfullyApplied = null;
             var notes = ImGui.GetClipboardText();
@@ -525,25 +525,25 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
 
         ImGui.SameLine();
-        ImGui.Checkbox("Overwrite existing notes", ref _overwriteExistingLabels);
-        UiSharedService.DrawHelpText("If this option is selected all already existing notes for UIDs will be overwritten by the imported notes.");
+        ImGui.Checkbox("覆盖现有备注", ref _overwriteExistingLabels);
+        UiSharedService.DrawHelpText("如果选择此选项，则导入的备注将覆盖对应UID的所有现存备注。");
         if (_notesSuccessfullyApplied.HasValue && _notesSuccessfullyApplied.Value)
         {
-            UiSharedService.ColorTextWrapped("User Notes successfully imported", ImGuiColors.HealerGreen);
+            UiSharedService.ColorTextWrapped("成功导入用户备注", ImGuiColors.HealerGreen);
         }
         else if (_notesSuccessfullyApplied.HasValue && !_notesSuccessfullyApplied.Value)
         {
-            UiSharedService.ColorTextWrapped("Attempt to import notes from clipboard failed. Check formatting and try again", ImGuiColors.DalamudRed);
+            UiSharedService.ColorTextWrapped("尝试从剪贴板导入备注失败，检查格式并重试。", ImGuiColors.DalamudRed);
         }
 
         var openPopupOnAddition = _configService.Current.OpenPopupOnAdd;
 
-        if (ImGui.Checkbox("Open Notes Popup on user addition", ref openPopupOnAddition))
+        if (ImGui.Checkbox("添加用户时打开备注菜单", ref openPopupOnAddition))
         {
             _configService.Current.OpenPopupOnAdd = openPopupOnAddition;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will open a popup that allows you to set the notes for a user after successfully adding them to your individual pairs.");
+        UiSharedService.DrawHelpText("这将打开一个弹窗，方便您在成功添加独立配对用户时为其设置备注。");
 
         ImGui.Separator();
         UiSharedService.FontText("UI", _uiShared.UidFont);
@@ -558,81 +558,81 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var enableDtrEntry = _configService.Current.EnableDtrEntry;
         var preferNotesInsteadOfName = _configService.Current.PreferNotesOverNamesForVisible;
 
-        if (ImGui.Checkbox("Enable Game Right Click Menu Entries", ref enableRightClickMenu))
+        if (ImGui.Checkbox("启用游戏右键菜单", ref enableRightClickMenu))
         {
             _configService.Current.EnableRightClickMenus = enableRightClickMenu;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will add Mare related right click menu entries in the game UI on paired players.");
+        UiSharedService.DrawHelpText("这将在配对玩家的游戏UI中添加与月海相关的右键菜单项。");
 
-        if (ImGui.Checkbox("Display status and visible pair count in Server Info Bar", ref enableDtrEntry))
+        if (ImGui.Checkbox("在服务器信息栏中显示状态和可见配对角色数", ref enableDtrEntry))
         {
             _configService.Current.EnableDtrEntry = enableDtrEntry;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will add Mare connection status and visible pair count in the Server Info Bar.\nYou can further configure this through your Dalamud Settings.");
+        UiSharedService.DrawHelpText("这将在服务器信息栏中添加月海连接状态和可见配对角色数。\n您可以通过Dalamud设置对此进行进一步配置。");
 
-        if (ImGui.Checkbox("Show separate Visible group", ref showVisibleSeparate))
+        if (ImGui.Checkbox("显示单独的“可见”组", ref showVisibleSeparate))
         {
             _configService.Current.ShowVisibleUsersSeparately = showVisibleSeparate;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will show all currently visible users in a special 'Visible' group in the main UI.");
+        UiSharedService.DrawHelpText("这将在主界面一个特殊“可见”组中显示所有当前可见的用户。");
 
-        if (ImGui.Checkbox("Show separate Offline group", ref showOfflineSeparate))
+        if (ImGui.Checkbox("显示单独的离线组", ref showOfflineSeparate))
         {
             _configService.Current.ShowOfflineUsersSeparately = showOfflineSeparate;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will show all currently offline users in a special 'Offline' group in the main UI.");
+        UiSharedService.DrawHelpText("这将在主界面中一个特殊“离线”组中显示所有当前离线的用户。");
 
-        if (ImGui.Checkbox("Show player name for visible players", ref showNameInsteadOfNotes))
+        if (ImGui.Checkbox("显示可见玩家的玩家名称", ref showNameInsteadOfNotes))
         {
             _configService.Current.ShowCharacterNameInsteadOfNotesForVisible = showNameInsteadOfNotes;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will show the character name instead of custom set note when a character is visible");
+        UiSharedService.DrawHelpText("当角色可见时，这将显示角色名称，而不是自定义备注");
 
         ImGui.Indent();
         if (!_configService.Current.ShowCharacterNameInsteadOfNotesForVisible) ImGui.BeginDisabled();
-        if (ImGui.Checkbox("Prefer notes over player names for visible players", ref preferNotesInsteadOfName))
+        if (ImGui.Checkbox("我更喜欢显示玩家备注而不是玩家名称", ref preferNotesInsteadOfName))
         {
             _configService.Current.PreferNotesOverNamesForVisible = preferNotesInsteadOfName;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("If you set a note for a player it will be shown instead of the player name");
+        UiSharedService.DrawHelpText("如果你为玩家设置了一个备注，它将显示出来，而不是玩家的名字");
         if (!_configService.Current.ShowCharacterNameInsteadOfNotesForVisible) ImGui.EndDisabled();
         ImGui.Unindent();
 
-        if (ImGui.Checkbox("Show Mare Profiles on Hover", ref showProfiles))
+        if (ImGui.Checkbox("在鼠标悬停时显示月海档案", ref showProfiles))
         {
             Mediator.Publish(new ClearProfileDataMessage());
             _configService.Current.ProfilesShow = showProfiles;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("This will show the configured user profile after a set delay");
+        UiSharedService.DrawHelpText("鼠标悬停一段时间后显示该用户自己设置的月海档案");
         ImGui.Indent();
         if (!showProfiles) ImGui.BeginDisabled();
-        if (ImGui.Checkbox("Popout profiles on the right", ref profileOnRight))
+        if (ImGui.Checkbox("在右侧弹出个人档案", ref profileOnRight))
         {
             _configService.Current.ProfilePopoutRight = profileOnRight;
             _configService.Save();
             Mediator.Publish(new CompactUiChange(Vector2.Zero, Vector2.Zero));
         }
-        UiSharedService.DrawHelpText("Will show profiles on the right side of the main UI");
-        if (ImGui.Checkbox("Show profiles marked as NSFW", ref showNsfwProfiles))
+        UiSharedService.DrawHelpText("将在主界面的右侧显示档案");
+        if (ImGui.Checkbox("显示标记为NSFW的档案", ref showNsfwProfiles))
         {
             Mediator.Publish(new ClearProfileDataMessage());
             _configService.Current.ProfilesAllowNsfw = showNsfwProfiles;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Will show profiles that have the NSFW tag enabled");
-        if (ImGui.SliderFloat("Hover Delay", ref profileDelay, 1, 10))
+        UiSharedService.DrawHelpText("将显示启用NSFW标记的档案文件");
+        if (ImGui.SliderFloat("悬停延迟", ref profileDelay, 1, 10))
         {
             _configService.Current.ProfileDelay = profileDelay;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Delay until the profile should be displayed");
+        UiSharedService.DrawHelpText("鼠标悬停多久才显示档案（秒）");
         if (!showProfiles) ImGui.EndDisabled();
         ImGui.Unindent();
 
@@ -642,100 +642,100 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var onlineNotifs = _configService.Current.ShowOnlineNotifications;
         var onlineNotifsPairsOnly = _configService.Current.ShowOnlineNotificationsOnlyForIndividualPairs;
         var onlineNotifsNamedOnly = _configService.Current.ShowOnlineNotificationsOnlyForNamedPairs;
-        UiSharedService.FontText("Notifications", _uiShared.UidFont);
+        UiSharedService.FontText("通知", _uiShared.UidFont);
 
-        _uiShared.DrawCombo("Info Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
+        _uiShared.DrawCombo("显示 [信息]##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
             _configService.Current.InfoNotification = i;
             _configService.Save();
         }, _configService.Current.InfoNotification);
-        UiSharedService.DrawHelpText("The location where \"Info\" notifications will display."
-                      + Environment.NewLine + "'Nowhere' will not show any Info notifications"
-                      + Environment.NewLine + "'Chat' will print Info notifications in chat"
-                      + Environment.NewLine + "'Toast' will show Warning toast notifications in the bottom right corner"
-                      + Environment.NewLine + "'Both' will show chat as well as the toast notification");
+        UiSharedService.DrawHelpText("显示“信息”通知的位置"
+                      + Environment.NewLine + "'Nowhere' 不会显示任何信息通知"
+                      + Environment.NewLine + "'Chat' 将在聊天频道中打印信息通知"
+                      + Environment.NewLine + "'Toast' 将在右下角显示提示框"
+                      + Environment.NewLine + "'Both' 将在聊天频道以及提示框中同时显示");
 
-        _uiShared.DrawCombo("Warning Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
+        _uiShared.DrawCombo("显示 [警告]##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
             _configService.Current.WarningNotification = i;
             _configService.Save();
         }, _configService.Current.WarningNotification);
-        UiSharedService.DrawHelpText("The location where \"Warning\" notifications will display."
-                              + Environment.NewLine + "'Nowhere' will not show any Warning notifications"
-                              + Environment.NewLine + "'Chat' will print Warning notifications in chat"
-                              + Environment.NewLine + "'Toast' will show Warning toast notifications in the bottom right corner"
-                              + Environment.NewLine + "'Both' will show chat as well as the toast notification");
+        UiSharedService.DrawHelpText("显示“警告”通知的位置。"
+                              + Environment.NewLine + "'Nowhere' 不会显示任何警告通知"
+                              + Environment.NewLine + "'Chat' 将在聊天中打印警告通知"
+                              + Environment.NewLine + "'Toast' 将在右下角显示提示框"
+                              + Environment.NewLine + "'Both' 将在聊天频道以及提示框中同时显示");
 
-        _uiShared.DrawCombo("Error Notification Display##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
+        _uiShared.DrawCombo("显示 [错误]##settingsUi", (NotificationLocation[])Enum.GetValues(typeof(NotificationLocation)), (i) => i.ToString(),
         (i) =>
         {
             _configService.Current.ErrorNotification = i;
             _configService.Save();
         }, _configService.Current.ErrorNotification);
-        UiSharedService.DrawHelpText("The location where \"Error\" notifications will display."
-                              + Environment.NewLine + "'Nowhere' will not show any Error notifications"
-                              + Environment.NewLine + "'Chat' will print Error notifications in chat"
-                              + Environment.NewLine + "'Toast' will show Error toast notifications in the bottom right corner"
-                              + Environment.NewLine + "'Both' will show chat as well as the toast notification");
+        UiSharedService.DrawHelpText("显示“错误”通知的位置。"
+                              + Environment.NewLine + "'Nowhere' 不会显示任何错误"
+                              + Environment.NewLine + "'Chat' 将在聊天中打印警告错误通知"
+                              + Environment.NewLine + "'Toast' 将在右下角显示提示框"
+                              + Environment.NewLine + "'Both' 将在聊天频道以及提示框中同时显示");
 
-        if (ImGui.Checkbox("Disable optional plugin warnings", ref disableOptionalPluginWarnings))
+        if (ImGui.Checkbox("禁用可选插件警告", ref disableOptionalPluginWarnings))
         {
             _configService.Current.DisableOptionalPluginWarnings = disableOptionalPluginWarnings;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Enabling this will not show any \"Warning\" labeled messages for missing optional plugins.");
-        if (ImGui.Checkbox("Enable online notifications", ref onlineNotifs))
+        UiSharedService.DrawHelpText("启用此选项将不会显示任何丢失可选插件的“警告”消息。");
+        if (ImGui.Checkbox("启用上线通知", ref onlineNotifs))
         {
             _configService.Current.ShowOnlineNotifications = onlineNotifs;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Enabling this will show a small notification (type: Info) in the bottom right corner when pairs go online.");
+        UiSharedService.DrawHelpText("启用此选项将在配对用户上线时在右下角显示一个小通知（类型：信息）。");
 
         if (!onlineNotifs) ImGui.BeginDisabled();
-        if (ImGui.Checkbox("Notify only for individual pairs", ref onlineNotifsPairsOnly))
+        if (ImGui.Checkbox("仅针对独立配对通知", ref onlineNotifsPairsOnly))
         {
             _configService.Current.ShowOnlineNotificationsOnlyForIndividualPairs = onlineNotifsPairsOnly;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Enabling this will only show online notifications (type: Info) for individual pairs.");
-        if (ImGui.Checkbox("Notify only for named pairs", ref onlineNotifsNamedOnly))
+        UiSharedService.DrawHelpText("启用此选项将仅显示独立配对用户的上线通知（类型：信息）。");
+        if (ImGui.Checkbox("仅针对单独备注通知", ref onlineNotifsNamedOnly))
         {
             _configService.Current.ShowOnlineNotificationsOnlyForNamedPairs = onlineNotifsNamedOnly;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("Enabling this will only show online notifications (type: Info) for pairs where you have set an individual note.");
+        UiSharedService.DrawHelpText("启用此选项将仅显示您设置了单独备注配对用户的上线通知（类型：信息）。");
         if (!onlineNotifs) ImGui.EndDisabled();
     }
 
     private void DrawServerConfiguration()
     {
-        _lastTab = "Service Settings";
+        _lastTab = "服务设置";
         if (ApiController.ServerAlive)
         {
-            UiSharedService.FontText("Service Actions", _uiShared.UidFont);
+            UiSharedService.FontText("服务操作", _uiShared.UidFont);
 
-            if (ImGui.Button("Delete all my files"))
+            if (ImGui.Button("删除我的所有文件"))
             {
                 _deleteFilesPopupModalShown = true;
-                ImGui.OpenPopup("Delete all your files?");
+                ImGui.OpenPopup("是否删除所有文件？");
             }
 
-            UiSharedService.DrawHelpText("Completely deletes all your uploaded files on the service.");
+            UiSharedService.DrawHelpText("完全删除您上传到该服务上的所有文件。");
 
-            if (ImGui.BeginPopupModal("Delete all your files?", ref _deleteFilesPopupModalShown, UiSharedService.PopupWindowFlags))
+            if (ImGui.BeginPopupModal("是否删除所有文件？", ref _deleteFilesPopupModalShown, UiSharedService.PopupWindowFlags))
             {
                 UiSharedService.TextWrapped(
-                    "All your own uploaded files on the service will be deleted.\nThis operation cannot be undone.");
-                ImGui.Text("Are you sure you want to continue?");
+                    "您上传到该服务上的所有文件都将被删除。\n此操作无法撤消。");
+                ImGui.Text("确定要继续吗？");
                 ImGui.Separator();
                 ImGui.Spacing();
 
                 var buttonSize = (ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X -
                                  ImGui.GetStyle().ItemSpacing.X) / 2;
 
-                if (ImGui.Button("Delete everything", new Vector2(buttonSize, 0)))
+                if (ImGui.Button("删除所有内容", new Vector2(buttonSize, 0)))
                 {
                     Task.Run(_fileTransferManager.DeleteAllFiles);
                     _deleteFilesPopupModalShown = false;
@@ -743,7 +743,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
                 ImGui.SameLine();
 
-                if (ImGui.Button("Cancel##cancelDelete", new Vector2(buttonSize, 0)))
+                if (ImGui.Button("取消##cancelDelete", new Vector2(buttonSize, 0)))
                 {
                     _deleteFilesPopupModalShown = false;
                 }
@@ -752,27 +752,27 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 ImGui.EndPopup();
             }
             ImGui.SameLine();
-            if (ImGui.Button("Delete account"))
+            if (ImGui.Button("删除帐户"))
             {
                 _deleteAccountPopupModalShown = true;
-                ImGui.OpenPopup("Delete your account?");
+                ImGui.OpenPopup("删除您的帐户？");
             }
 
-            UiSharedService.DrawHelpText("Completely deletes your account and all uploaded files to the service.");
+            UiSharedService.DrawHelpText("完全删除您的帐户和所有上传到该服务的文件。");
 
-            if (ImGui.BeginPopupModal("Delete your account?", ref _deleteAccountPopupModalShown, UiSharedService.PopupWindowFlags))
+            if (ImGui.BeginPopupModal("删除您的帐户？", ref _deleteAccountPopupModalShown, UiSharedService.PopupWindowFlags))
             {
                 UiSharedService.TextWrapped(
-                    "Your account and all associated files and data on the service will be deleted.");
-                UiSharedService.TextWrapped("Your UID will be removed from all pairing lists.");
-                ImGui.Text("Are you sure you want to continue?");
+                    "您的帐户以及服务上的所有相关文件和数据都将被删除。");
+                UiSharedService.TextWrapped("您的UID将从所有配对列表中删除。");
+                ImGui.Text("确定要继续吗？");
                 ImGui.Separator();
                 ImGui.Spacing();
 
                 var buttonSize = (ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X -
                                   ImGui.GetStyle().ItemSpacing.X) / 2;
 
-                if (ImGui.Button("Delete account", new Vector2(buttonSize, 0)))
+                if (ImGui.Button("删除帐户", new Vector2(buttonSize, 0)))
                 {
                     Task.Run(ApiController.UserDelete);
                     _deleteAccountPopupModalShown = false;
@@ -781,7 +781,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
                 ImGui.SameLine();
 
-                if (ImGui.Button("Cancel##cancelDelete", new Vector2(buttonSize, 0)))
+                if (ImGui.Button("取消##cancelDelete", new Vector2(buttonSize, 0)))
                 {
                     _deleteAccountPopupModalShown = false;
                 }
@@ -792,7 +792,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             ImGui.Separator();
         }
 
-        UiSharedService.FontText("Service & Character Settings", _uiShared.UidFont);
+        UiSharedService.FontText("服务和角色设置", _uiShared.UidFont);
 
         var idx = _uiShared.DrawServiceSelection();
 
@@ -801,17 +801,17 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var selectedServer = _serverConfigurationManager.GetServerByIndex(idx);
         if (selectedServer == _serverConfigurationManager.CurrentServer)
         {
-            UiSharedService.ColorTextWrapped("For any changes to be applied to the current service you need to reconnect to the service.", ImGuiColors.DalamudYellow);
+            UiSharedService.ColorTextWrapped("要将任何修改应用到当前服务，您需要重新连接到该服务。", ImGuiColors.DalamudYellow);
         }
 
         if (ImGui.BeginTabBar("serverTabBar"))
         {
-            if (ImGui.BeginTabItem("Character Management"))
+            if (ImGui.BeginTabItem("角色管理"))
             {
                 if (selectedServer.SecretKeys.Any())
                 {
-                    UiSharedService.ColorTextWrapped("Characters listed here will automatically connect to the selected Mare service with the settings as provided below." +
-                        " Make sure to enter the character names correctly or use the 'Add current character' button at the bottom.", ImGuiColors.DalamudYellow);
+                    UiSharedService.ColorTextWrapped("此处列出的角色将使用下面提供的设置自动连接到选定的月海服务。" +
+                        " 请确保输入正确的角色名称或使用底部的“添加当前角色”按钮。", ImGuiColors.DalamudYellow);
                     int i = 0;
                     foreach (var item in selectedServer.Authentications.ToList())
                     {
@@ -832,16 +832,16 @@ public class SettingsUi : WindowMediatorSubscriberBase
                             }
                             var friendlyName = secretKey.FriendlyName;
 
-                            if (ImGui.TreeNode($"chara", $"Character: {item.CharacterName}, World: {worldPreview}, Secret Key: {friendlyName}"))
+                            if (ImGui.TreeNode($"chara", $"角色：{item.CharacterName}, 世界：{worldPreview}，密钥：{friendlyName}"))
                             {
                                 var charaName = item.CharacterName;
-                                if (ImGui.InputText("Character Name", ref charaName, 64))
+                                if (ImGui.InputText("角色名称", ref charaName, 64))
                                 {
                                     item.CharacterName = charaName;
                                     _serverConfigurationManager.Save();
                                 }
 
-                                _uiShared.DrawCombo("World##" + item.CharacterName + i, data, (w) => w.Value,
+                                _uiShared.DrawCombo("世界##" + item.CharacterName + i, data, (w) => w.Value,
                                     (w) =>
                                     {
                                         if (item.WorldId != w.Key)
@@ -851,7 +851,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                                         }
                                     }, EqualityComparer<KeyValuePair<ushort, string>>.Default.Equals(data.FirstOrDefault(f => f.Key == worldIdx), default) ? data.First() : data.First(f => f.Key == worldIdx));
 
-                                _uiShared.DrawCombo("Secret Key##" + item.CharacterName + i, keys, (w) => w.Value.FriendlyName,
+                                _uiShared.DrawCombo("密钥##" + item.CharacterName + i, keys, (w) => w.Value.FriendlyName,
                                     (w) =>
                                     {
                                         if (w.Key != item.SecretKeyIdx)
@@ -861,9 +861,9 @@ public class SettingsUi : WindowMediatorSubscriberBase
                                         }
                                     }, EqualityComparer<KeyValuePair<int, SecretKey>>.Default.Equals(keys.FirstOrDefault(f => f.Key == item.SecretKeyIdx), default) ? keys.First() : keys.First(f => f.Key == item.SecretKeyIdx));
 
-                                if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Character") && UiSharedService.CtrlPressed())
+                                if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "删除角色") && UiSharedService.CtrlPressed())
                                     _serverConfigurationManager.RemoveCharacterFromServer(idx, item);
-                                UiSharedService.AttachToolTip("Hold CTRL to delete this entry.");
+                                UiSharedService.AttachToolTip("按住CTRL键可删除此条目。");
 
                                 ImGui.TreePop();
                             }
@@ -876,34 +876,34 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     if (!selectedServer.Authentications.Any(c => string.Equals(c.CharacterName, _uiShared.PlayerName, StringComparison.Ordinal)
                         && c.WorldId == _uiShared.WorldId))
                     {
-                        if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Add current character"))
+                        if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "添加当前角色"))
                         {
                             _serverConfigurationManager.AddCurrentCharacterToServer(idx);
                         }
                         ImGui.SameLine();
                     }
 
-                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Add new character"))
+                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "添加新角色"))
                     {
                         _serverConfigurationManager.AddEmptyCharacterToServer(idx);
                     }
                 }
                 else
                 {
-                    UiSharedService.ColorTextWrapped("You need to add a Secret Key first before adding Characters.", ImGuiColors.DalamudYellow);
+                    UiSharedService.ColorTextWrapped("先添加密钥，再添加角色。", ImGuiColors.DalamudYellow);
                 }
 
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Secret Key Management"))
+            if (ImGui.BeginTabItem("密钥管理"))
             {
                 foreach (var item in selectedServer.SecretKeys.ToList())
                 {
                     UiSharedService.DrawWithID("key" + item.Key, () =>
                     {
                         var friendlyName = item.Value.FriendlyName;
-                        if (ImGui.InputText("Secret Key Display Name", ref friendlyName, 255))
+                        if (ImGui.InputText("密钥显示名称", ref friendlyName, 255))
                         {
                             item.Value.FriendlyName = friendlyName;
                             _serverConfigurationManager.Save();
@@ -916,16 +916,16 @@ public class SettingsUi : WindowMediatorSubscriberBase
                         }
                         if (!selectedServer.Authentications.Any(p => p.SecretKeyIdx == item.Key))
                         {
-                            if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Secret Key") && UiSharedService.CtrlPressed())
+                            if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "删除密钥") && UiSharedService.CtrlPressed())
                             {
                                 selectedServer.SecretKeys.Remove(item.Key);
                                 _serverConfigurationManager.Save();
                             }
-                            UiSharedService.AttachToolTip("Hold CTRL to delete this secret key entry");
+                            UiSharedService.AttachToolTip("按住CTRL键可删除此密钥项");
                         }
                         else
                         {
-                            UiSharedService.ColorTextWrapped("This key is in use and cannot be deleted", ImGuiColors.DalamudYellow);
+                            UiSharedService.ColorTextWrapped("此密钥正在使用，无法删除", ImGuiColors.DalamudYellow);
                         }
                     });
 
@@ -934,11 +934,11 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 }
 
                 ImGui.Separator();
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Add new Secret Key"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "添加新密钥"))
                 {
                     selectedServer.SecretKeys.Add(selectedServer.SecretKeys.Any() ? selectedServer.SecretKeys.Max(p => p.Key) + 1 : 0, new SecretKey()
                     {
-                        FriendlyName = "New Secret Key",
+                        FriendlyName = "新密钥",
                     });
                     _serverConfigurationManager.Save();
                 }
@@ -946,39 +946,39 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Service Settings"))
+            if (ImGui.BeginTabItem("服务设置"))
             {
                 var serverName = selectedServer.ServerName;
                 var serverUri = selectedServer.ServerUri;
                 var isMain = string.Equals(serverName, ApiController.MainServer, StringComparison.OrdinalIgnoreCase);
                 var flags = isMain ? ImGuiInputTextFlags.ReadOnly : ImGuiInputTextFlags.None;
 
-                if (ImGui.InputText("Service URI", ref serverUri, 255, flags))
+                if (ImGui.InputText("服务URI", ref serverUri, 255, flags))
                 {
                     selectedServer.ServerUri = serverUri;
                 }
                 if (isMain)
                 {
-                    UiSharedService.DrawHelpText("You cannot edit the URI of the main service.");
+                    UiSharedService.DrawHelpText("无法编辑主服务的URI。");
                 }
 
-                if (ImGui.InputText("Service Name", ref serverName, 255, flags))
+                if (ImGui.InputText("服务名称", ref serverName, 255, flags))
                 {
                     selectedServer.ServerName = serverName;
                     _serverConfigurationManager.Save();
                 }
                 if (isMain)
                 {
-                    UiSharedService.DrawHelpText("You cannot edit the name of the main service.");
+                    UiSharedService.DrawHelpText("无法编辑主服务的名称。");
                 }
 
                 if (!isMain && selectedServer != _serverConfigurationManager.CurrentServer)
                 {
-                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Service") && UiSharedService.CtrlPressed())
+                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "删除服务") && UiSharedService.CtrlPressed())
                     {
                         _serverConfigurationManager.DeleteServer(selectedServer);
                     }
-                    UiSharedService.DrawHelpText("Hold CTRL to delete this service");
+                    UiSharedService.DrawHelpText("按住CTRL键可删除此服务");
                 }
                 ImGui.EndTabItem();
             }
@@ -990,40 +990,40 @@ public class SettingsUi : WindowMediatorSubscriberBase
     {
         _uiShared.PrintServerState();
         ImGui.AlignTextToFramePadding();
-        ImGui.Text("Community and Support:");
+        ImGui.Text("社区和支持（国服的）：");
         ImGui.SameLine();
-        if (ImGui.Button("Mare Synchronos Discord"))
+        if (ImGui.Button("月海同步器/Mare Synchronos Discord"))
         {
-            Util.OpenLink("https://discord.gg/mpNdkrTRjW");
+            Util.OpenLink("https://discord.gg/3dwsdrShST");
         }
         ImGui.Separator();
         if (ImGui.BeginTabBar("mainTabBar"))
         {
-            if (ImGui.BeginTabItem("General"))
+            if (ImGui.BeginTabItem("常规设置"))
             {
                 DrawGeneral();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Export & Storage"))
+            if (ImGui.BeginTabItem("导出&存储"))
             {
                 DrawFileStorageSettings();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Transfers"))
+            if (ImGui.BeginTabItem("传输设置"))
             {
                 DrawCurrentTransfers();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Service Settings"))
+            if (ImGui.BeginTabItem("服务设置"))
             {
                 DrawServerConfiguration();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Debug"))
+            if (ImGui.BeginTabItem("调试"))
             {
                 DrawDebug();
                 ImGui.EndTabItem();

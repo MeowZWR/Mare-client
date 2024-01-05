@@ -468,16 +468,16 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     public void DrawCacheDirectorySetting()
     {
-        ColorTextWrapped("Note: The storage folder should be somewhere close to root (i.e. C:\\MareStorage) in a new empty folder. DO NOT point this to your game folder. DO NOT point this to your Penumbra folder.", ImGuiColors.DalamudYellow);
+        ColorTextWrapped("注意：存储文件夹应位于新建的空白文件夹中，并且路径靠近根目录越短越好（比如C:\\MareStorage）。路径不要有中文。不要将路径指定到游戏文件夹。不要将路径指定到Penumbra文件夹。", ImGuiColors.DalamudYellow);
         var cacheDirectory = _configService.Current.CacheFolder;
-        ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255, ImGuiInputTextFlags.ReadOnly);
+        ImGui.InputText("存储文件夹##cache", ref cacheDirectory, 255, ImGuiInputTextFlags.ReadOnly);
 
         ImGui.SameLine();
         ImGui.PushFont(UiBuilder.IconFont);
         string folderIcon = FontAwesomeIcon.Folder.ToIconString();
         if (ImGui.Button(folderIcon + "##chooseCacheFolder"))
         {
-            FileDialogManager.OpenFolderDialog("Pick Mare Synchronos Storage Folder", (success, path) =>
+            FileDialogManager.OpenFolderDialog("选择星海同步器存储文件夹", (success, path) =>
             {
                 if (!success) return;
 
@@ -503,29 +503,29 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
         if (_isPenumbraDirectory)
         {
-            ColorTextWrapped("Do not point the storage path directly to the Penumbra directory. If necessary, make a subfolder in it.", ImGuiColors.DalamudRed);
+            ColorTextWrapped("不要将存储路径直接指向Penumbra文件夹。如果一定要指向这里，在其中创建一个子文件夹。", ImGuiColors.DalamudRed);
         }
         else if (!_isDirectoryWritable)
         {
-            ColorTextWrapped("The folder you selected does not exist or cannot be written to. Please provide a valid path.", ImGuiColors.DalamudRed);
+            ColorTextWrapped("您选择的文件夹不存在或无法写入。请提供一个有效的路径。", ImGuiColors.DalamudRed);
         }
         else if (_cacheDirectoryHasOtherFilesThanCache)
         {
-            ColorTextWrapped("Your selected directory has files inside that are not Mare related. Use an empty directory or a previous Mare storage directory only.", ImGuiColors.DalamudRed);
+            ColorTextWrapped("您选择的文件夹中有与月海同步器无关的文件。仅使用空目录或以前的Mare存储目录。", ImGuiColors.DalamudRed);
         }
         else if (!_cacheDirectoryIsValidPath)
         {
-            ColorTextWrapped("Your selected directory contains illegal characters unreadable by FFXIV. " +
-                             "Restrict yourself to latin letters (A-Z), underscores (_), dashes (-) and arabic numbers (0-9).", ImGuiColors.DalamudRed);
+            ColorTextWrapped("您选择的文件夹路径包含FF14无法读取的非法字符。" +
+                             "请仅使用拉丁字母（A-Z）、下划线（_）、短划线（-）和阿拉伯数字（0-9）。", ImGuiColors.DalamudRed);
         }
 
         float maxCacheSize = (float)_configService.Current.MaxLocalCacheInGiB;
-        if (ImGui.SliderFloat("Maximum Storage Size in GiB", ref maxCacheSize, 1f, 200f, "%.2f GiB"))
+        if (ImGui.SliderFloat("最大存储大小（GiB）", ref maxCacheSize, 1f, 200f, "%.2f GiB"))
         {
             _configService.Current.MaxLocalCacheInGiB = maxCacheSize;
             _configService.Save();
         }
-        DrawHelpText("The storage is automatically governed by Mare. It will clear itself automatically once it reaches the set capacity by removing the oldest unused files. You typically do not need to clear it yourself.");
+        DrawHelpText("存储由月海同步器自动管理。一旦达到设置的容量，它将通过删除最旧的未使用文件自动清除。\n您通常不需要自己清理。");
     }
 
     public T? DrawCombo<T>(string comboName, IEnumerable<T> comboItems, Func<T, string> toName,
@@ -569,25 +569,24 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     public void DrawFileScanState()
     {
-        ImGui.Text("File Scanner Status");
+        ImGui.Text("文件扫描状态");
         ImGui.SameLine();
         if (_cacheScanner.IsScanRunning)
         {
-            ImGui.Text("Scan is running");
-            ImGui.Text("Current Progress:");
+            ImGui.Text("扫描进行中");
+            ImGui.Text("当前进度：");
             ImGui.SameLine();
             ImGui.Text(_cacheScanner.TotalFiles == 1
-                ? "Collecting files"
-                : $"Processing {_cacheScanner.CurrentFileProgress}/{_cacheScanner.TotalFilesStorage} from storage ({_cacheScanner.TotalFiles} scanned in)");
-            AttachToolTip("Note: it is possible to have more files in storage than scanned in, " +
-                "this is due to the scanner normally ignoring those files but the game loading them in and using them on your character, so they get " +
-                "added to the local storage.");
+                ? "正在计算文件数量"
+                : $"从存储中处理 {_cacheScanner.CurrentFileProgress}/{_cacheScanner.TotalFilesStorage}(已扫描{_cacheScanner.TotalFiles})");
+            AttachToolTip("注意：存储的文件可能比扫描的文件多，这是因为扫描器通常会忽略这些文件，" +
+                "但游戏会加载这些文件并在你的角色上使用它们，所以它们会被添加到本地存储中。");
         }
         else if (_configService.Current.FileScanPaused)
         {
-            ImGui.Text("File scanner is paused");
+            ImGui.Text("文件扫描已暂停");
             ImGui.SameLine();
-            if (ImGui.Button("Force Rescan##forcedrescan"))
+            if (ImGui.Button("强制重新扫描##forcedrescan"))
             {
                 _cacheScanner.InvokeScan(forced: true);
             }
@@ -596,14 +595,14 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         {
             ImGui.Text("Halted (" + string.Join(", ", _cacheScanner.HaltScanLocks.Where(f => f.Value > 0).Select(locker => locker.Key + ": " + locker.Value + " halt requests")) + ")");
             ImGui.SameLine();
-            if (ImGui.Button("Reset halt requests##clearlocks"))
+            if (ImGui.Button("重置暂停需求##clearlocks"))
             {
                 _cacheScanner.ResetLocks();
             }
         }
         else
         {
-            ImGui.Text("Next scan in " + _cacheScanner.TimeUntilNextScan);
+            ImGui.Text("下一次扫描于 " + _cacheScanner.TimeUntilNextScan);
         }
     }
 
@@ -617,32 +616,32 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         var honorificColor = _honorificExists ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
         ImGui.Text("Penumbra:");
         ImGui.SameLine();
-        ImGui.TextColored(penumbraColor, _penumbraExists ? "Available" : "Unavailable");
+        ImGui.TextColored(penumbraColor, _penumbraExists ? "可用" : "不可用");
         ImGui.SameLine();
         ImGui.Text("Glamourer:");
         ImGui.SameLine();
-        ImGui.TextColored(glamourerColor, _glamourerExists ? "Available" : "Unavailable");
-        ImGui.Text("Optional Addons");
+        ImGui.TextColored(glamourerColor, _glamourerExists ? "可用" : "不可用");
+        ImGui.Text("可选插件");
         ImGui.SameLine();
         ImGui.Text("SimpleHeels:");
         ImGui.SameLine();
-        ImGui.TextColored(heelsColor, _heelsExists ? "Available" : "Unavailable");
+        ImGui.TextColored(heelsColor, _heelsExists ? "可用" : "不可用");
         ImGui.SameLine();
         ImGui.Text("Customize+:");
         ImGui.SameLine();
-        ImGui.TextColored(customizeColor, _customizePlusExists ? "Available" : "Unavailable");
+        ImGui.TextColored(customizeColor, _customizePlusExists ? "可用" : "不可用");
         ImGui.SameLine();
         ImGui.Text("Palette+:");
         ImGui.SameLine();
-        ImGui.TextColored(paletteColor, _palettePlusExists ? "Available" : "Unavailable");
+        ImGui.TextColored(paletteColor, _palettePlusExists ? "可用" : "不可用");
         ImGui.SameLine();
         ImGui.Text("Honorific:");
         ImGui.SameLine();
-        ImGui.TextColored(honorificColor, _honorificExists ? "Available" : "Unavailable");
+        ImGui.TextColored(honorificColor, _honorificExists ? "可用" : "不可用");
 
         if (!_penumbraExists || !_glamourerExists)
         {
-            ImGui.TextColored(ImGuiColors.DalamudRed, "You need to install both Penumbra and Glamourer and keep them up to date to use Mare Synchronos.");
+            ImGui.TextColored(ImGuiColors.DalamudRed, "您需要同时安装Penumbra和Glamourer，并更新到它们的最新版本才能使用月海同步器。");
             return false;
         }
 
@@ -666,7 +665,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
             if (string.Equals(_serverConfigurationManager.CurrentServer?.ServerName, comboEntries[i], StringComparison.OrdinalIgnoreCase))
                 comboEntries[i] += " [Current]";
         }
-        if (ImGui.BeginCombo("Select Service", comboEntries[_serverSelectionIndex]))
+        if (ImGui.BeginCombo("选择服务", comboEntries[_serverSelectionIndex]))
         {
             for (int i = 0; i < comboEntries.Length; i++)
             {
@@ -693,7 +692,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         {
             ImGui.SameLine();
             var text = "Connect";
-            if (_serverSelectionIndex == _serverConfigurationManager.CurrentServerIndex) text = "Reconnect";
+            if (_serverSelectionIndex == _serverConfigurationManager.CurrentServerIndex) text = "重新连接";
             if (IconTextButton(FontAwesomeIcon.Link, text))
             {
                 _serverConfigurationManager.SelectServer(_serverSelectionIndex);
@@ -701,13 +700,13 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
             }
         }
 
-        if (ImGui.TreeNode("Add Custom Service"))
+        if (ImGui.TreeNode("添加自定义服务"))
         {
             ImGui.SetNextItemWidth(250);
-            ImGui.InputText("Custom Service URI", ref _customServerUri, 255);
+            ImGui.InputText("自定义服务URI", ref _customServerUri, 255);
             ImGui.SetNextItemWidth(250);
-            ImGui.InputText("Custom Service Name", ref _customServerName, 255);
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Add Custom Service")
+            ImGui.InputText("自定义服务名称", ref _customServerName, 255);
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "添加自定义服务")
                 && !string.IsNullOrEmpty(_customServerUri)
                 && !string.IsNullOrEmpty(_customServerName))
             {
@@ -729,19 +728,19 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     public void DrawTimeSpanBetweenScansSetting()
     {
         var timeSpan = _configService.Current.TimeSpanBetweenScansInSeconds;
-        if (ImGui.SliderInt("Seconds between scans##timespan", ref timeSpan, 20, 60))
+        if (ImGui.SliderInt("定期扫描间隔秒数##timespan", ref timeSpan, 20, 60))
         {
             _configService.Current.TimeSpanBetweenScansInSeconds = timeSpan;
             _configService.Save();
         }
-        DrawHelpText("This is the time in seconds between file scans. Increase it to reduce system load. A too high setting can cause issues when manually fumbling about in the cache or Penumbra mods folders.");
+        DrawHelpText("这是两次文件扫描之间的间隔时间（以秒为单位）。增加它以减少系统负载。\n但在缓存或Penumbra模组文件夹中慢慢摸索文件也太过笨拙，因此设置过高可能会导致问题。");
         var isPaused = _configService.Current.FileScanPaused;
-        if (ImGui.Checkbox("Pause periodic file scan##filescanpause", ref isPaused))
+        if (ImGui.Checkbox("暂停定期文件扫描##filescanpause", ref isPaused))
         {
             _configService.Current.FileScanPaused = isPaused;
             _configService.Save();
         }
-        DrawHelpText("This allows you to stop the periodic scans of your Penumbra and Mare cache directories. Use this to move the Mare cache and Penumbra mod folders around. If you enable this permanently, run a Force rescan after adding mods to Penumbra.");
+        DrawHelpText("这允许您停止对Penumbra和月海缓存目录的定期扫描。建议在打算移动月海缓存和Penumbra模组文件夹时启用。如果您永久启用此功能，请在将模组添加到Penumbra后运行强制重新扫描。");
     }
 
     public void LoadLocalization(string languageCode)
@@ -754,15 +753,15 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     {
         if (_apiController.ServerState is ServerState.Connected)
         {
-            ImGui.TextUnformatted("Service " + _serverConfigurationManager.CurrentServer!.ServerName + ":");
+            ImGui.TextUnformatted("服务 " + _serverConfigurationManager.CurrentServer!.ServerName + ":");
             ImGui.SameLine();
-            ImGui.TextColored(ImGuiColors.ParsedGreen, "Available");
+            ImGui.TextColored(ImGuiColors.ParsedGreen, "可用");
             ImGui.SameLine();
             ImGui.TextUnformatted("(");
             ImGui.SameLine();
             ImGui.TextColored(ImGuiColors.ParsedGreen, _apiController.OnlineUsers.ToString(CultureInfo.InvariantCulture));
             ImGui.SameLine();
-            ImGui.Text("Users Online");
+            ImGui.Text("用户在线");
             ImGui.SameLine();
             ImGui.Text(")");
         }

@@ -52,9 +52,9 @@ public class UidDisplayHandler
 
                 if (_popupTime > DateTime.UtcNow || !_mareConfigService.Current.ProfilesShow)
                 {
-                    ImGui.SetTooltip("Left click to switch between UID display and nick" + Environment.NewLine
-                        + "Right click to change nick for " + pair.UserData.AliasOrUID + Environment.NewLine
-                        + "Middle Mouse Button to open their profile in a separate window");
+                    ImGui.SetTooltip("鼠标左键单击可在UID显示和昵称之间切换" + Environment.NewLine
+                        + "鼠标右键单击可为此用户更改昵称：" + pair.UserData.AliasOrUID + Environment.NewLine
+                        + "鼠标中键单击可在单独的窗口中打开他们的档案文件");
                 }
                 else if (_popupTime < DateTime.UtcNow && !_popupShown)
                 {
@@ -102,7 +102,7 @@ public class UidDisplayHandler
             ImGui.SetCursorPosY(originalY);
 
             ImGui.SetNextItemWidth(editBoxWidth.Invoke());
-            if (ImGui.InputTextWithHint("", "Nick/Notes", ref _editUserComment, 255, ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputTextWithHint("", "昵称/备注", ref _editUserComment, 255, ImGuiInputTextFlags.EnterReturnsTrue))
             {
                 _serverManager.SetNoteForUid(pair.UserData.UID, _editUserComment);
                 _serverManager.SaveNotes();
@@ -113,7 +113,7 @@ public class UidDisplayHandler
             {
                 _editNickEntry = string.Empty;
             }
-            UiSharedService.AttachToolTip("Hit ENTER to save\nRight click to cancel");
+            UiSharedService.AttachToolTip("按回车保存\n鼠标右键单击可取消");
         }
     }
 

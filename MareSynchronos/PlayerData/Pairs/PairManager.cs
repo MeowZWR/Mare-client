@@ -79,7 +79,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
     public void ClearPairs()
     {
-        Logger.LogDebug("Clearing all Pairs");
+        Logger.LogDebug("清理所有配对");
         DisposePairs();
         _allClientPairs.Clear();
         _allGroups.Clear();
@@ -104,7 +104,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
     public void MarkPairOnline(OnlineUserIdentDto dto, bool sendNotif = true)
     {
-        if (!_allClientPairs.ContainsKey(dto.User)) throw new InvalidOperationException("No user found for " + dto);
+        if (!_allClientPairs.ContainsKey(dto.User)) throw new InvalidOperationException("未找到用户 " + dto);
 
         Mediator.Publish(new ClearProfileDataMessage(dto.User));
 
@@ -119,9 +119,9 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         {
             string? note = pair.GetNote();
             var msg = !string.IsNullOrEmpty(note)
-                ? $"{note} ({pair.UserData.AliasOrUID}) is now online"
-                : $"{pair.UserData.AliasOrUID} is now online";
-            Mediator.Publish(new NotificationMessage("User online", msg, NotificationType.Info, 5000));
+                ? $"{note} ({pair.UserData.AliasOrUID}) 现在处于联机状态"
+                : $"{pair.UserData.AliasOrUID} 现在处于联机状态";
+            Mediator.Publish(new NotificationMessage("用户在线", msg, NotificationType.Info, 5000));
         }
 
         pair.CreateCachedPlayer(dto);
@@ -130,7 +130,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
     public void ReceiveCharaData(OnlineUserCharaDataDto dto)
     {
-        if (!_allClientPairs.ContainsKey(dto.User)) throw new InvalidOperationException("No user found for " + dto.User);
+        if (!_allClientPairs.ContainsKey(dto.User)) throw new InvalidOperationException("找不到用户 " + dto.User);
 
         _allClientPairs[dto.User].ApplyData(dto);
     }

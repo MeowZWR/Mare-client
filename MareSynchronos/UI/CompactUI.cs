@@ -103,13 +103,13 @@ public class CompactUi : WindowMediatorSubscriberBase
         {
             var ver = _apiController.CurrentClientVersion;
             if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
-            var unsupported = "UNSUPPORTED VERSION";
+            var unsupported = "不支持的版本";
             var uidTextSize = ImGui.CalcTextSize(unsupported);
             ImGui.SetCursorPosX((ImGui.GetWindowContentRegionMax().X + ImGui.GetWindowContentRegionMin().X) / 2 - uidTextSize.X / 2);
             ImGui.TextColored(ImGuiColors.DalamudRed, unsupported);
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
-            UiSharedService.ColorTextWrapped($"Your Mare Synchronos installation is out of date, the current version is {ver.Major}.{ver.Minor}.{ver.Build}. " +
-                $"It is highly recommended to keep Mare Synchronos up to date. Open /xlplugins and update the plugin.", ImGuiColors.DalamudRed);
+            UiSharedService.ColorTextWrapped($"您安装的月海同步器版本已过期，当前版本问：{ver.Major}.{ver.Minor}.{ver.Build}。 " +
+                $"强烈建议更新月海同步器到最新版本。打开插件管理器/xlplugins并更新插件。", ImGuiColors.DalamudRed);
         }
 
         UiSharedService.DrawWithID("header", DrawUIDHeader);
@@ -134,7 +134,7 @@ public class CompactUi : WindowMediatorSubscriberBase
                 ImGui.PopStyleColor();
             }
             ImGui.PopFont();
-            UiSharedService.AttachToolTip("Individual pairs");
+            UiSharedService.AttachToolTip("独立配对");
 
             ImGui.SameLine();
 
@@ -153,7 +153,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             }
             ImGui.PopFont();
 
-            UiSharedService.AttachToolTip("Syncshells");
+            UiSharedService.AttachToolTip("同步贝");
 
             ImGui.Separator();
             if (!hasShownSyncShells)
@@ -175,12 +175,12 @@ public class CompactUi : WindowMediatorSubscriberBase
         {
             _lastAddedUser = _pairManager.LastAddedUser;
             _pairManager.LastAddedUser = null;
-            ImGui.OpenPopup("Set Notes for New User");
+            ImGui.OpenPopup("为新用户设置备注");
             _showModalForUserAddition = true;
             _lastAddedUserComment = string.Empty;
         }
 
-        if (ImGui.BeginPopupModal("Set Notes for New User", ref _showModalForUserAddition, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("为新用户设置备注", ref _showModalForUserAddition, UiSharedService.PopupWindowFlags))
         {
             if (_lastAddedUser == null)
             {
@@ -188,9 +188,9 @@ public class CompactUi : WindowMediatorSubscriberBase
             }
             else
             {
-                UiSharedService.TextWrapped($"You have successfully added {_lastAddedUser.UserData.AliasOrUID}. Set a local note for the user in the field below:");
+                UiSharedService.TextWrapped($"您已成功添加 {_lastAddedUser.UserData.AliasOrUID}。在下面的字段中为用户设置本地备注：");
                 ImGui.InputTextWithHint("##noteforuser", $"Note for {_lastAddedUser.UserData.AliasOrUID}", ref _lastAddedUserComment, 100);
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Save, "Save Note"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Save, "保存备注"))
                 {
                     _serverManager.SetNoteForUid(_lastAddedUser.UserData.UID, _lastAddedUserComment);
                     _lastAddedUser = null;
@@ -225,7 +225,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         if (keys.Any())
         {
             if (_secretKeyIdx == -1) _secretKeyIdx = keys.First().Key;
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "Add current character with secret key"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.Plus, "为当前角色添加密钥"))
             {
                 _serverManager.CurrentServer!.Authentications.Add(new MareConfiguration.Models.Authentication()
                 {
@@ -239,11 +239,11 @@ public class CompactUi : WindowMediatorSubscriberBase
                 _ = _apiController.CreateConnections(forceGetToken: true);
             }
 
-            _uiShared.DrawCombo("Secret Key##addCharacterSecretKey", keys, (f) => f.Value.FriendlyName, (f) => _secretKeyIdx = f.Key);
+            _uiShared.DrawCombo("密钥##addCharacterSecretKey", keys, (f) => f.Value.FriendlyName, (f) => _secretKeyIdx = f.Key);
         }
         else
         {
-            UiSharedService.ColorTextWrapped("No secret keys are configured for the current server.", ImGuiColors.DalamudYellow);
+            UiSharedService.ColorTextWrapped("没有为当前服务器配置密钥。", ImGuiColors.DalamudYellow);
         }
     }
 
@@ -251,7 +251,7 @@ public class CompactUi : WindowMediatorSubscriberBase
     {
         var buttonSize = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Plus);
         ImGui.SetNextItemWidth(UiSharedService.GetWindowContentRegionWidth() - ImGui.GetWindowContentRegionMin().X - buttonSize.X);
-        ImGui.InputTextWithHint("##otheruid", "Other players UID/Alias", ref _pairToAdd, 20);
+        ImGui.InputTextWithHint("##otheruid", "其他玩家UID或别名", ref _pairToAdd, 20);
         ImGui.SameLine(ImGui.GetWindowContentRegionMin().X + UiSharedService.GetWindowContentRegionWidth() - buttonSize.X);
         var canAdd = !_pairManager.DirectPairs.Any(p => string.Equals(p.UserData.UID, _pairToAdd, StringComparison.Ordinal) || string.Equals(p.UserData.Alias, _pairToAdd, StringComparison.Ordinal));
         if (!canAdd)
@@ -265,7 +265,7 @@ public class CompactUi : WindowMediatorSubscriberBase
                 _ = _apiController.UserAddPair(new(new(_pairToAdd)));
                 _pairToAdd = string.Empty;
             }
-            UiSharedService.AttachToolTip("Pair with " + (_pairToAdd.IsNullOrEmpty() ? "other user" : _pairToAdd));
+            UiSharedService.AttachToolTip("与" + (_pairToAdd.IsNullOrEmpty() ? "其他玩家" : _pairToAdd + "配对"));
         }
 
         ImGuiHelpers.ScaledDummy(2);
@@ -282,7 +282,7 @@ public class CompactUi : WindowMediatorSubscriberBase
                 _configService.Current.ReverseUserSort = true;
                 _configService.Save();
             }
-            UiSharedService.AttachToolTip("Sort by name descending");
+            UiSharedService.AttachToolTip("按名称降序排列");
         }
         else
         {
@@ -291,7 +291,7 @@ public class CompactUi : WindowMediatorSubscriberBase
                 _configService.Current.ReverseUserSort = false;
                 _configService.Save();
             }
-            UiSharedService.AttachToolTip("Sort by name ascending");
+            UiSharedService.AttachToolTip("按名称升序排列");
         }
         ImGui.SameLine();
 
@@ -303,7 +303,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             : ImGui.GetStyle().ItemSpacing.X;
 
         ImGui.SetNextItemWidth(WindowContentWidth - buttonSize.X - spacing);
-        ImGui.InputTextWithHint("##filter", "Filter for UID/notes", ref _characterOrCommentFilter, 255);
+        ImGui.InputTextWithHint("##filter", "根据UID或备注筛选", ref _characterOrCommentFilter, 255);
 
         if (userCount == 0) return;
 
@@ -350,13 +350,13 @@ public class CompactUi : WindowMediatorSubscriberBase
                 _timeout.Start();
                 _buttonState = !_buttonState;
             }
-            UiSharedService.AttachToolTip($"Hold Control to {(button == FontAwesomeIcon.Play ? "resume" : "pause")} pairing with {users.Count} out of {userCount} displayed users.");
+            UiSharedService.AttachToolTip($"按住CTRL键来 {(button == FontAwesomeIcon.Play ? "继续" : "暂停")} 与 {users.Count} / {userCount} 个已显示用户的配对。");
         }
         else
         {
             var availableAt = (15000 - _timeout.ElapsedMilliseconds) / 1000;
             ImGuiComponents.DisabledButton(button);
-            UiSharedService.AttachToolTip($"Next execution is available at {availableAt} seconds");
+            UiSharedService.AttachToolTip($"下一次运行在 {availableAt} 秒");
         }
     }
 
@@ -400,7 +400,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         var buttonSize = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Link);
         var userCount = _apiController.OnlineUsers.ToString(CultureInfo.InvariantCulture);
         var userSize = ImGui.CalcTextSize(userCount);
-        var textSize = ImGui.CalcTextSize("Users Online");
+        var textSize = ImGui.CalcTextSize("用户在线");
 #if DEBUG
         string shardConnection = $"Shard: {_apiController.ServerInfo.ShardName}";
 #else
@@ -416,12 +416,12 @@ public class CompactUi : WindowMediatorSubscriberBase
             ImGui.TextColored(ImGuiColors.ParsedGreen, userCount);
             ImGui.SameLine();
             if (!printShard) ImGui.AlignTextToFramePadding();
-            ImGui.Text("Users Online");
+            ImGui.Text("用户在线");
         }
         else
         {
             ImGui.AlignTextToFramePadding();
-            ImGui.TextColored(ImGuiColors.DalamudRed, "Not connected to any server");
+            ImGui.TextColored(ImGuiColors.DalamudRed, "未连接到任何服务器");
         }
 
         if (printShard)
@@ -446,7 +446,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             {
                 Mediator.Publish(new UiToggleMessage(typeof(EditProfileUi)));
             }
-            UiSharedService.AttachToolTip("Edit your Mare Profile");
+            UiSharedService.AttachToolTip("编辑您的月海档案");
         }
 
         ImGui.SameLine(ImGui.GetWindowContentRegionMin().X + UiSharedService.GetWindowContentRegionWidth() - buttonSize.X);
@@ -465,7 +465,7 @@ public class CompactUi : WindowMediatorSubscriberBase
                 _ = _apiController.CreateConnections();
             }
             ImGui.PopStyleColor();
-            UiSharedService.AttachToolTip(!_serverManager.CurrentServer.FullPause ? "Disconnect from " + _serverManager.CurrentServer.ServerName : "Connect to " + _serverManager.CurrentServer.ServerName);
+            UiSharedService.AttachToolTip(!_serverManager.CurrentServer.FullPause ? "断开服务器：" + _serverManager.CurrentServer.ServerName : "连接服务器：" + _serverManager.CurrentServer.ServerName);
         }
     }
 
@@ -493,7 +493,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         }
         else
         {
-            ImGui.Text("No uploads in progress");
+            ImGui.Text("没有上传任务");
         }
 
         var currentDownloads = _currentDownloads.SelectMany(d => d.Value.Values).ToList();
@@ -518,10 +518,10 @@ public class CompactUi : WindowMediatorSubscriberBase
         }
         else
         {
-            ImGui.Text("No downloads in progress");
+            ImGui.Text("没有下载任务");
         }
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.PersonCircleQuestion, "Mare Character Data Analysis", WindowContentWidth))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.PersonCircleQuestion, "月海角色数据分析", WindowContentWidth))
         {
             Mediator.Publish(new OpenDataAnalysisUiMessage());
         }
@@ -548,7 +548,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         {
             Mediator.Publish(new OpenSettingsUiMessage());
         }
-        UiSharedService.AttachToolTip("Open the Mare Synchronos Settings");
+        UiSharedService.AttachToolTip("打开设置窗口");
 
         ImGui.SameLine(); //Important to draw the uidText consistently
         ImGui.SetCursorPos(originalPos);
@@ -561,7 +561,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             {
                 ImGui.SetClipboardText(_apiController.DisplayName);
             }
-            UiSharedService.AttachToolTip("Copy your UID to clipboard");
+            UiSharedService.AttachToolTip("复制您的UID到剪贴板");
             ImGui.SameLine();
         }
         ImGui.SetWindowFontScale(1f);
@@ -597,17 +597,17 @@ public class CompactUi : WindowMediatorSubscriberBase
     {
         return _apiController.ServerState switch
         {
-            ServerState.Connecting => "Attempting to connect to the server.",
-            ServerState.Reconnecting => "Connection to server interrupted, attempting to reconnect to the server.",
-            ServerState.Disconnected => "You are currently disconnected from the Mare Synchronos server.",
-            ServerState.Disconnecting => "Disconnecting from the server",
-            ServerState.Unauthorized => "Server Response: " + _apiController.AuthFailureMessage,
-            ServerState.Offline => "Your selected Mare Synchronos server is currently offline.",
+            ServerState.Connecting => "正在尝试连接服务器。",
+            ServerState.Reconnecting => "与服务器的连接中断，正在尝试重新连接。",
+            ServerState.Disconnected => "您当前已断开与月海同步服务器的连接。",
+            ServerState.Disconnecting => "正在断开与服务器的连接。",
+            ServerState.Unauthorized => "服务器响应：" + _apiController.AuthFailureMessage,
+            ServerState.Offline => "您选择的月海同步服务器当前处于脱机状态。",
             ServerState.VersionMisMatch =>
-                "Your plugin or the server you are connecting to is out of date. Please update your plugin now. If you already did so, contact the server provider to update their server to the latest version.",
-            ServerState.RateLimited => "You are rate limited for (re)connecting too often. Disconnect, wait 10 minutes and try again.",
+                "您的插件或连接到的服务器已过期。请立即更新您的插件。如果您已经这样做了，请联系服务器提供商，将其服务器更新到最新版本。",
+            ServerState.RateLimited => "您因过于频繁地重新连接而受到限制。请断开连接并等待10分钟，然后重试。",
             ServerState.Connected => string.Empty,
-            ServerState.NoSecretKey => "You have no secret key set for this current character. Use the button below or open the settings and set a secret key for the current character. You can reuse the same secret key for multiple characters.",
+            ServerState.NoSecretKey => "您没有为当前角色设置密钥。使用下面的按钮或打开设置为当前角色设置密钥。您可以对多个角色使用同一密钥。",
             _ => string.Empty
         };
     }
@@ -634,15 +634,15 @@ public class CompactUi : WindowMediatorSubscriberBase
     {
         return _apiController.ServerState switch
         {
-            ServerState.Reconnecting => "Reconnecting",
-            ServerState.Connecting => "Connecting",
-            ServerState.Disconnected => "Disconnected",
-            ServerState.Disconnecting => "Disconnecting",
-            ServerState.Unauthorized => "Unauthorized",
-            ServerState.VersionMisMatch => "Version mismatch",
-            ServerState.Offline => "Unavailable",
-            ServerState.RateLimited => "Rate Limited",
-            ServerState.NoSecretKey => "No Secret Key",
+            ServerState.Reconnecting => "正在重新连接",
+            ServerState.Connecting => "正在连接",
+            ServerState.Disconnected => "已断开连接",
+            ServerState.Disconnecting => "正在断开连接",
+            ServerState.Unauthorized => "未认证",
+            ServerState.VersionMisMatch => "版本不匹配",
+            ServerState.Offline => "不可用",
+            ServerState.RateLimited => "速率限制",
+            ServerState.NoSecretKey => "无密钥",
             ServerState.Connected => _apiController.DisplayName,
             _ => string.Empty
         };
