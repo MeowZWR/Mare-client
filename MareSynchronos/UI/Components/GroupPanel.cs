@@ -69,7 +69,7 @@ internal sealed class GroupPanel
     {
         var buttonSize = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Plus);
         ImGui.SetNextItemWidth(UiSharedService.GetWindowContentRegionWidth() - ImGui.GetWindowContentRegionMin().X - buttonSize.X);
-        ImGui.InputTextWithHint("##syncshellid", "Syncshell GID/Alias (leave empty to create)", ref _syncShellToJoin, 20);
+        ImGui.InputTextWithHint("##syncshellid", "同步贝GID或别名（留空创建同步贝）", ref _syncShellToJoin, 20);
         ImGui.SameLine(ImGui.GetWindowContentRegionMin().X + UiSharedService.GetWindowContentRegionWidth() - buttonSize.X);
 
         bool userCanJoinMoreGroups = _pairManager.GroupPairs.Count < ApiController.ServerInfo.MaxGroupsJoinedByUser;
@@ -86,7 +86,7 @@ internal sealed class GroupPanel
                 {
                     _errorGroupJoin = false;
                     _showModalEnterPassword = true;
-                    ImGui.OpenPopup("Enter Syncshell Password");
+                    ImGui.OpenPopup("输入同步贝密码");
                 }
             }
             else
@@ -96,30 +96,30 @@ internal sealed class GroupPanel
                     _lastCreatedGroup = null;
                     _errorGroupCreate = false;
                     _showModalCreateGroup = true;
-                    ImGui.OpenPopup("Create Syncshell");
+                    ImGui.OpenPopup("创建同步贝");
                 }
             }
         }
         UiSharedService.AttachToolTip(_syncShellToJoin.IsNullOrEmpty()
-            ? (userCanCreateMoreGroups ? "Create Syncshell" : $"You cannot create more than {ApiController.ServerInfo.MaxGroupsCreatedByUser} Syncshells")
-            : (userCanJoinMoreGroups ? "Join Syncshell" + _syncShellToJoin : $"You cannot join more than {ApiController.ServerInfo.MaxGroupsJoinedByUser} Syncshells"));
+            ? (userCanCreateMoreGroups ? "创建同步贝" : $"你无法创建超过{ApiController.ServerInfo.MaxGroupsCreatedByUser}个同步贝")
+            : (userCanJoinMoreGroups ? "加入同步贝" + _syncShellToJoin : $"你无法加入超过{ApiController.ServerInfo.MaxGroupsJoinedByUser}个同步贝"));
 
         if (alreadyInGroup) ImGui.EndDisabled();
 
-        if (ImGui.BeginPopupModal("Enter Syncshell Password", ref _showModalEnterPassword, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("输入同步贝密码", ref _showModalEnterPassword, UiSharedService.PopupWindowFlags))
         {
-            UiSharedService.TextWrapped("Before joining any Syncshells please be aware that you will be automatically paired with everyone in the Syncshell.");
+            UiSharedService.TextWrapped("在加入任何同步贝之前，请注意，您将自动与同步贝中的每个人配对。");
             ImGui.Separator();
-            UiSharedService.TextWrapped("Enter the password for Syncshell " + _syncShellToJoin + ":");
+            UiSharedService.TextWrapped("输入同步贝 " + _syncShellToJoin + " 的密码：");
             ImGui.SetNextItemWidth(-1);
             ImGui.InputTextWithHint("##password", _syncShellToJoin + " Password", ref _syncShellPassword, 255, ImGuiInputTextFlags.Password);
             if (_errorGroupJoin)
             {
-                UiSharedService.ColorTextWrapped($"An error occured during joining of this Syncshell: you either have joined the maximum amount of Syncshells ({ApiController.ServerInfo.MaxGroupsJoinedByUser}), " +
-                    $"it does not exist, the password you entered is wrong, you already joined the Syncshell, the Syncshell is full ({ApiController.ServerInfo.MaxGroupUserCount} users) or the Syncshell has closed invites.",
+                UiSharedService.ColorTextWrapped($"加入此同步贝时发生错误：您加入的同步贝数量已达到最大值({ApiController.ServerInfo.MaxGroupsJoinedByUser}), " +
+                    $"同步贝不存在、密码错误、您已加入此同步贝、同步贝已满（{ApiController.ServerInfo.MaxGroupUserCount} 个用户）、或者此同步贝已关闭邀请。",
                     new Vector4(1, 0, 0, 1));
             }
-            if (ImGui.Button("Join " + _syncShellToJoin))
+            if (ImGui.Button("加入 " + _syncShellToJoin))
             {
                 var shell = _syncShellToJoin;
                 var pw = _syncShellPassword;
@@ -135,11 +135,11 @@ internal sealed class GroupPanel
             ImGui.EndPopup();
         }
 
-        if (ImGui.BeginPopupModal("Create Syncshell", ref _showModalCreateGroup, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("创建同步贝", ref _showModalCreateGroup, UiSharedService.PopupWindowFlags))
         {
-            UiSharedService.TextWrapped("Press the button below to create a new Syncshell.");
+            UiSharedService.TextWrapped("点击下面的按钮创建一个新的同步贝");
             ImGui.SetNextItemWidth(200);
-            if (ImGui.Button("Create Syncshell"))
+            if (ImGui.Button("创建同步贝"))
             {
                 try
                 {
@@ -156,20 +156,20 @@ internal sealed class GroupPanel
             {
                 ImGui.Separator();
                 _errorGroupCreate = false;
-                ImGui.TextUnformatted("Syncshell ID: " + _lastCreatedGroup.Group.GID);
+                ImGui.TextUnformatted("同步贝ID：" + _lastCreatedGroup.Group.GID);
                 ImGui.AlignTextToFramePadding();
-                ImGui.TextUnformatted("Syncshell Password: " + _lastCreatedGroup.Password);
+                ImGui.TextUnformatted("同步贝密码：" + _lastCreatedGroup.Password);
                 ImGui.SameLine();
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Copy))
                 {
                     ImGui.SetClipboardText(_lastCreatedGroup.Password);
                 }
-                UiSharedService.TextWrapped("You can change the Syncshell password later at any time.");
+                UiSharedService.TextWrapped("您可以稍后随时修改同步贝密码。");
             }
 
             if (_errorGroupCreate)
             {
-                UiSharedService.ColorTextWrapped("You are already owner of the maximum amount of Syncshells (3) or joined the maximum amount of Syncshells (6). Relinquish ownership of your own Syncshells to someone else or leave existing Syncshells.",
+                UiSharedService.ColorTextWrapped("您已经拥有最大数量的同步贝（3）或加入了最大数量的同步贝（6）。请将您自己的同步贝的所有权转移给其他人或离开现有的同步贝。",
                     new Vector4(1, 0, 0, 1));
             }
 
@@ -204,7 +204,7 @@ internal sealed class GroupPanel
             var userPerm = groupDto.GroupUserPermissions ^ GroupUserPermissions.Paused;
             _ = ApiController.GroupChangeIndividualPermissionState(new GroupPairUserPermissionDto(groupDto.Group, new UserData(ApiController.UID), userPerm));
         }
-        UiSharedService.AttachToolTip((groupDto.GroupUserPermissions.IsPaused() ? "Resume" : "Pause") + " pairing with all users in this Syncshell");
+        UiSharedService.AttachToolTip((groupDto.GroupUserPermissions.IsPaused() ? "恢复" : "暂停") + "与此同步贝中的所有用户配对。");
         ImGui.SameLine();
 
         var textIsGid = true;
@@ -215,7 +215,7 @@ internal sealed class GroupPanel
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.Text(FontAwesomeIcon.Crown.ToIconString());
             ImGui.PopFont();
-            UiSharedService.AttachToolTip("You are the owner of Syncshell " + groupName);
+            UiSharedService.AttachToolTip("您是同步贝" + groupName + "的所有者。");
             ImGui.SameLine();
         }
         else if (groupDto.GroupUserInfo.IsModerator())
@@ -223,7 +223,7 @@ internal sealed class GroupPanel
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.Text(FontAwesomeIcon.UserShield.ToIconString());
             ImGui.PopFont();
-            UiSharedService.AttachToolTip("You are a moderator of Syncshell " + groupName);
+            UiSharedService.AttachToolTip("您是同步贝" + groupName + "的主持人。");
             ImGui.SameLine();
         }
 
@@ -240,9 +240,9 @@ internal sealed class GroupPanel
             if (textIsGid) ImGui.PushFont(UiBuilder.MonoFont);
             ImGui.TextUnformatted(groupName);
             if (textIsGid) ImGui.PopFont();
-            UiSharedService.AttachToolTip("Left click to switch between GID display and comment" + Environment.NewLine +
-                          "Right click to change comment for " + groupName + Environment.NewLine + Environment.NewLine
-                          + "Users: " + (pairsInGroup.Count + 1) + ", Owner: " + groupDto.OwnerAliasOrUID);
+            UiSharedService.AttachToolTip("左键单击可在GID和备注之间切换                " + Environment.NewLine +
+                          "右键单击为" + groupName + "修改备注" + Environment.NewLine
+                          + "用户：" + (pairsInGroup.Count + 1) + ", 所有者：" + groupDto.OwnerAliasOrUID);
             if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
             {
                 var prevState = textIsGid;
@@ -265,7 +265,7 @@ internal sealed class GroupPanel
         {
             var buttonSizes = UiSharedService.GetIconButtonSize(FontAwesomeIcon.Bars).X + UiSharedService.GetIconSize(FontAwesomeIcon.LockOpen).X;
             ImGui.SetNextItemWidth(UiSharedService.GetWindowContentRegionWidth() - ImGui.GetCursorPosX() - buttonSizes - ImGui.GetStyle().ItemSpacing.X * 2);
-            if (ImGui.InputTextWithHint("", "Comment/Notes", ref _editGroupComment, 255, ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputTextWithHint("", "备注/注释", ref _editGroupComment, 255, ImGuiInputTextFlags.EnterReturnsTrue))
             {
                 _serverConfigurationManager.SetNoteForGid(groupDto.GID, _editGroupComment);
                 _editGroupEntry = string.Empty;
@@ -275,7 +275,7 @@ internal sealed class GroupPanel
             {
                 _editGroupEntry = string.Empty;
             }
-            UiSharedService.AttachToolTip("Hit ENTER to save\nRight click to cancel");
+            UiSharedService.AttachToolTip("按回车键保存\n点击鼠标右键取消");
         }
 
         UiSharedService.DrawWithID(groupDto.GID + "settings", () => DrawSyncShellButtons(groupDto, pairsInGroup));
@@ -283,14 +283,14 @@ internal sealed class GroupPanel
         if (_showModalBanList && !_modalBanListOpened)
         {
             _modalBanListOpened = true;
-            ImGui.OpenPopup("Manage Banlist for " + groupDto.GID);
+            ImGui.OpenPopup("禁止名单管理：" + groupDto.GID);
         }
 
         if (!_showModalBanList) _modalBanListOpened = false;
 
-        if (ImGui.BeginPopupModal("Manage Banlist for " + groupDto.GID, ref _showModalBanList, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("禁止名单管理：" + groupDto.GID, ref _showModalBanList, UiSharedService.PopupWindowFlags))
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.Retweet, "Refresh Banlist from Server"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.Retweet, "从服务器刷新禁止列表"))
             {
                 _bannedUsers = ApiController.GroupGetBannedUsers(groupDto).Result;
             }
@@ -298,11 +298,11 @@ internal sealed class GroupPanel
             if (ImGui.BeginTable("bannedusertable" + groupDto.GID, 6, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.ScrollY))
             {
                 ImGui.TableSetupColumn("UID", ImGuiTableColumnFlags.None, 1);
-                ImGui.TableSetupColumn("Alias", ImGuiTableColumnFlags.None, 1);
-                ImGui.TableSetupColumn("By", ImGuiTableColumnFlags.None, 1);
-                ImGui.TableSetupColumn("Date", ImGuiTableColumnFlags.None, 2);
-                ImGui.TableSetupColumn("Reason", ImGuiTableColumnFlags.None, 3);
-                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.None, 1);
+                ImGui.TableSetupColumn("别名", ImGuiTableColumnFlags.None, 1);
+                ImGui.TableSetupColumn("操作人", ImGuiTableColumnFlags.None, 1);
+                ImGui.TableSetupColumn("日期", ImGuiTableColumnFlags.None, 2);
+                ImGui.TableSetupColumn("原因", ImGuiTableColumnFlags.None, 3);
+                ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.None, 1);
 
                 ImGui.TableHeadersRow();
 
@@ -335,18 +335,18 @@ internal sealed class GroupPanel
         if (_showModalChangePassword && !_modalChangePwOpened)
         {
             _modalChangePwOpened = true;
-            ImGui.OpenPopup("Change Syncshell Password");
+            ImGui.OpenPopup("修改同步贝密码");
         }
 
         if (!_showModalChangePassword) _modalChangePwOpened = false;
 
-        if (ImGui.BeginPopupModal("Change Syncshell Password", ref _showModalChangePassword, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("修改同步贝密码", ref _showModalChangePassword, UiSharedService.PopupWindowFlags))
         {
-            UiSharedService.TextWrapped("Enter the new Syncshell password for Syncshell " + name + " here.");
-            UiSharedService.TextWrapped("This action is irreversible");
+            UiSharedService.TextWrapped("在这里为同步贝 " + name + " 输入新密码。");
+            UiSharedService.TextWrapped("操作不可逆");
             ImGui.SetNextItemWidth(-1);
-            ImGui.InputTextWithHint("##changepw", "New password for " + name, ref _newSyncShellPassword, 255);
-            if (ImGui.Button("Change password"))
+            ImGui.InputTextWithHint("##changepw", "为此同步贝修改新密码：" + name, ref _newSyncShellPassword, 255);
+            if (ImGui.Button("确认修改"))
             {
                 var pw = _newSyncShellPassword;
                 _isPasswordValid = ApiController.GroupChangePassword(new(groupDto.Group, pw)).Result;
@@ -356,7 +356,7 @@ internal sealed class GroupPanel
 
             if (!_isPasswordValid)
             {
-                UiSharedService.ColorTextWrapped("The selected password is too short. It must be at least 10 characters.", new Vector4(1, 0, 0, 1));
+                UiSharedService.ColorTextWrapped("密码太短。必须至少包含10个字符。", new Vector4(1, 0, 0, 1));
             }
 
             UiSharedService.SetScaledWindowSize(290);
@@ -366,29 +366,29 @@ internal sealed class GroupPanel
         if (_showModalBulkOneTimeInvites && !_modalBulkOneTimeInvitesOpened)
         {
             _modalBulkOneTimeInvitesOpened = true;
-            ImGui.OpenPopup("Create Bulk One-Time Invites");
+            ImGui.OpenPopup("创建批量一次性邀请");
         }
 
         if (!_showModalBulkOneTimeInvites) _modalBulkOneTimeInvitesOpened = false;
 
-        if (ImGui.BeginPopupModal("Create Bulk One-Time Invites", ref _showModalBulkOneTimeInvites, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("创建批量一次性邀请", ref _showModalBulkOneTimeInvites, UiSharedService.PopupWindowFlags))
         {
-            UiSharedService.TextWrapped("This allows you to create up to 100 one-time invites at once for the Syncshell " + name + "." + Environment.NewLine
-                + "The invites are valid for 24h after creation and will automatically expire.");
+            UiSharedService.TextWrapped("这允许您一次性为同步贝 " + name + " 创建多达100个的一次性邀请。" + Environment.NewLine
+                + "邀请在创建后24小时内有效。");
             ImGui.Separator();
             if (_bulkOneTimeInvites.Count == 0)
             {
                 ImGui.SetNextItemWidth(-1);
-                ImGui.SliderInt("Amount##bulkinvites", ref _bulkInviteCount, 1, 100);
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.MailBulk, "Create invites"))
+                ImGui.SliderInt("数量##bulkinvites", ref _bulkInviteCount, 1, 100);
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.MailBulk, "创建邀请"))
                 {
                     _bulkOneTimeInvites = ApiController.GroupCreateTempInvite(groupDto, _bulkInviteCount).Result;
                 }
             }
             else
             {
-                UiSharedService.TextWrapped("A total of " + _bulkOneTimeInvites.Count + " invites have been created.");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Copy, "Copy invites to clipboard"))
+                UiSharedService.TextWrapped("一共创建了 " + _bulkOneTimeInvites.Count + " 个邀请。");
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Copy, "将邀请信息复制到剪贴板"))
                 {
                     ImGui.SetClipboardText(string.Join(Environment.NewLine, _bulkOneTimeInvites));
                 }
@@ -428,7 +428,7 @@ internal sealed class GroupPanel
 
             if (visibleUsers.Any())
             {
-                ImGui.Text("Visible");
+                ImGui.Text("可见");
                 ImGui.Separator();
                 foreach (var entry in visibleUsers)
                 {
@@ -438,7 +438,7 @@ internal sealed class GroupPanel
 
             if (onlineUsers.Any())
             {
-                ImGui.Text("Online");
+                ImGui.Text("在线");
                 ImGui.Separator();
                 foreach (var entry in onlineUsers)
                 {
@@ -448,7 +448,7 @@ internal sealed class GroupPanel
 
             if (offlineUsers.Any())
             {
-                ImGui.Text("Offline/Unknown");
+                ImGui.Text("离线/未知");
                 ImGui.Separator();
                 foreach (var entry in offlineUsers)
                 {
@@ -499,11 +499,11 @@ internal sealed class GroupPanel
                 ImGui.BeginTooltip();
                 if (!invitesEnabled || soundsDisabled || animDisabled || vfxDisabled)
                 {
-                    ImGui.Text("Syncshell permissions");
+                    ImGui.Text("同步贝权限");
 
                     if (!invitesEnabled)
                     {
-                        var lockedText = "Syncshell is closed for joining";
+                        var lockedText = "同步贝已关闭加入权限";
                         UiSharedService.FontText(lockedIcon.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(lockedText);
@@ -511,7 +511,7 @@ internal sealed class GroupPanel
 
                     if (soundsDisabled)
                     {
-                        var soundsText = "Sound sync disabled through owner";
+                        var soundsText = "所有者已禁用声音同步";
                         UiSharedService.FontText(soundsIcon.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(soundsText);
@@ -519,7 +519,7 @@ internal sealed class GroupPanel
 
                     if (animDisabled)
                     {
-                        var animText = "Animation sync disabled through owner";
+                        var animText = "所有者已禁用情感动作同步";
                         UiSharedService.FontText(animIcon.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(animText);
@@ -527,7 +527,7 @@ internal sealed class GroupPanel
 
                     if (vfxDisabled)
                     {
-                        var vfxText = "VFX sync disabled through owner";
+                        var vfxText = "所有者已禁用视觉效果VFX同步";
                         UiSharedService.FontText(vfxIcon.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(vfxText);
@@ -539,11 +539,11 @@ internal sealed class GroupPanel
                     if (!invitesEnabled || soundsDisabled || animDisabled || vfxDisabled)
                         ImGui.Separator();
 
-                    ImGui.Text("Your permissions");
+                    ImGui.Text("您的权限");
 
                     if (userSoundsDisabled)
                     {
-                        var userSoundsText = "Sound sync disabled through you";
+                        var userSoundsText = "您已禁用声音同步";
                         UiSharedService.FontText(userSoundsIcon.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(userSoundsText);
@@ -551,7 +551,7 @@ internal sealed class GroupPanel
 
                     if (userAnimDisabled)
                     {
-                        var userAnimText = "Animation sync disabled through you";
+                        var userAnimText = "您已禁用情感动作同步";
                         UiSharedService.FontText(userAnimIcon.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(userAnimText);
@@ -559,14 +559,14 @@ internal sealed class GroupPanel
 
                     if (userVFXDisabled)
                     {
-                        var userVFXText = "VFX sync disabled through you";
+                        var userVFXText = "您已禁用视觉效果VFX同步";
                         UiSharedService.FontText(userVFXIcon.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(userVFXText);
                     }
 
                     if (!invitesEnabled || soundsDisabled || animDisabled || vfxDisabled)
-                        UiSharedService.TextWrapped("Note that syncshell permissions for disabling take precedence over your own set permissions");
+                        UiSharedService.TextWrapped("请注意同步贝全局禁用权限优先于您自己的设置权限");
                 }
                 ImGui.EndTooltip();
             }
@@ -581,28 +581,28 @@ internal sealed class GroupPanel
 
         if (ImGui.BeginPopup("ShellPopup"))
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.ArrowCircleLeft, "Leave Syncshell") && UiSharedService.CtrlPressed())
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.ArrowCircleLeft, "离开同步贝") && UiSharedService.CtrlPressed())
             {
                 _ = ApiController.GroupLeave(groupDto);
             }
-            UiSharedService.AttachToolTip("Hold CTRL and click to leave this Syncshell" + (!string.Equals(groupDto.OwnerUID, ApiController.UID, StringComparison.Ordinal) ? string.Empty : Environment.NewLine
-                + "WARNING: This action is irreversible" + Environment.NewLine + "Leaving an owned Syncshell will transfer the ownership to a random person in the Syncshell."));
+            UiSharedService.AttachToolTip("按住CTRL键并单击来离开此同步贝" + (!string.Equals(groupDto.OwnerUID, ApiController.UID, StringComparison.Ordinal) ? string.Empty : Environment.NewLine
+                + "警告：此操作是不可逆" + Environment.NewLine + "离开自己是所有者的同步贝会将所有权转移给同步贝的一个随机成员。"));
 
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.Copy, "Copy ID"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.Copy, "复制ID"))
             {
                 ImGui.CloseCurrentPopup();
                 ImGui.SetClipboardText(groupDto.GroupAliasOrGID);
             }
-            UiSharedService.AttachToolTip("Copy Syncshell ID to Clipboard");
+            UiSharedService.AttachToolTip("复制同步贝ID到剪贴板");
 
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "Copy Notes"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.StickyNote, "复制备注"))
             {
                 ImGui.CloseCurrentPopup();
                 ImGui.SetClipboardText(UiSharedService.GetNotes(groupPairs));
             }
-            UiSharedService.AttachToolTip("Copies all your notes for all users in this Syncshell to the clipboard." + Environment.NewLine + "They can be imported via Settings -> Privacy -> Import Notes from Clipboard");
+            UiSharedService.AttachToolTip("将此同步贝中所有用户的备注复制到剪贴板。" + Environment.NewLine + "它们可以通过“设置”->“备注”->“从剪贴板导入备注”选项导入。");
 
-            var soundsText = userSoundsDisabled ? "Enable sound sync" : "Disable sound sync";
+            var soundsText = userSoundsDisabled ? "启用声音同步" : "禁用声音同步";
             if (UiSharedService.IconTextButton(userSoundsIcon, soundsText))
             {
                 ImGui.CloseCurrentPopup();
@@ -610,12 +610,12 @@ internal sealed class GroupPanel
                 perm.SetDisableSounds(!perm.IsDisableSounds());
                 _ = ApiController.GroupChangeIndividualPermissionState(new(groupDto.Group, new UserData(ApiController.UID), perm));
             }
-            UiSharedService.AttachToolTip("Sets your allowance for sound synchronization for users of this syncshell."
-                + Environment.NewLine + "Disabling the synchronization will stop applying sound modifications for users of this syncshell."
-                + Environment.NewLine + "Note: this setting can be forcefully overridden to 'disabled' through the syncshell owner."
-                + Environment.NewLine + "Note: this setting does not apply to individual pairs that are also in the syncshell.");
+            UiSharedService.AttachToolTip("设置此同步贝成员的声音同步开关。"
+                + Environment.NewLine + "禁用同步将停止此同步贝成员对声音的修改。"
+                + Environment.NewLine + "注意：此设置可被同步贝所有者强制覆盖为“禁用”。"
+                + Environment.NewLine + "注意：此设置不会影响此同步贝成员的独立配对。");
 
-            var animText = userAnimDisabled ? "Enable animations sync" : "Disable animations sync";
+            var animText = userAnimDisabled ? "启用情感动作同步" : "禁用情感动作同步";
             if (UiSharedService.IconTextButton(userAnimIcon, animText))
             {
                 ImGui.CloseCurrentPopup();
@@ -623,13 +623,13 @@ internal sealed class GroupPanel
                 perm.SetDisableAnimations(!perm.IsDisableAnimations());
                 _ = ApiController.GroupChangeIndividualPermissionState(new(groupDto.Group, new UserData(ApiController.UID), perm));
             }
-            UiSharedService.AttachToolTip("Sets your allowance for animations synchronization for users of this syncshell."
-                + Environment.NewLine + "Disabling the synchronization will stop applying animations modifications for users of this syncshell."
-                + Environment.NewLine + "Note: this setting might also affect sound synchronization"
-                + Environment.NewLine + "Note: this setting can be forcefully overridden to 'disabled' through the syncshell owner."
-                + Environment.NewLine + "Note: this setting does not apply to individual pairs that are also in the syncshell.");
+            UiSharedService.AttachToolTip("设置此同步贝中成员的情感动作同步开关。"
+                + Environment.NewLine + "禁用同步将停止此同步贝中成员对情感动作的修改。"
+                + Environment.NewLine + "注意：此设置也可能影响声音同步。"
+                + Environment.NewLine + "注意：此设置可被同步贝所有者强制覆盖为“禁用”。"
+                + Environment.NewLine + "注意：此设置不会影响同步贝成员的独立配对。");
 
-            var vfxText = userVFXDisabled ? "Enable VFX sync" : "Disable VFX sync";
+            var vfxText = userVFXDisabled ? "启用视觉特效同步" : "禁用视觉特效同步";
             if (UiSharedService.IconTextButton(userVFXIcon, vfxText))
             {
                 ImGui.CloseCurrentPopup();
@@ -637,46 +637,46 @@ internal sealed class GroupPanel
                 perm.SetDisableVFX(!perm.IsDisableVFX());
                 _ = ApiController.GroupChangeIndividualPermissionState(new(groupDto.Group, new UserData(ApiController.UID), perm));
             }
-            UiSharedService.AttachToolTip("Sets your allowance for VFX synchronization for users of this syncshell."
-                                          + Environment.NewLine + "Disabling the synchronization will stop applying VFX modifications for users of this syncshell."
-                                          + Environment.NewLine + "Note: this setting might also affect animation synchronization to some degree"
-                                          + Environment.NewLine + "Note: this setting can be forcefully overridden to 'disabled' through the syncshell owner."
-                                          + Environment.NewLine + "Note: this setting does not apply to individual pairs that are also in the syncshell.");
+            UiSharedService.AttachToolTip("设置此同步贝中用户的视觉特效（VFX）同步开关。"
+                                          + Environment.NewLine + "禁用同步将停止此同步贝成员对视觉特效的修改。"
+                                          + Environment.NewLine + "注意：此设置也可能在一定程度上影响情感动作同步。"
+                                          + Environment.NewLine + "注意：此设置可被同步贝所有者强制覆盖为“禁用”。"
+                                          + Environment.NewLine + "注意：此设置不会影响成员的独立配对。");
 
             if (isOwner || groupDto.GroupUserInfo.IsModerator())
             {
                 ImGui.Separator();
 
                 var changedToIcon = invitesEnabled ? FontAwesomeIcon.LockOpen : FontAwesomeIcon.Lock;
-                if (UiSharedService.IconTextButton(changedToIcon, invitesEnabled ? "Lock Syncshell" : "Unlock Syncshell"))
+                if (UiSharedService.IconTextButton(changedToIcon, invitesEnabled ? "锁定同步贝" : "解锁同步贝"))
                 {
                     ImGui.CloseCurrentPopup();
                     var groupPerm = groupDto.GroupPermissions;
                     groupPerm.SetDisableInvites(invitesEnabled);
                     _ = ApiController.GroupChangeGroupPermissionState(new GroupPermissionDto(groupDto.Group, groupPerm));
                 }
-                UiSharedService.AttachToolTip("Change Syncshell joining permissions" + Environment.NewLine + "Syncshell is currently " + (invitesEnabled ? "open" : "closed") + " for people to join");
+                UiSharedService.AttachToolTip("修改同步贝加入权限" + Environment.NewLine + "同步贝当前状态为：" + (invitesEnabled ? "可加入" : "不可加入"));
 
                 if (isOwner)
                 {
-                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Passport, "Change Password"))
+                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Passport, "修改密码"))
                     {
                         ImGui.CloseCurrentPopup();
                         _isPasswordValid = true;
                         _showModalChangePassword = true;
                     }
-                    UiSharedService.AttachToolTip("Change Syncshell Password");
+                    UiSharedService.AttachToolTip("修改同步贝密码");
                 }
 
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Broom, "Clear Syncshell") && UiSharedService.CtrlPressed())
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Broom, "清理同步贝") && UiSharedService.CtrlPressed())
                 {
                     ImGui.CloseCurrentPopup();
                     _ = ApiController.GroupClear(groupDto);
                 }
-                UiSharedService.AttachToolTip("Hold CTRL and click to clear this Syncshell." + Environment.NewLine + "WARNING: this action is irreversible." + Environment.NewLine
-                    + "Clearing the Syncshell will remove all not pinned users from it.");
+                UiSharedService.AttachToolTip("按住CTRL键并单击来清理此同步贝。" + Environment.NewLine + "警告：此操作不可逆。" + Environment.NewLine
+                    + "清理同步贝将从中删除所有临时用户。");
 
-                var groupSoundsText = soundsDisabled ? "Enable syncshell sound sync" : "Disable syncshell sound sync";
+                var groupSoundsText = soundsDisabled ? "启用同步贝声音同步" : "禁用同步贝声音同步";
                 if (UiSharedService.IconTextButton(soundsIcon, groupSoundsText))
                 {
                     ImGui.CloseCurrentPopup();
@@ -684,11 +684,11 @@ internal sealed class GroupPanel
                     perm.SetDisableSounds(!perm.IsDisableSounds());
                     _ = ApiController.GroupChangeGroupPermissionState(new(groupDto.Group, perm));
                 }
-                UiSharedService.AttachToolTip("Sets syncshell-wide allowance for sound synchronization for all users." + Environment.NewLine
-                    + "Note: users that are individually paired with others in the syncshell will ignore this setting." + Environment.NewLine
-                    + "Note: if the synchronization is enabled, users can individually override this setting to disabled.");
+                UiSharedService.AttachToolTip("为此同步贝中所有成员设置声音同步开关。" + Environment.NewLine
+                    + "注意：同步贝中单独配对的成员之间将忽略此设置。" + Environment.NewLine
+                    + "注意：如果启用了同步，成员可以单独将此设置覆盖为禁用。");
 
-                var groupAnimText = animDisabled ? "Enable syncshell animations sync" : "Disable syncshell animations sync";
+                var groupAnimText = animDisabled ? "启用同步贝情感动作同步" : "禁用同步贝情感动作同步";
                 if (UiSharedService.IconTextButton(animIcon, groupAnimText))
                 {
                     ImGui.CloseCurrentPopup();
@@ -696,11 +696,11 @@ internal sealed class GroupPanel
                     perm.SetDisableAnimations(!perm.IsDisableAnimations());
                     _ = ApiController.GroupChangeGroupPermissionState(new(groupDto.Group, perm));
                 }
-                UiSharedService.AttachToolTip("Sets syncshell-wide allowance for animations synchronization for all users." + Environment.NewLine
-                    + "Note: users that are individually paired with others in the syncshell will ignore this setting." + Environment.NewLine
-                    + "Note: if the synchronization is enabled, users can individually override this setting to disabled.");
+                UiSharedService.AttachToolTip("为此同步贝中所有成员设置情感动作同步开关。" + Environment.NewLine
+                    + "注意：同步贝中单独配对的成员之间将忽略此设置。" + Environment.NewLine
+                    + "注意：如果启用了同步，成员可以单独将此设置覆盖为禁用。");
 
-                var groupVFXText = vfxDisabled ? "Enable syncshell VFX sync" : "Disable syncshell VFX sync";
+                var groupVFXText = vfxDisabled ? "启用同步贝视觉效果同步" : "禁用同步贝视觉效果同步";
                 if (UiSharedService.IconTextButton(vfxIcon, groupVFXText))
                 {
                     ImGui.CloseCurrentPopup();
@@ -708,26 +708,26 @@ internal sealed class GroupPanel
                     perm.SetDisableVFX(!perm.IsDisableVFX());
                     _ = ApiController.GroupChangeGroupPermissionState(new(groupDto.Group, perm));
                 }
-                UiSharedService.AttachToolTip("Sets syncshell-wide allowance for VFX synchronization for all users." + Environment.NewLine
-                    + "Note: users that are individually paired with others in the syncshell will ignore this setting." + Environment.NewLine
-                    + "Note: if the synchronization is enabled, users can individually override this setting to disabled.");
+                UiSharedService.AttachToolTip("为此同步贝中所有成员设置视觉效果（VFX）同步开关。" + Environment.NewLine
+                    + "注意：同步贝中单独配对的成员之间将忽略此设置。" + Environment.NewLine
+                    + "注意：如果启用了同步，成员可以单独将此设置覆盖为禁用。");
 
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Envelope, "Single one-time invite"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Envelope, "一次性邀请"))
                 {
                     ImGui.CloseCurrentPopup();
                     ImGui.SetClipboardText(ApiController.GroupCreateTempInvite(groupDto, 1).Result.FirstOrDefault() ?? string.Empty);
                 }
-                UiSharedService.AttachToolTip("Creates a single-use password for joining the syncshell which is valid for 24h and copies it to the clipboard.");
+                UiSharedService.AttachToolTip("创建一个加入同步贝的一次性密码，有效期为24小时，并将其复制到剪贴板。");
 
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.MailBulk, "Bulk one-time invites"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.MailBulk, "批量一次性邀请"))
                 {
                     ImGui.CloseCurrentPopup();
                     _showModalBulkOneTimeInvites = true;
                     _bulkOneTimeInvites.Clear();
                 }
-                UiSharedService.AttachToolTip("Opens a dialog to create up to 100 single-use passwords for joining the syncshell.");
+                UiSharedService.AttachToolTip("打开一个对话框，创建最多100个用于加入同步贝的一次性密码。");
 
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Ban, "Manage Banlist"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Ban, "管理黑名单"))
                 {
                     ImGui.CloseCurrentPopup();
                     _showModalBanList = true;
@@ -736,12 +736,12 @@ internal sealed class GroupPanel
 
                 if (isOwner)
                 {
-                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Delete Syncshell") && UiSharedService.CtrlPressed() && UiSharedService.ShiftPressed())
+                    if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "删除同步贝") && UiSharedService.CtrlPressed() && UiSharedService.ShiftPressed())
                     {
                         ImGui.CloseCurrentPopup();
                         _ = ApiController.GroupDelete(groupDto);
                     }
-                    UiSharedService.AttachToolTip("Hold CTRL and Shift and click to delete this Syncshell." + Environment.NewLine + "WARNING: this action is irreversible.");
+                    UiSharedService.AttachToolTip("按住CTRL+Shift键并单击来删除此同步贝。" + Environment.NewLine + "警告：此操作不可逆。");
                 }
             }
 

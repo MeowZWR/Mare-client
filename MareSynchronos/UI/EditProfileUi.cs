@@ -60,7 +60,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
 
     public override void Draw()
     {
-        _uiSharedService.BigText("Current Profile (as saved on server)");
+        _uiSharedService.BigText("当前档案（保存在服务器上）");
 
         var profile = _mareProfileManager.GetMareProfile(new UserData(_apiController.UID));
 
@@ -114,25 +114,25 @@ public class EditProfileUi : WindowMediatorSubscriberBase
 
         var nsfw = profile.IsNSFW;
         ImGui.BeginDisabled();
-        ImGui.Checkbox("Is NSFW", ref nsfw);
+        ImGui.Checkbox("是NSFW", ref nsfw);
         ImGui.EndDisabled();
 
         ImGui.Separator();
-        _uiSharedService.BigText("Notes and Rules for Profiles");
+        _uiSharedService.BigText("档案的备注和规则");
 
-        ImGui.TextWrapped($"- All users that are paired and unpaused with you will be able to see your profile picture and description.{Environment.NewLine}" +
-            $"- Other users have the possibility to report your profile for breaking the rules.{Environment.NewLine}" +
-            $"- !!! AVOID: anything as profile image that can be considered highly illegal or obscene (bestiality, anything that could be considered a sexual act with a minor (that includes Lalafells), etc.){Environment.NewLine}" +
-            $"- !!! AVOID: slurs of any kind in the description that can be considered highly offensive{Environment.NewLine}" +
-            $"- In case of valid reports from other users this can lead to disabling your profile forever or terminating your Mare account indefinitely.{Environment.NewLine}" +
-            $"- Judgement of your profile validity from reports through staff is not up to debate and the decisions to disable your profile/account permanent.{Environment.NewLine}" +
-            $"- If your profile picture or profile description could be considered NSFW, enable the toggle below.");
+        ImGui.TextWrapped($"- 所有与您配对且未暂停的用户都将能够看到您的个人档案图片和描述。{Environment.NewLine}" +
+            $"- 其他用户可以举报您的个人档案违反规则。{Environment.NewLine}" +
+            $"- !!!禁止：任何可被视为高度非法或淫秽的个人档案图片（兽交、任何可被视为与未成年人（包括拉拉菲尔族）发生性行为的东西等）。{Environment.NewLine}" +
+            $"- !!!避免：描述中任何可能被视为高度冒犯性的侮辱词汇。{Environment.NewLine}" +
+            $"- 如果其他用户提供的举报有效，这可能会导致您的个人档案被永久禁用或您的月海帐户被无限期终止。{Environment.NewLine}" +
+            $"- 插件的管理团队作出的关于您的个人档案是否合规的结论是不可争议的，并且永久禁用您的个人档案/帐户的决定也是不可争议的。{Environment.NewLine}" +
+            $"- 如果您的个人档案图片或个人档案描述应该被视为NSFW，请启用下面的开关。");
         ImGui.Separator();
-        _uiSharedService.BigText("Profile Settings");
+        _uiSharedService.BigText("档案设置");
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.FileUpload, "Upload new profile picture"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.FileUpload, "上传新的个人档案图片"))
         {
-            _fileDialogManager.OpenFileDialog("Select new Profile picture", ".png", (success, file) =>
+            _fileDialogManager.OpenFileDialog("选择新的个人档案图片", ".png", (success, file) =>
             {
                 if (!success) return;
                 Task.Run(async () =>
@@ -159,29 +159,29 @@ public class EditProfileUi : WindowMediatorSubscriberBase
                 });
             });
         }
-        UiSharedService.AttachToolTip("Select and upload a new profile picture");
+        UiSharedService.AttachToolTip("选择并上传新的个人档案图片");
         ImGui.SameLine();
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Clear uploaded profile picture"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "清除上传的个人档案图片"))
         {
             _ = _apiController.UserSetProfile(new UserProfileDto(new UserData(_apiController.UID), false, null, "", null));
         }
-        UiSharedService.AttachToolTip("Clear your currently uploaded profile picture");
+        UiSharedService.AttachToolTip("清除您当前上传的个人档案图片");
         if (_showFileDialogError)
         {
-            UiSharedService.ColorTextWrapped("The profile picture must be a PNG file with a maximum height and width of 256px and 250KiB size", ImGuiColors.DalamudRed);
+            UiSharedService.ColorTextWrapped("个人档案图片必须是PNG文件，最大高度和宽度为256px，大小不超过250KiB", ImGuiColors.DalamudRed);
         }
         var isNsfw = profile.IsNSFW;
-        if (ImGui.Checkbox("Profile is NSFW", ref isNsfw))
+        if (ImGui.Checkbox("档案是NSFW", ref isNsfw))
         {
             _ = _apiController.UserSetProfile(new UserProfileDto(new UserData(_apiController.UID), false, isNsfw, null, null));
         }
-        UiSharedService.DrawHelpText("If your profile description or image can be considered NSFW, toggle this to ON");
+        UiSharedService.DrawHelpText("如果您的个人档案描述或图片为NSFW，请勾选");
         var widthTextBox = 400;
         var posX = ImGui.GetCursorPosX();
-        ImGui.TextUnformatted($"Description {_descriptionText.Length}/1500");
+        ImGui.TextUnformatted($"描述 {_descriptionText.Length}/1500");
         ImGui.SetCursorPosX(posX);
         ImGuiHelpers.ScaledRelativeSameLine(widthTextBox, ImGui.GetStyle().ItemSpacing.X);
-        ImGui.TextUnformatted("Preview (approximate)");
+        ImGui.TextUnformatted("预览（大致）");
         ImGui.PushFont(_uiBuilder.GetGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.ChnAxis120)).ImFont);
         ImGui.InputTextMultiline("##description", ref _descriptionText, 1500, ImGuiHelpers.ScaledVector2(widthTextBox, 200));
         ImGui.PopFont();
@@ -210,17 +210,17 @@ public class EditProfileUi : WindowMediatorSubscriberBase
         ImGui.EndChildFrame();
         ImGui.PopFont();
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Save, "Save Description"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Save, "保存描述"))
         {
             _ = _apiController.UserSetProfile(new UserProfileDto(new UserData(_apiController.UID), false, null, null, _descriptionText));
         }
-        UiSharedService.AttachToolTip("Sets your profile description text");
+        UiSharedService.AttachToolTip("设置档案描述文本");
         ImGui.SameLine();
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Clear Description"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "清除描述"))
         {
             _ = _apiController.UserSetProfile(new UserProfileDto(new UserData(_apiController.UID), false, null, null, ""));
         }
-        UiSharedService.AttachToolTip("Clears your profile description text");
+        UiSharedService.AttachToolTip("清除档案件描述文本");
     }
 
     protected override void Dispose(bool disposing)

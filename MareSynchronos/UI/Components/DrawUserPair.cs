@@ -17,7 +17,7 @@ public class DrawUserPair : DrawPairBase
 
     public DrawUserPair(string id, Pair entry, UidDisplayHandler displayHandler, ApiController apiController, SelectGroupForPairUi selectGroupForPairUi) : base(id, entry, apiController, displayHandler)
     {
-        if (_pair.UserPair == null) throw new ArgumentException("Pair must be UserPair", nameof(entry));
+        if (_pair.UserPair == null) throw new ArgumentException("配对必须是用户", nameof(entry));
         _pair = entry;
         _selectGroupForPairUi = selectGroupForPairUi;
     }
@@ -34,19 +34,19 @@ public class DrawUserPair : DrawPairBase
         if (!(_pair.UserPair!.OwnPermissions.IsPaired() && _pair.UserPair!.OtherPermissions.IsPaired()))
         {
             connectionIcon = FontAwesomeIcon.ArrowUp;
-            connectionText = _pair.UserData.AliasOrUID + " has not added you back";
+            connectionText = _pair.UserData.AliasOrUID + " 还未回加您";
             connectionColor = ImGuiColors.DalamudRed;
         }
         else if (_pair.UserPair!.OwnPermissions.IsPaused() || _pair.UserPair!.OtherPermissions.IsPaused())
         {
             connectionIcon = FontAwesomeIcon.PauseCircle;
-            connectionText = "Pairing status with " + _pair.UserData.AliasOrUID + " is paused";
+            connectionText = "与 " + _pair.UserData.AliasOrUID + " 的配对已暂停";
             connectionColor = ImGuiColors.DalamudYellow;
         }
         else
         {
             connectionIcon = FontAwesomeIcon.Check;
-            connectionText = "You are paired with " + _pair.UserData.AliasOrUID;
+            connectionText = "您已与此用户配对：" + _pair.UserData.AliasOrUID;
             connectionColor = ImGuiColors.ParsedGreen;
         }
 
@@ -62,7 +62,7 @@ public class DrawUserPair : DrawPairBase
             ImGui.PushFont(UiBuilder.IconFont);
             UiSharedService.ColorText(FontAwesomeIcon.Eye.ToIconString(), ImGuiColors.ParsedGreen);
             ImGui.PopFont();
-            UiSharedService.AttachToolTip(_pair.UserData.AliasOrUID + " is visible: " + _pair.PlayerName!);
+            UiSharedService.AttachToolTip(_pair.UserData.AliasOrUID + " 可见：" + _pair.PlayerName!);
         }
     }
 
@@ -98,17 +98,17 @@ public class DrawUserPair : DrawPairBase
                 {
                     ImGui.BeginTooltip();
 
-                    ImGui.Text("Individual User permissions");
+                    ImGui.Text("独立用户权限");
 
                     if (individualSoundsDisabled)
                     {
-                        var userSoundsText = "Sound sync disabled with " + _pair.UserData.AliasOrUID;
+                        var userSoundsText = "与 " + _pair.UserData.AliasOrUID + " 的声音同步已禁用";
                         UiSharedService.FontText(FontAwesomeIcon.VolumeOff.ToIconString(), UiBuilder.IconFont);
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                         ImGui.Text(userSoundsText);
                         ImGui.NewLine();
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
-                        ImGui.Text("You: " + (_pair.UserPair!.OwnPermissions.IsDisableSounds() ? "Disabled" : "Enabled") + ", They: " + (_pair.UserPair!.OtherPermissions.IsDisableSounds() ? "Disabled" : "Enabled"));
+                        ImGui.Text("你：" + (_pair.UserPair!.OwnPermissions.IsDisableSounds() ? "禁用" : "启用") + "，他们：" + (_pair.UserPair!.OtherPermissions.IsDisableSounds() ? "禁用" : "启用"));
                     }
 
                     if (individualAnimDisabled)
@@ -119,7 +119,7 @@ public class DrawUserPair : DrawPairBase
                         ImGui.Text(userAnimText);
                         ImGui.NewLine();
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
-                        ImGui.Text("You: " + (_pair.UserPair!.OwnPermissions.IsDisableAnimations() ? "Disabled" : "Enabled") + ", They: " + (_pair.UserPair!.OtherPermissions.IsDisableAnimations() ? "Disabled" : "Enabled"));
+                        ImGui.Text("你：" + (_pair.UserPair!.OwnPermissions.IsDisableAnimations() ? "禁用" : "启用") + "，他们：" + (_pair.UserPair!.OtherPermissions.IsDisableAnimations() ? "禁用" : "启用"));
                     }
 
                     if (individualVFXDisabled)
@@ -130,7 +130,7 @@ public class DrawUserPair : DrawPairBase
                         ImGui.Text(userVFXText);
                         ImGui.NewLine();
                         ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
-                        ImGui.Text("You: " + (_pair.UserPair!.OwnPermissions.IsDisableVFX() ? "Disabled" : "Enabled") + ", They: " + (_pair.UserPair!.OtherPermissions.IsDisableVFX() ? "Disabled" : "Enabled"));
+                        ImGui.Text("你：" + (_pair.UserPair!.OwnPermissions.IsDisableVFX() ? "禁用" : "启用") + "，他们：" + (_pair.UserPair!.OtherPermissions.IsDisableVFX() ? "禁用" : "启用"));
                     }
 
                     ImGui.EndTooltip();
@@ -179,37 +179,37 @@ public class DrawUserPair : DrawPairBase
     {
         if (!entry.IsPaused)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Open Profile"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "打开档案"))
             {
                 _displayHandler.OpenProfile(entry);
                 ImGui.CloseCurrentPopup();
             }
-            UiSharedService.AttachToolTip("Opens the profile for this user in a new window");
+            UiSharedService.AttachToolTip("在新窗口中打开此用户的档案");
         }
         if (entry.IsVisible)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.Sync, "Reload last data"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.Sync, "重新加载最后一次数据"))
             {
                 entry.ApplyLastReceivedData(forced: true);
                 ImGui.CloseCurrentPopup();
             }
-            UiSharedService.AttachToolTip("This reapplies the last received character data to this character");
+            UiSharedService.AttachToolTip("这将上次接收的角色数据重新应用到此角色");
         }
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "Cycle pause state"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "循环暂停状态"))
         {
             _ = _apiController.CyclePause(entry.UserData);
             ImGui.CloseCurrentPopup();
         }
         var entryUID = entry.UserData.AliasOrUID;
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Folder, "Pair Groups"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Folder, "配对组"))
         {
             _selectGroupForPairUi.Open(entry);
         }
-        UiSharedService.AttachToolTip("Choose pair groups for " + entryUID);
+        UiSharedService.AttachToolTip("为 " + entryUID + " 选择配对组");
 
         var isDisableSounds = entry.UserPair!.OwnPermissions.IsDisableSounds();
-        string disableSoundsText = isDisableSounds ? "Enable sound sync" : "Disable sound sync";
+        string disableSoundsText = isDisableSounds ? "启用声音同步" : "禁用声音同步";
         var disableSoundsIcon = isDisableSounds ? FontAwesomeIcon.VolumeUp : FontAwesomeIcon.VolumeMute;
         if (UiSharedService.IconTextButton(disableSoundsIcon, disableSoundsText))
         {
@@ -219,7 +219,7 @@ public class DrawUserPair : DrawPairBase
         }
 
         var isDisableAnims = entry.UserPair!.OwnPermissions.IsDisableAnimations();
-        string disableAnimsText = isDisableAnims ? "Enable animation sync" : "Disable animation sync";
+        string disableAnimsText = isDisableAnims ? "启用情感动作同步" : "禁用情感动作同步";
         var disableAnimsIcon = isDisableAnims ? FontAwesomeIcon.Running : FontAwesomeIcon.Stop;
         if (UiSharedService.IconTextButton(disableAnimsIcon, disableAnimsText))
         {
@@ -229,7 +229,7 @@ public class DrawUserPair : DrawPairBase
         }
 
         var isDisableVFX = entry.UserPair!.OwnPermissions.IsDisableVFX();
-        string disableVFXText = isDisableVFX ? "Enable VFX sync" : "Disable VFX sync";
+        string disableVFXText = isDisableVFX ? "启用视觉特效VFX同步" : "禁用视觉特效VFX同步";
         var disableVFXIcon = isDisableVFX ? FontAwesomeIcon.Sun : FontAwesomeIcon.Circle;
         if (UiSharedService.IconTextButton(disableVFXIcon, disableVFXText))
         {
@@ -238,21 +238,21 @@ public class DrawUserPair : DrawPairBase
             _ = _apiController.UserSetPairPermissions(new UserPermissionsDto(entry.UserData, permissions));
         }
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Unpair Permanently") && UiSharedService.CtrlPressed())
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "永久取消配对") && UiSharedService.CtrlPressed())
         {
             _ = _apiController.UserRemovePair(new(entry.UserData));
         }
-        UiSharedService.AttachToolTip("Hold CTRL and click to unpair permanently from " + entryUID);
+        UiSharedService.AttachToolTip("按住CTRL键单击以永久取消与 " + entryUID + " 的配对。");
 
         ImGui.Separator();
         if (!entry.IsPaused)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "举报月海档案"))
             {
                 ImGui.CloseCurrentPopup();
                 _showModalReport = true;
             }
-            UiSharedService.AttachToolTip("Report this users Mare Profile to the administrative team");
+            UiSharedService.AttachToolTip("向管理团队举报此用户的月海档案文件");
         }
     }
 }

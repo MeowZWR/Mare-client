@@ -18,7 +18,7 @@ public class GposeUi : WindowMediatorSubscriberBase
 
     public GposeUi(ILogger<GposeUi> logger, MareCharaFileManager mareCharaFileManager,
         DalamudUtilService dalamudUtil, FileDialogManager fileDialogManager, MareConfigService configService,
-        MareMediator mediator) : base(logger, mediator, "Mare Synchronos Gpose Import UI###MareSynchronosGposeUI")
+        MareMediator mediator) : base(logger, mediator, "月海同步器集体动作导入窗口###MareSynchronosGposeUI")
     {
         _mareCharaFileManager = mareCharaFileManager;
         _dalamudUtil = dalamudUtil;
@@ -41,9 +41,9 @@ public class GposeUi : WindowMediatorSubscriberBase
 
         if (!_mareCharaFileManager.CurrentlyWorking)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.FolderOpen, "Load MCDF"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.FolderOpen, "加载MCDF"))
             {
-                _fileDialogManager.OpenFileDialog("Pick MCDF file", ".mcdf", (success, paths) =>
+                _fileDialogManager.OpenFileDialog("选择MCDF文件", ".mcdf", (success, paths) =>
                 {
                     if (!success) return;
                     if (paths.FirstOrDefault() is not string path) return;
@@ -54,24 +54,24 @@ public class GposeUi : WindowMediatorSubscriberBase
                     Task.Run(() => _mareCharaFileManager.LoadMareCharaFile(path));
                 }, 1, Directory.Exists(_configService.Current.ExportFolder) ? _configService.Current.ExportFolder : null);
             }
-            UiSharedService.AttachToolTip("Applies it to the currently selected GPose actor");
+            UiSharedService.AttachToolTip("将其应用于当前选定的集体动作角色");
             if (_mareCharaFileManager.LoadedCharaFile != null)
             {
-                UiSharedService.TextWrapped("Loaded file: " + _mareCharaFileManager.LoadedCharaFile.FilePath);
-                UiSharedService.TextWrapped("File Description: " + _mareCharaFileManager.LoadedCharaFile.CharaFileData.Description);
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Check, "Apply loaded MCDF"))
+                UiSharedService.TextWrapped("已加载文件：" + _mareCharaFileManager.LoadedCharaFile.FilePath);
+                UiSharedService.TextWrapped("文件描述：" + _mareCharaFileManager.LoadedCharaFile.CharaFileData.Description);
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Check, "应用加载的MCDF"))
                 {
                     Task.Run(async () => await _mareCharaFileManager.ApplyMareCharaFile(_dalamudUtil.GposeTargetGameObject).ConfigureAwait(false));
                 }
-                UiSharedService.AttachToolTip("Applies it to the currently selected GPose actor");
-                UiSharedService.ColorTextWrapped("Warning: redrawing or changing the character will revert all applied mods.", ImGuiColors.DalamudYellow);
+                UiSharedService.AttachToolTip("将其应用于当前选定的集体动作角色");
+                UiSharedService.ColorTextWrapped("警告：重新绘制或更改角色将恢复所有应用的mod。", ImGuiColors.DalamudYellow);
             }
         }
         else
         {
-            UiSharedService.ColorTextWrapped("Loading Character...", ImGuiColors.DalamudYellow);
+            UiSharedService.ColorTextWrapped("正在加载角色...", ImGuiColors.DalamudYellow);
         }
-        UiSharedService.TextWrapped("Hint: You can disable the automatic loading of this window in the Mare settings and open it manually with /mare gpose");
+        UiSharedService.TextWrapped("提示：您可以在插件设置中禁用此窗口在进入集体动作时自动打开，使用命令“/Mare gpose”可以手动打开此窗口。");
     }
 
     private void EndGpose()

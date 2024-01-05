@@ -29,7 +29,7 @@ public class IntroUi : WindowMediatorSubscriberBase
     private string[]? _tosParagraphs;
 
     public IntroUi(ILogger<IntroUi> logger, UiSharedService uiShared, MareConfigService configService,
-        PeriodicFileScanner fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator) : base(logger, mareMediator, "Mare Synchronos Setup")
+        PeriodicFileScanner fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator) : base(logger, mareMediator, "Mare Synchronos/月海同步器设置")
     {
         _uiShared = uiShared;
         _configService = configService;
@@ -61,19 +61,19 @@ public class IntroUi : WindowMediatorSubscriberBase
         if (!_configService.Current.AcceptedAgreement && !_readFirstPage)
         {
             if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
-            ImGui.TextUnformatted("Welcome to Mare Synchronos");
+            ImGui.TextUnformatted("欢迎使用月海同步器。");
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
             ImGui.Separator();
-            UiSharedService.TextWrapped("Mare Synchronos is a plugin that will replicate your full current character state including all Penumbra mods to other paired Mare Synchronos users. " +
-                              "Note that you will have to have Penumbra as well as Glamourer installed to use this plugin.");
-            UiSharedService.TextWrapped("We will have to setup a few things first before you can start using this plugin. Click on next to continue.");
+            UiSharedService.TextWrapped("月海同步器可以将您的角色当前的完整状态同步给与您配对的其他用户，包括Penumbra的模组。" +
+                              "请注意，您必须安装Penumbra和Glamourer才能使用此插件。");
+            UiSharedService.TextWrapped("在您开始使用这个插件之前，我们必须先设置一些东西。单击“下一步”继续。");
 
-            UiSharedService.ColorTextWrapped("Note: Any modifications you have applied through anything but Penumbra cannot be shared and your character state on other clients " +
-                                 "might look broken because of this or others players mods might not apply on your end altogether. " +
-                                 "If you want to use this plugin you will have to move your mods to Penumbra.", ImGuiColors.DalamudYellow);
+            UiSharedService.ColorTextWrapped("注意：除了Penumbra，您通过其他任何方式应用的修改都不能被同步。" +
+                                 "受此影响，您在他人客户端上的角色状态可能会因此看起来不完整。" +
+                                 "如果打算继续使用此插件，您需要将所有模组都转移到Penumbra。", ImGuiColors.DalamudYellow);
             if (!_uiShared.DrawOtherPluginState()) return;
             ImGui.Separator();
-            if (ImGui.Button("Next##toAgreement"))
+            if (ImGui.Button("下一步##toAgreement"))
             {
                 _readFirstPage = true;
                 _timeoutTask = Task.Run(async () =>
@@ -143,29 +143,29 @@ public class IntroUi : WindowMediatorSubscriberBase
                      || !Directory.Exists(_configService.Current.CacheFolder)))
         {
             if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
-            ImGui.TextUnformatted("File Storage Setup");
+            ImGui.TextUnformatted("文件存储设置");
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
             ImGui.Separator();
 
             if (!_uiShared.HasValidPenumbraModPath)
             {
-                UiSharedService.ColorTextWrapped("You do not have a valid Penumbra path set. Open Penumbra and set up a valid path for the mod directory.", ImGuiColors.DalamudRed);
+                UiSharedService.ColorTextWrapped("未检测到有效的Penumbra模组路径，请在Penumbra里为模组目录设置一个有效的路径。", ImGuiColors.DalamudRed);
             }
             else
             {
-                UiSharedService.TextWrapped("To not unnecessary download files already present on your computer, Mare Synchronos will have to scan your Penumbra mod directory. " +
-                                     "Additionally, a local storage folder must be set where Mare Synchronos will download other character files to. " +
-                                     "Once the storage folder is set and the scan complete, this page will automatically forward to registration at a service.");
-                UiSharedService.TextWrapped("Note: The initial scan, depending on the amount of mods you have, might take a while. Please wait until it is completed.");
-                UiSharedService.ColorTextWrapped("Warning: once past this step you should not delete the FileCache.csv of Mare Synchronos in the Plugin Configurations folder of Dalamud. " +
-                                          "Otherwise on the next launch a full re-scan of the file cache database will be initiated.", ImGuiColors.DalamudYellow);
-                UiSharedService.ColorTextWrapped("Warning: if the scan is hanging and does nothing for a long time, chances are high your Penumbra folder is not set up properly.", ImGuiColors.DalamudYellow);
+                UiSharedService.TextWrapped("为了避免重复下载您已经拥有的模组文件，月海同步器需要扫描您的Penumbra模组目录。" +
+                                     "另外，您还必须设置一个本地存储文件夹，月海同步器会将其他被同步角色的文件下载到其中。" +
+                                     "设置好存储文件夹并扫描完成后，此页面将自动跳转到服务注册。");
+                UiSharedService.TextWrapped("注意：初次扫描需要一些时间，时间长短取决于您拥有的模组数量。请耐心等待扫描完成。");
+                UiSharedService.ColorTextWrapped("警告：一旦完成此步骤，您应该避免删除卫月目录下MareSynchronos配置文件夹中的FileCache.csv文件。" +
+                                          "否则，在下次启动时，将重新扫描全部的模组文件来重建文件缓存数据库。", ImGuiColors.DalamudYellow);
+                UiSharedService.ColorTextWrapped("警告：如果扫描卡住并且长时间没有进展，那么很可能是因为您的Penumbra文件路径设置不正确。", ImGuiColors.DalamudYellow);
                 _uiShared.DrawCacheDirectorySetting();
             }
 
             if (!_fileCacheManager.IsScanRunning && !string.IsNullOrEmpty(_configService.Current.CacheFolder) && _uiShared.HasValidPenumbraModPath && Directory.Exists(_configService.Current.CacheFolder))
             {
-                if (ImGui.Button("Start Scan##startScan"))
+                if (ImGui.Button("开始扫描##startScan"))
                 {
                     _fileCacheManager.InvokeScan(forced: true);
                 }
@@ -177,40 +177,40 @@ public class IntroUi : WindowMediatorSubscriberBase
             if (!Util.IsLinux())
             {
                 var useFileCompactor = _configService.Current.UseCompactor;
-                if (ImGui.Checkbox("Use File Compactor", ref useFileCompactor))
+                if (ImGui.Checkbox("使用文件系统压缩", ref useFileCompactor))
                 {
                     _configService.Current.UseCompactor = useFileCompactor;
                     _configService.Save();
                 }
-                UiSharedService.ColorTextWrapped("The File Compactor can save a tremendeous amount of space on the hard disk for downloads through Mare. It will incur a minor CPU penalty on download but can speed up " +
-                    "loading of other characters. It is recommended to keep it enabled. You can change this setting later anytime in the Mare settings.", ImGuiColors.DalamudYellow);
+                UiSharedService.ColorTextWrapped("文件系统压缩可以大幅减少月海同步器下载的文件在硬盘上占用的空间。它会在下载时产生较小的CPU负荷，但可以加快其他角色的加载速度。" +
+                    "建议保持启用状态。您也可以稍后在设置中随时更改此选项。", ImGuiColors.DalamudYellow);
             }
         }
         else if (!_uiShared.ApiController.ServerAlive)
         {
             if (_uiShared.UidFontBuilt) ImGui.PushFont(_uiShared.UidFont);
-            ImGui.TextUnformatted("Service Registration");
+            ImGui.TextUnformatted("服务注册");
             if (_uiShared.UidFontBuilt) ImGui.PopFont();
             ImGui.Separator();
-            UiSharedService.TextWrapped("To be able to use Mare Synchronos you will have to register an account.");
-            UiSharedService.TextWrapped("For the official Mare Synchronos Servers the account creation will be handled on the official Mare Synchronos Discord. Due to security risks for the server, there is no way to handle this senisibly otherwise.");
-            UiSharedService.TextWrapped("If you want to register at the main server \"" + WebAPI.ApiController.MainServer + "\" join the Discord and follow the instructions as described in #mare-commands.");
+            UiSharedService.TextWrapped("您必须先注册一个账户，才能使用月海同步器。");
+            UiSharedService.TextWrapped("为了安全，注册账户需要您去国服的月海同步器官方服务器Discord上进行处理，没有其他方式（也许您也可以问问亲爱的獭爹）。");
+            UiSharedService.TextWrapped("如果您想在国服主服务器上进行注册 \"" + WebAPI.ApiController.MainServer + "\" 请加入Discord并在“月海命令”频道中按照指引通过服务机器人进行注册。");
 
-            if (ImGui.Button("Join the Mare Synchronos Discord"))
+            if (ImGui.Button("加入国服月海同步器Discord"))
             {
-                Util.OpenLink("https://discord.gg/mpNdkrTRjW");
+                Util.OpenLink("https://discord.gg/3dwsdrShST");
             }
 
-            UiSharedService.TextWrapped("For all other non official services you will have to contact the appropriate service provider how to obtain a secret key.");
+            UiSharedService.TextWrapped("如果您要加入非官方服务器，请联系该服务提供商来获取密钥。");
 
             ImGui.Separator();
 
-            UiSharedService.TextWrapped("Once you have received a secret key you can connect to the service using the tools provided below.");
+            UiSharedService.TextWrapped("一旦您获取到密钥，您就可以使用下面提供的工具来连接该服务。");
 
             _ = _uiShared.DrawServiceSelection(selectOnChange: true);
 
-            var text = "Enter Secret Key";
-            var buttonText = "Save";
+            var text = "输入密钥";
+            var buttonText = "保存";
             var buttonWidth = _secretKey.Length != 64 ? 0 : ImGuiHelpers.GetButtonSize(buttonText).X + ImGui.GetStyle().ItemSpacing.X;
             var textSize = ImGui.CalcTextSize(text);
             ImGui.AlignTextToFramePadding();
@@ -220,7 +220,7 @@ public class IntroUi : WindowMediatorSubscriberBase
             ImGui.InputText("", ref _secretKey, 64);
             if (_secretKey.Length > 0 && _secretKey.Length != 64)
             {
-                UiSharedService.ColorTextWrapped("Your secret key must be exactly 64 characters long. Don't enter your Lodestone auth here.", ImGuiColors.DalamudRed);
+                UiSharedService.ColorTextWrapped("您的密钥长度为64个字符，请不要在此输入石之家的验证码。", ImGuiColors.DalamudRed);
             }
             else if (_secretKey.Length == 64)
             {

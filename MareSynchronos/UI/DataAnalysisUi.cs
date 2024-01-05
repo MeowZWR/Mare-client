@@ -31,7 +31,7 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
     private bool _modalOpen = false;
     private bool _showModal = false;
 
-    public DataAnalysisUi(ILogger<DataAnalysisUi> logger, MareMediator mediator, CharacterAnalyzer characterAnalyzer, IpcManager ipcManager) : base(logger, mediator, "Mare Character Data Analysis")
+    public DataAnalysisUi(ILogger<DataAnalysisUi> logger, MareMediator mediator, CharacterAnalyzer characterAnalyzer, IpcManager ipcManager) : base(logger, mediator, "月海角色数据分析")
     {
         _characterAnalyzer = characterAnalyzer;
         _ipcManager = ipcManager;
@@ -119,16 +119,16 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
             _hasUpdate = false;
         }
 
-        UiSharedService.TextWrapped("This window shows you all files and their sizes that are currently in use through your character and associated entities in Mare");
+        UiSharedService.TextWrapped("此窗口显示你的角色正在使用的并且与月海相关的所有文件及文件大小。");
 
         if (_cachedAnalysis!.Count == 0) return;
 
         bool isAnalyzing = _characterAnalyzer.IsAnalysisRunning;
         if (isAnalyzing)
         {
-            UiSharedService.ColorTextWrapped($"Analyzing {_characterAnalyzer.CurrentFile}/{_characterAnalyzer.TotalFiles}",
+            UiSharedService.ColorTextWrapped($"分析中 {_characterAnalyzer.CurrentFile}/{_characterAnalyzer.TotalFiles}",
                 ImGuiColors.DalamudYellow);
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.StopCircle, "Cancel analysis"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.StopCircle, "取消分析"))
             {
                 _characterAnalyzer.CancelAnalyze();
             }
@@ -137,16 +137,16 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
         {
             if (_cachedAnalysis!.Any(c => c.Value.Any(f => !f.Value.IsComputed)))
             {
-                UiSharedService.ColorTextWrapped("Some entries in the analysis have file size not determined yet, press the button below to analyze your current data",
+                UiSharedService.ColorTextWrapped("分析中的某些条目的文件大小尚未确定，请按下面的按钮分析您的当前数据",
                     ImGuiColors.DalamudYellow);
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "Start analysis (missing entries)"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "开始分析（缺少条目）"))
                 {
                     _ = _characterAnalyzer.ComputeAnalysis(false);
                 }
             }
             else
             {
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "Start analysis (recalculate all entries)"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "开始分析（重新计算所有条目）"))
                 {
                     _ = _characterAnalyzer.ComputeAnalysis(false, true);
                 }
@@ -155,7 +155,7 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
 
         ImGui.Separator();
 
-        ImGui.TextUnformatted("Total files:");
+        ImGui.TextUnformatted("文件总数：");
         ImGui.SameLine();
         ImGui.TextUnformatted(_cachedAnalysis!.Values.Sum(c => c.Values.Count).ToString());
         ImGui.SameLine();
@@ -168,14 +168,14 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
             string text = "";
             var groupedfiles = _cachedAnalysis.Values.SelectMany(f => f.Values).GroupBy(f => f.FileType, StringComparer.Ordinal);
             text = string.Join(Environment.NewLine, groupedfiles.OrderBy(f => f.Key, StringComparer.Ordinal)
-                .Select(f => f.Key + ": " + f.Count() + " files, size: " + UiSharedService.ByteToString(f.Sum(v => v.OriginalSize))
-                + ", compressed: " + UiSharedService.ByteToString(f.Sum(v => v.CompressedSize))));
+                .Select(f => f.Key + "：" + f.Count() + "个文件，大小为： " + UiSharedService.ByteToString(f.Sum(v => v.OriginalSize))
+                + ", 已压缩： " + UiSharedService.ByteToString(f.Sum(v => v.CompressedSize))));
             ImGui.SetTooltip(text);
         }
-        ImGui.TextUnformatted("Total size (uncompressed):");
+        ImGui.TextUnformatted("总大小（未压缩）：");
         ImGui.SameLine();
         ImGui.TextUnformatted(UiSharedService.ByteToString(_cachedAnalysis!.Sum(c => c.Value.Sum(c => c.Value.OriginalSize))));
-        ImGui.TextUnformatted("Total size (compressed):");
+        ImGui.TextUnformatted("总大小（已压缩）：");
         ImGui.SameLine();
         ImGui.TextUnformatted(UiSharedService.ByteToString(_cachedAnalysis!.Sum(c => c.Value.Sum(c => c.Value.CompressedSize))));
 
@@ -192,7 +192,7 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
             {
                 var groupedfiles = kvp.Value.Select(v => v.Value).GroupBy(f => f.FileType, StringComparer.Ordinal).OrderBy(k => k.Key, StringComparer.Ordinal).ToList();
 
-                ImGui.TextUnformatted("Files for " + kvp.Key);
+                ImGui.TextUnformatted(kvp.Key+ " 文件总数：");
                 ImGui.SameLine();
                 ImGui.TextUnformatted(kvp.Value.Count.ToString());
                 ImGui.SameLine();
@@ -205,14 +205,14 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
                 {
                     string text = "";
                     text = string.Join(Environment.NewLine, groupedfiles
-                        .Select(f => f.Key + ": " + f.Count() + " files, size: " + UiSharedService.ByteToString(f.Sum(v => v.OriginalSize))
-                        + ", compressed: " + UiSharedService.ByteToString(f.Sum(v => v.CompressedSize))));
+                        .Select(f => f.Key + ": " + f.Count() + "个文件，大小：" + UiSharedService.ByteToString(f.Sum(v => v.OriginalSize))
+                        + "，已压缩：" + UiSharedService.ByteToString(f.Sum(v => v.CompressedSize))));
                     ImGui.SetTooltip(text);
                 }
-                ImGui.TextUnformatted($"{kvp.Key} size (uncompressed):");
+                ImGui.TextUnformatted($"{kvp.Key} 大小（未压缩）：");
                 ImGui.SameLine();
                 ImGui.TextUnformatted(UiSharedService.ByteToString(kvp.Value.Sum(c => c.Value.OriginalSize)));
-                ImGui.TextUnformatted($"{kvp.Key} size (compressed):");
+                ImGui.TextUnformatted($"{kvp.Key} 大小（已压缩）：");
                 ImGui.SameLine();
                 ImGui.TextUnformatted(UiSharedService.ByteToString(kvp.Value.Sum(c => c.Value.CompressedSize)));
 
@@ -254,31 +254,31 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
                         _texturesToConvert.Clear();
                     }
 
-                    ImGui.TextUnformatted($"{fileGroup.Key} files");
+                    ImGui.TextUnformatted($"{fileGroup.Key} 文件");
                     ImGui.SameLine();
                     ImGui.TextUnformatted(fileGroup.Count().ToString());
 
-                    ImGui.TextUnformatted($"{fileGroup.Key} files size (uncompressed):");
+                    ImGui.TextUnformatted($"{fileGroup.Key} 文件大小（未压缩）：");
                     ImGui.SameLine();
                     ImGui.TextUnformatted(UiSharedService.ByteToString(fileGroup.Sum(c => c.OriginalSize)));
 
-                    ImGui.TextUnformatted($"{fileGroup.Key} files size (compressed):");
+                    ImGui.TextUnformatted($"{fileGroup.Key} 文件大小（已压缩）：");
                     ImGui.SameLine();
                     ImGui.TextUnformatted(UiSharedService.ByteToString(fileGroup.Sum(c => c.CompressedSize)));
 
                     if (_selectedFileTypeTab == "tex")
                     {
-                        ImGui.Checkbox("Enable BC7 Conversion Mode", ref _enableBc7ConversionMode);
+                        ImGui.Checkbox("启用BC7格式转换模式", ref _enableBc7ConversionMode);
                         if (_enableBc7ConversionMode)
                         {
-                            UiSharedService.ColorText("WARNING BC7 CONVERSION:", ImGuiColors.DalamudYellow);
+                            UiSharedService.ColorText("警告BC7格式转换：", ImGuiColors.DalamudYellow);
                             ImGui.SameLine();
-                            UiSharedService.ColorText("Converting textures to BC7 is irreversible!", ImGuiColors.DalamudRed);
-                            UiSharedService.ColorTextWrapped("- Converting textures to BC7 will reduce their size (compressed and uncompressed) drastically. It is recommended to be used for large (4k+) textures." +
-                            Environment.NewLine + "- Some textures, especially ones utilizing colorsets, might not be suited for BC7 conversion and might produce visual artifacts." +
-                            Environment.NewLine + "- Before converting textures, make sure to have the original files of the mod you are converting so you can reimport it in case of issues." +
-                            Environment.NewLine + "- Conversion will convert all found texture duplicates (entries with more than 1 file path) automatically." +
-                            Environment.NewLine + "- Converting textures to BC7 is a very expensive operation and, depending on the amount of textures to convert, will take a while to complete."
+                            UiSharedService.ColorText("将纹理转换为BC7格式是不可逆转的！", ImGuiColors.DalamudRed);
+                            UiSharedService.ColorTextWrapped("- 将纹理转换为BC7格式将大幅减小它们的大小（已压缩和未压缩）。建议用于高分辨率（4k+）纹理。" +
+                            Environment.NewLine + "- 一些纹理，尤其是使用颜色集的纹理，可能不适合BC7格式的转换，可能产生色彩扭曲、细节损失、曝光失真。" +
+                            Environment.NewLine + "- 在转换纹理之前，请确保拥有正在转换的mod的原始文件，以便在出现问题后重新导入。" +
+                            Environment.NewLine + "- 转换将自动转换所有找到的纹理重复项（文件路径超过1个的条目）。" +
+                            Environment.NewLine + "- 将纹理转换为BC7格式是一项非常复杂的工作，根据要转换的纹理数量，需要一段时间才能完成。"
                                 , ImGuiColors.DalamudYellow);
                             if (_texturesToConvert.Count > 0 && UiSharedService.IconTextButton(FontAwesomeIcon.PlayCircle, "Start conversion of " + _texturesToConvert.Count + " texture(s)"))
                             {
@@ -298,33 +298,33 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
 
         ImGui.Separator();
 
-        ImGui.Text("Selected file:");
+        ImGui.Text("选中的文件：");
         ImGui.SameLine();
         UiSharedService.ColorText(_selectedHash, ImGuiColors.DalamudYellow);
 
         if (_cachedAnalysis[_selectedObjectTab].ContainsKey(_selectedHash))
         {
             var filePaths = _cachedAnalysis[_selectedObjectTab][_selectedHash].FilePaths;
-            ImGui.TextUnformatted("Local file path:");
+            ImGui.TextUnformatted("本地文件路径：");
             ImGui.SameLine();
             UiSharedService.TextWrapped(filePaths[0]);
             if (filePaths.Count > 1)
             {
                 ImGui.SameLine();
-                ImGui.TextUnformatted($"(and {filePaths.Count - 1} more)");
+                ImGui.TextUnformatted($"(另外还有 {filePaths.Count - 1} 个)");
                 ImGui.SameLine();
                 UiSharedService.FontText(FontAwesomeIcon.InfoCircle.ToIconString(), UiBuilder.IconFont);
                 UiSharedService.AttachToolTip(string.Join(Environment.NewLine, filePaths.Skip(1)));
             }
 
             var gamepaths = _cachedAnalysis[_selectedObjectTab][_selectedHash].GamePaths;
-            ImGui.TextUnformatted("Used by game path:");
+            ImGui.TextUnformatted("游戏使用路径：");
             ImGui.SameLine();
             UiSharedService.TextWrapped(gamepaths[0]);
             if (gamepaths.Count > 1)
             {
                 ImGui.SameLine();
-                ImGui.TextUnformatted($"(and {gamepaths.Count - 1} more)");
+                ImGui.TextUnformatted($"(另外还有 {gamepaths.Count - 1} 个)");
                 ImGui.SameLine();
                 UiSharedService.FontText(FontAwesomeIcon.InfoCircle.ToIconString(), UiBuilder.IconFont);
                 UiSharedService.AttachToolTip(string.Join(Environment.NewLine, gamepaths.Skip(1)));
@@ -337,15 +337,15 @@ public class DataAnalysisUi : WindowMediatorSubscriberBase
         using var table = ImRaii.Table("Analysis", fileGroup.Key == "tex" ? (_enableBc7ConversionMode ? 7 : 6) : 5, ImGuiTableFlags.Sortable | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
 new Vector2(0, 300));
         if (!table.Success) return;
-        ImGui.TableSetupColumn("Hash");
-        ImGui.TableSetupColumn("Filepaths");
-        ImGui.TableSetupColumn("Gamepaths");
-        ImGui.TableSetupColumn("Original Size");
-        ImGui.TableSetupColumn("Compressed Size");
+        ImGui.TableSetupColumn("哈希");
+        ImGui.TableSetupColumn("文件路径");
+        ImGui.TableSetupColumn("游戏路径");
+        ImGui.TableSetupColumn("原始大小");
+        ImGui.TableSetupColumn("压缩大小");
         if (fileGroup.Key == "tex")
         {
-            ImGui.TableSetupColumn("Format");
-            if (_enableBc7ConversionMode) ImGui.TableSetupColumn("Convert to BC7");
+            ImGui.TableSetupColumn("格式");
+            if (_enableBc7ConversionMode) ImGui.TableSetupColumn("转换为BC7格式");
         }
         ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableHeadersRow();

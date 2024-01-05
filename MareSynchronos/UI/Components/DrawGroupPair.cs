@@ -34,20 +34,20 @@ public class DrawGroupPair : DrawPairBase
         var entryIsPinned = _fullInfoDto.GroupPairStatusInfo.IsPinned();
         var presenceIcon = _pair.IsVisible ? FontAwesomeIcon.Eye : (_pair.IsOnline ? FontAwesomeIcon.Link : FontAwesomeIcon.Unlink);
         var presenceColor = (_pair.IsOnline || _pair.IsVisible) ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
-        var presenceText = entryUID + " is offline";
+        var presenceText = entryUID + " 已离线";
 
         ImGui.SetCursorPosY(textPosY);
         if (_pair.IsPaused)
         {
             presenceIcon = FontAwesomeIcon.Question;
             presenceColor = ImGuiColors.DalamudGrey;
-            presenceText = entryUID + " online status is unknown (paused)";
+            presenceText = entryUID + " 联机状态未知（已暂停）";
 
             ImGui.PushFont(UiBuilder.IconFont);
             UiSharedService.ColorText(FontAwesomeIcon.PauseCircle.ToIconString(), ImGuiColors.DalamudYellow);
             ImGui.PopFont();
 
-            UiSharedService.AttachToolTip("Pairing status with " + entryUID + " is paused");
+            UiSharedService.AttachToolTip("与 " + entryUID + " 的配对已暂停");
         }
         else
         {
@@ -55,10 +55,10 @@ public class DrawGroupPair : DrawPairBase
             UiSharedService.ColorText(FontAwesomeIcon.Check.ToIconString(), ImGuiColors.ParsedGreen);
             ImGui.PopFont();
 
-            UiSharedService.AttachToolTip("You are paired with " + entryUID);
+            UiSharedService.AttachToolTip("您与 " + entryUID + "已配对");
         }
 
-        if (_pair.IsOnline && !_pair.IsVisible) presenceText = entryUID + " is online";
+        if (_pair.IsOnline && !_pair.IsVisible) presenceText = entryUID + " 上线了";
         else if (_pair.IsOnline && _pair.IsVisible) presenceText = entryUID + " is visible: " + _pair.PlayerName;
 
         ImGui.SameLine();
@@ -75,7 +75,7 @@ public class DrawGroupPair : DrawPairBase
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.TextUnformatted(FontAwesomeIcon.Crown.ToIconString());
             ImGui.PopFont();
-            UiSharedService.AttachToolTip("User is owner of this Syncshell");
+            UiSharedService.AttachToolTip("用户是此同步贝的所有者");
         }
         else if (entryIsMod)
         {
@@ -84,7 +84,7 @@ public class DrawGroupPair : DrawPairBase
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.TextUnformatted(FontAwesomeIcon.UserShield.ToIconString());
             ImGui.PopFont();
-            UiSharedService.AttachToolTip("User is moderator of this Syncshell");
+            UiSharedService.AttachToolTip("用户是此同步贝的主持人");
         }
         else if (entryIsPinned)
         {
@@ -93,7 +93,7 @@ public class DrawGroupPair : DrawPairBase
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.TextUnformatted(FontAwesomeIcon.Thumbtack.ToIconString());
             ImGui.PopFont();
-            UiSharedService.AttachToolTip("User is pinned in this Syncshell");
+            UiSharedService.AttachToolTip("用户是此同步贝的固定成员");
         }
     }
 
@@ -140,39 +140,39 @@ public class DrawGroupPair : DrawPairBase
             {
                 ImGui.BeginTooltip();
 
-                ImGui.Text("Individual User permissions");
+                ImGui.Text("独立用户权限");
 
                 if (individualSoundsDisabled)
                 {
-                    var userSoundsText = "Sound sync disabled with " + _pair.UserData.AliasOrUID;
+                    var userSoundsText = "与 " + _pair.UserData.AliasOrUID + " 的声音同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.VolumeOff.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userSoundsText);
                     ImGui.NewLine();
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
-                    ImGui.Text("You: " + (_pair.UserPair!.OwnPermissions.IsDisableSounds() ? "Disabled" : "Enabled") + ", They: " + (_pair.UserPair!.OtherPermissions.IsDisableSounds() ? "Disabled" : "Enabled"));
+                    ImGui.Text("你：" + (_pair.UserPair!.OwnPermissions.IsDisableSounds() ? "禁用" : "启用") + "，他们：" + (_pair.UserPair!.OtherPermissions.IsDisableSounds() ? "禁用" : "启用"));
                 }
 
                 if (individualAnimDisabled)
                 {
-                    var userAnimText = "Animation sync disabled with " + _pair.UserData.AliasOrUID;
+                    var userAnimText = "与 " + _pair.UserData.AliasOrUID + " 的情感动作同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.Stop.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userAnimText);
                     ImGui.NewLine();
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
-                    ImGui.Text("You: " + (_pair.UserPair!.OwnPermissions.IsDisableAnimations() ? "Disabled" : "Enabled") + ", They: " + (_pair.UserPair!.OtherPermissions.IsDisableAnimations() ? "Disabled" : "Enabled"));
+                    ImGui.Text("你：" + (_pair.UserPair!.OwnPermissions.IsDisableAnimations() ? "禁用" : "启用") + "，他们：" + (_pair.UserPair!.OtherPermissions.IsDisableAnimations() ? "禁用" : "启用"));
                 }
 
                 if (individualVFXDisabled)
                 {
-                    var userVFXText = "VFX sync disabled with " + _pair.UserData.AliasOrUID;
+                    var userVFXText = "与 " + _pair.UserData.AliasOrUID + " 的视觉特效同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.Circle.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userVFXText);
                     ImGui.NewLine();
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
-                    ImGui.Text("You: " + (_pair.UserPair!.OwnPermissions.IsDisableVFX() ? "Disabled" : "Enabled") + ", They: " + (_pair.UserPair!.OtherPermissions.IsDisableVFX() ? "Disabled" : "Enabled"));
+                    ImGui.Text("你：" + (_pair.UserPair!.OwnPermissions.IsDisableVFX() ? "禁用" : "启用") + "，他们：" + (_pair.UserPair!.OtherPermissions.IsDisableVFX() ? "禁用" : "启用"));
                 }
 
                 ImGui.EndTooltip();
@@ -187,11 +187,11 @@ public class DrawGroupPair : DrawPairBase
             {
                 ImGui.BeginTooltip();
 
-                ImGui.Text("Sycnshell User permissions");
+                ImGui.Text("同步贝用户权限");
 
                 if (soundsDisabled)
                 {
-                    var userSoundsText = "Sound sync disabled by " + _pair.UserData.AliasOrUID;
+                    var userSoundsText = "在 " + _pair.UserData.AliasOrUID + " 的声音同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.VolumeOff.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userSoundsText);
@@ -199,7 +199,7 @@ public class DrawGroupPair : DrawPairBase
 
                 if (animDisabled)
                 {
-                    var userAnimText = "Animation sync disabled by " + _pair.UserData.AliasOrUID;
+                    var userAnimText = "在 " + _pair.UserData.AliasOrUID + " 的情感动作同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.Stop.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userAnimText);
@@ -207,7 +207,7 @@ public class DrawGroupPair : DrawPairBase
 
                 if (vfxDisabled)
                 {
-                    var userVFXText = "VFX sync disabled by " + _pair.UserData.AliasOrUID;
+                    var userVFXText = "在 " + _pair.UserData.AliasOrUID + " 的视觉特效同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.Circle.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userVFXText);
@@ -226,7 +226,7 @@ public class DrawGroupPair : DrawPairBase
             {
                 _ = _apiController.UserAddPair(new UserDto(new(_pair.UserData.UID)));
             }
-            UiSharedService.AttachToolTip("Pair with " + entryUID + " individually");
+            UiSharedService.AttachToolTip("与 " + entryUID + " 进行独立配对");
             ImGui.SameLine();
         }
 
@@ -244,88 +244,88 @@ public class DrawGroupPair : DrawPairBase
         {
             if ((userIsModerator || userIsOwner) && !(entryIsMod || entryIsOwner))
             {
-                var pinText = entryIsPinned ? "Unpin user" : "Pin user";
+                var pinText = entryIsPinned ? "临时成员" : "固定成员";
                 if (UiSharedService.IconTextButton(FontAwesomeIcon.Thumbtack, pinText))
                 {
                     ImGui.CloseCurrentPopup();
                     var userInfo = _fullInfoDto.GroupPairStatusInfo ^ GroupUserInfo.IsPinned;
                     _ = _apiController.GroupSetUserInfo(new GroupPairUserInfoDto(_fullInfoDto.Group, _fullInfoDto.User, userInfo));
                 }
-                UiSharedService.AttachToolTip("Pin this user to the Syncshell. Pinned users will not be deleted in case of a manually initiated Syncshell clean");
+                UiSharedService.AttachToolTip("将此成员固定到同步贝。在手动启动同步贝清理的情况下，固定成员将不会被清除");
 
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "Remove user") && UiSharedService.CtrlPressed())
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "移除成员") && UiSharedService.CtrlPressed())
                 {
                     ImGui.CloseCurrentPopup();
                     _ = _apiController.GroupRemoveUser(_fullInfoDto);
                 }
 
-                UiSharedService.AttachToolTip("Hold CTRL and click to remove user " + (_pair.UserData.AliasOrUID) + " from Syncshell");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.UserSlash, "Ban User"))
+                UiSharedService.AttachToolTip("按住CTRL键并单击以从同步贝 " + (_pair.UserData.AliasOrUID) + " 删除该用户");
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.UserSlash, "禁止用户"))
                 {
                     _showModalBanUser = true;
                     ImGui.CloseCurrentPopup();
                 }
-                UiSharedService.AttachToolTip("Ban user from this Syncshell");
+                UiSharedService.AttachToolTip("禁止用户进入此同步贝");
             }
 
             if (userIsOwner)
             {
-                string modText = entryIsMod ? "Demod user" : "Mod user";
+                string modText = entryIsMod ? "降级成员" : "提升成员";
                 if (UiSharedService.IconTextButton(FontAwesomeIcon.UserShield, modText) && UiSharedService.CtrlPressed())
                 {
                     ImGui.CloseCurrentPopup();
                     var userInfo = _fullInfoDto.GroupPairStatusInfo ^ GroupUserInfo.IsModerator;
                     _ = _apiController.GroupSetUserInfo(new GroupPairUserInfoDto(_fullInfoDto.Group, _fullInfoDto.User, userInfo));
                 }
-                UiSharedService.AttachToolTip("Hold CTRL to change the moderator status for " + (_fullInfoDto.UserAliasOrUID) + Environment.NewLine +
-                    "Moderators can kick, ban/unban, pin/unpin users and clear the Syncshell.");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.Crown, "Transfer Ownership") && UiSharedService.CtrlPressed() && UiSharedService.ShiftPressed())
+                UiSharedService.AttachToolTip("按住CTRL键可更改主持人权限给 " + (_fullInfoDto.UserAliasOrUID) + Environment.NewLine +
+                    "主持人可以踢出、禁止/取消禁止、固定/取消固定成员和清理同步贝。");
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.Crown, "移交所有权") && UiSharedService.CtrlPressed() && UiSharedService.ShiftPressed())
                 {
                     ImGui.CloseCurrentPopup();
                     _ = _apiController.GroupChangeOwnership(_fullInfoDto);
                 }
-                UiSharedService.AttachToolTip("Hold CTRL and SHIFT and click to transfer ownership of this Syncshell to " + (_fullInfoDto.UserAliasOrUID) + Environment.NewLine + "WARNING: This action is irreversible.");
+                UiSharedService.AttachToolTip("按住CTRL+SHIFT键并单击，将此同步贝的所有权转移给 " + (_fullInfoDto.UserAliasOrUID) + Environment.NewLine + "警告：此操作不可逆。");
             }
 
             ImGui.Separator();
             if (!_pair.IsPaused)
             {
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "Open Profile"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "打开档案"))
                 {
                     _displayHandler.OpenProfile(_pair);
                     ImGui.CloseCurrentPopup();
                 }
-                UiSharedService.AttachToolTip("Opens the profile for this user in a new window");
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "Report Mare Profile"))
+                UiSharedService.AttachToolTip("在新窗口中打开此用户的档案文件");
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "举报月海档案"))
                 {
                     ImGui.CloseCurrentPopup();
                     _showModalReport = true;
                 }
-                UiSharedService.AttachToolTip("Report this users Mare Profile to the administrative team");
+                UiSharedService.AttachToolTip("向管理团队举报此用户的月海档案");
             }
             ImGui.EndPopup();
         }
 
         if (_showModalBanUser && !_banUserPopupOpen)
         {
-            ImGui.OpenPopup("Ban User");
+            ImGui.OpenPopup("禁止用户");
             _banUserPopupOpen = true;
         }
 
         if (!_showModalBanUser) _banUserPopupOpen = false;
 
-        if (ImGui.BeginPopupModal("Ban User", ref _showModalBanUser, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("禁止用户", ref _showModalBanUser, UiSharedService.PopupWindowFlags))
         {
-            UiSharedService.TextWrapped("User " + (_fullInfoDto.UserAliasOrUID) + " will be banned and removed from this Syncshell.");
-            ImGui.InputTextWithHint("##banreason", "Ban Reason", ref _banReason, 255);
-            if (ImGui.Button("Ban User"))
+            UiSharedService.TextWrapped("用户 " + (_fullInfoDto.UserAliasOrUID) + " 将被移出同步贝并禁止进入。");
+            ImGui.InputTextWithHint("##banreason", "禁止原因", ref _banReason, 255);
+            if (ImGui.Button("禁止用户"))
             {
                 ImGui.CloseCurrentPopup();
                 var reason = _banReason;
                 _ = _apiController.GroupBanUser(new GroupPairDto(_group.Group, _fullInfoDto.User), reason);
                 _banReason = string.Empty;
             }
-            UiSharedService.TextWrapped("The reason will be displayed in the banlist. The current server-side alias if present (Vanity ID) will automatically be attached to the reason.");
+            UiSharedService.TextWrapped("原因将显示在公告栏中。当前服务器端别名如果存在（自定义ID）将自动附加到原因。");
             UiSharedService.SetScaledWindowSize(300);
             ImGui.EndPopup();
         }

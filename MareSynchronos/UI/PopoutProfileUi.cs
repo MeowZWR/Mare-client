@@ -122,7 +122,7 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
             {
                 UiSharedService.ColorText(note, ImGuiColors.DalamudGrey);
             }
-            string status = _pair.IsVisible ? "Visible" : (_pair.IsOnline ? "Online" : "Offline");
+            string status = _pair.IsVisible ? "可见" : (_pair.IsOnline ? "在线" : "离线");
             UiSharedService.ColorText(status, (_pair.IsVisible || _pair.IsOnline) ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed);
             if (_pair.IsVisible)
             {
@@ -131,21 +131,21 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
             }
             if (_pair.UserPair != null)
             {
-                ImGui.TextUnformatted("Directly paired");
+                ImGui.TextUnformatted("直接配对");
                 if (_pair.UserPair.OwnPermissions.IsPaused())
                 {
                     ImGui.SameLine();
-                    UiSharedService.ColorText("You: paused", ImGuiColors.DalamudYellow);
+                    UiSharedService.ColorText("你：已暂停", ImGuiColors.DalamudYellow);
                 }
                 if (_pair.UserPair.OtherPermissions.IsPaused())
                 {
                     ImGui.SameLine();
-                    UiSharedService.ColorText("They: paused", ImGuiColors.DalamudYellow);
+                    UiSharedService.ColorText("他们：已暂停", ImGuiColors.DalamudYellow);
                 }
             }
             if (_pair.GroupPair.Any())
             {
-                ImGui.TextUnformatted("Paired through Syncshells:");
+                ImGui.TextUnformatted("通过同步贝配对：");
                 foreach (var groupPair in _pair.GroupPair.Select(k => k.Key))
                 {
                     var groupNote = _serverManager.GetNoteForGid(groupPair.GID);
@@ -163,9 +163,9 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
             while (textSize.Y > remaining && descText.Contains(' '))
             {
                 descText = descText.Substring(0, descText.LastIndexOf(' ')).TrimEnd();
-                textSize = ImGui.CalcTextSize(descText + $"...{Environment.NewLine}[Open Full Profile for complete description]", 256f * ImGuiHelpers.GlobalScale);
+                textSize = ImGui.CalcTextSize(descText + $"...{Environment.NewLine}[打开档案窗口以获取完整描述]", 256f * ImGuiHelpers.GlobalScale);
             }
-            UiSharedService.TextWrapped(trimmed ? descText + $"...{Environment.NewLine}[Open Full Profile for complete description]" : mareProfile.Description);
+            UiSharedService.TextWrapped(trimmed ? descText + $"...{Environment.NewLine}[打开档案窗口以获取完整描述]" : mareProfile.Description);
             ImGui.PopFont();
 
             var padding = ImGui.GetStyle().WindowPadding.X / 2;
@@ -187,7 +187,7 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during draw tooltip");
+            _logger.LogWarning(ex, "绘制提示时出错");
         }
     }
 }
