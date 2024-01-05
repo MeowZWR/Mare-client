@@ -150,8 +150,8 @@ public class DrawUserPair : DrawPairBase
                 _ = _apiController.UserSetPairPermissions(new(_pair.UserData, perm));
             }
             UiSharedService.AttachToolTip(!_pair.UserPair!.OwnPermissions.IsPaused()
-                ? "Pause pairing with " + entryUID
-                : "Resume pairing with " + entryUID);
+                ? "暂停与这个用户的配对：" + entryUID
+                : "恢复与这个用户的配对：" + entryUID);
         }
 
         // Flyout Menu

@@ -188,7 +188,7 @@ public class DownloadUi : WindowMediatorSubscriberBase
                     try
                     {
                         if (_uiShared.UidFontBuilt && _configService.Current.ShowUploadingBigText) ImGui.PushFont(_uiShared.UidFont);
-                        var uploadText = "Uploading";
+                        var uploadText = "正在上传";
 
                         var textSize = ImGui.CalcTextSize(uploadText);
 

@@ -59,7 +59,7 @@ public class SelectGroupForPairUi
             var childHeight = tags.Count != 0 ? tags.Count * 25 : 1;
             var childSize = new Vector2(0, childHeight > 100 ? 100 : childHeight) * ImGuiHelpers.GlobalScale;
 
-            UiSharedService.FontText($"Select the groups you want {name} to be in.", UiBuilder.DefaultFont);
+            UiSharedService.FontText($"选择你想要将 {name} 移到的组。", UiBuilder.DefaultFont);
             if (ImGui.BeginChild(name + "##listGroups", childSize))
             {
                 foreach (var tag in tags)
@@ -70,13 +70,13 @@ public class SelectGroupForPairUi
             }
 
             ImGui.Separator();
-            UiSharedService.FontText($"Create a new group for {name}.", UiBuilder.DefaultFont);
+            UiSharedService.FontText($"为 {name} 创建一个新的组。", UiBuilder.DefaultFont);
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus))
             {
                 HandleAddTag();
             }
             ImGui.SameLine();
-            ImGui.InputTextWithHint("##category_name", "New Group", ref _tagNameToAdd, 40);
+            ImGui.InputTextWithHint("##category_name", "组名称", ref _tagNameToAdd, 40);
             if (ImGui.IsKeyDown(ImGuiKey.Enter))
             {
                 HandleAddTag();

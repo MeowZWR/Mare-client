@@ -350,13 +350,13 @@ public class CompactUi : WindowMediatorSubscriberBase
                 _timeout.Start();
                 _buttonState = !_buttonState;
             }
-            UiSharedService.AttachToolTip($"Hold Control to {(button == FontAwesomeIcon.Play ? "resume" : "pause")} pairing with {users.Count} out of {userCount} displayed users.");
+            UiSharedService.AttachToolTip($"按住CTRL键来 {(button == FontAwesomeIcon.Play ? "继续" : "暂停")} 与 {users.Count} / {userCount} 个已显示用户的配对。");
         }
         else
         {
             var availableAt = (15000 - _timeout.ElapsedMilliseconds) / 1000;
             ImGuiComponents.DisabledButton(button);
-            UiSharedService.AttachToolTip($"Next execution is available at {availableAt} seconds");
+            UiSharedService.AttachToolTip($"下一次运行在 {availableAt} 秒");
         }
     }
 
