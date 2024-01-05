@@ -46,4 +46,8 @@ public class MareConfig : IMareConfiguration
     public bool UseAlternativeFileUpload { get; set; } = false;
     public int Version { get; set; } = 1;
     public NotificationLocation WarningNotification { get; set; } = NotificationLocation.Both;
+    public bool UseManualProxy { get; set; }
+    public string ProxyProtocol { get; set; } = "socks5";
+    public string ProxyHost { get; set; } = "127.0.0.1";
+    public int ProxyPort { get; set; } = 1080;
 }

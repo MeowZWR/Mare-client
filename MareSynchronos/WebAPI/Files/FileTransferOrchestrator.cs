@@ -4,6 +4,7 @@ using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.WebAPI.Files.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Reflection;
@@ -22,6 +23,20 @@ public class FileTransferOrchestrator : DisposableMediatorSubscriberBase
 
     public FileTransferOrchestrator(ILogger<FileTransferOrchestrator> logger, MareConfigService mareConfig, ServerConfigurationManager serverManager, MareMediator mediator) : base(logger, mediator)
     {
+        if (mareConfig.Current.UseManualProxy)
+        {
+            var proxyProtocol = mareConfig.Current.ProxyProtocol;
+            var proxyHost = mareConfig.Current.ProxyHost;
+            var proxyPort = mareConfig.Current.ProxyPort;
+            var proxy = new WebProxy($"{proxyProtocol}://{proxyHost}:{proxyPort}", true);
+            WebRequest.DefaultWebProxy = proxy;
+            HttpClient.DefaultProxy = proxy;
+        } else
+        {
+            var proxy = new WebProxy();
+            WebRequest.DefaultWebProxy = proxy;
+            HttpClient.DefaultProxy = proxy;
+        }
         _mareConfig = mareConfig;
         _serverManager = serverManager;
         _httpClient = new();

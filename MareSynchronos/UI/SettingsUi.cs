@@ -21,6 +21,7 @@ using MareSynchronos.WebAPI.Files.Models;
 using MareSynchronos.PlayerData.Handlers;
 using System.Collections.Concurrent;
 using MareSynchronos.FileCache;
+using System.Net;
 
 namespace MareSynchronos.UI;
 
@@ -45,6 +46,14 @@ public class SettingsUi : WindowMediatorSubscriberBase
     private bool _readClearCache = false;
     private bool _readExport = false;
     private bool _wasOpen = false;
+
+    private bool useManualProxy;
+    private string proxyProtocol = string.Empty;
+    private string proxyHost = string.Empty;
+    private int proxyPort;
+    private int proxyProtocolIndex;
+    private string proxyStatus = "Unknown";
+    private readonly string[] proxyProtocols = new string[] { "http", "https", "socks5" };
 
     public SettingsUi(ILogger<SettingsUi> logger,
         UiSharedService uiShared, MareConfigService configService,
@@ -130,10 +139,103 @@ public class SettingsUi : WindowMediatorSubscriberBase
         }
     }
 
+    public void LoadProxyConfig()
+    {
+
+        this.useManualProxy = _configService.Current.UseManualProxy;
+        this.proxyProtocol = _configService.Current.ProxyProtocol;
+        this.proxyHost = _configService.Current.ProxyHost;
+        this.proxyPort = _configService.Current.ProxyPort;
+        this.proxyProtocolIndex = Array.IndexOf(this.proxyProtocols, this.proxyProtocol);
+        if (this.proxyProtocolIndex == -1)
+            this.proxyProtocolIndex = 0;
+    }
     private void DrawCurrentTransfers()
     {
         _lastTab = "Transfers";
-        UiSharedService.FontText("传输设置", _uiShared.UidFont);
+        UiSharedService.FontText("代理设置", _uiShared.UidFont);
+        LoadProxyConfig();
+        ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudRed, "设置 Mare 所使用的网络代理,会影响到文件同步的连接,保存后重启插件生效");
+        if (ImGui.Checkbox("手动配置代理", ref this.useManualProxy))
+        {
+            _configService.Current.UseManualProxy = this.useManualProxy;
+            _configService.Save();
+        }
+        if (this.useManualProxy)
+        {
+            ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudGrey, "在更改下方选项时，请确保你知道你在做什么，否则不要随便更改。");
+            ImGui.Text("协议");
+            ImGui.SameLine();
+            if (ImGui.Combo("##proxyProtocol", ref this.proxyProtocolIndex, this.proxyProtocols, this.proxyProtocols.Length))
+            {
+                this.proxyProtocol = this.proxyProtocols[this.proxyProtocolIndex];
+                _configService.Current.ProxyProtocol = this.proxyProtocol;
+                _configService.Save();
+            }
+            ImGui.Text("地址");
+            ImGui.SameLine();
+            if (ImGui.InputText("##proxyHost", ref this.proxyHost, 100))
+            {
+                _configService.Current.ProxyHost = this.proxyHost;
+                _configService.Save();
+            }
+            ImGui.Text("端口");
+            ImGui.SameLine();
+            if (ImGui.InputInt("##proxyPort", ref this.proxyPort))
+            {
+                _configService.Current.ProxyPort = this.proxyPort;
+                _configService.Save();
+            }
+        }
+
+        if (ImGui.Button("测试GitHub连接"))
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    this.proxyStatus = "测试中";
+                    var handler = new HttpClientHandler();
+                    if (this.useManualProxy)
+                    {
+                        handler.UseProxy = true;
+                        handler.Proxy = new WebProxy($"{this.proxyProtocol}://{this.proxyHost}:{this.proxyPort}", true);
+                    }
+                    else
+                    {
+                        handler.UseProxy = false;
+                    }
+                    var httpClient = new HttpClient(handler);
+                    httpClient.Timeout = TimeSpan.FromSeconds(3);
+                    _ = await httpClient.GetStringAsync("https://raw.githubusercontent.com/ottercorp/dalamud-distrib/main/version");
+                    this.proxyStatus = "有效";
+                }
+                catch (Exception)
+                {
+                    this.proxyStatus = "无效";
+                }
+            });
+        }
+
+        var proxyStatusColor = ImGuiColors.DalamudWhite;
+        switch (this.proxyStatus)
+        {
+            case "测试中":
+                proxyStatusColor = ImGuiColors.DalamudYellow;
+                break;
+            case "有效":
+                proxyStatusColor = ImGuiColors.ParsedGreen;
+                break;
+            case "无效":
+                proxyStatusColor = ImGuiColors.DalamudRed;
+                break;
+            default: break;
+        }
+
+        ImGui.TextColored(proxyStatusColor, $"代理测试结果: {this.proxyStatus}");
+
+        ImGui.Separator();
+        UiSharedService.FontText("Transfer Settings", _uiShared.UidFont);
 
         int maxParallelDownloads = _configService.Current.ParallelDownloads;
         bool useAlternativeUpload = _configService.Current.UseAlternativeFileUpload;
