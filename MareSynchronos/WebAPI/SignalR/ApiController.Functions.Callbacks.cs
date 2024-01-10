@@ -87,11 +87,11 @@ public partial class ApiController
         switch (messageSeverity)
         {
             case MessageSeverity.Error:
-                Mediator.Publish(new NotificationMessage("Warning from " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Error, 7500));
+                Mediator.Publish(new NotificationMessage("警告来自 " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Error, 7500));
                 break;
 
             case MessageSeverity.Warning:
-                Mediator.Publish(new NotificationMessage("Warning from " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Warning, 7500));
+                Mediator.Publish(new NotificationMessage("警告来自 " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Warning, 7500));
                 break;
 
             case MessageSeverity.Information:
@@ -100,7 +100,7 @@ public partial class ApiController
                     _doNotNotifyOnNextInfo = false;
                     break;
                 }
-                Mediator.Publish(new NotificationMessage("Info from " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Info, 5000));
+                Mediator.Publish(new NotificationMessage("警告来自 " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Info, 5000));
                 break;
         }
 

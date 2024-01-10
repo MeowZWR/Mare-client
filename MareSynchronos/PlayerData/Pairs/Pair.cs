@@ -55,18 +55,18 @@ public class Pair
 
         if (!IsPaused)
         {
-            args.AddCustomItem(new GameObjectContextMenuItem("[Mare] Open Profile", (a) =>
+            args.AddCustomItem(new GameObjectContextMenuItem("[月海] 打开档案", (a) =>
             {
                 _mediator.Publish(new ProfileOpenStandaloneMessage(this));
             }));
         }
-        args.AddCustomItem(new GameObjectContextMenuItem("[Mare] Reapply last data", (a) =>
+        args.AddCustomItem(new GameObjectContextMenuItem("[月海] 重新应用最后一次数据", (a) =>
         {
             ApplyLastReceivedData(true);
         }, false));
         if (UserPair != null && UserPair.OtherPermissions.IsPaired() && UserPair.OwnPermissions.IsPaired())
         {
-            args.AddCustomItem(new GameObjectContextMenuItem("[Mare] Cycle pause state", (a) =>
+            args.AddCustomItem(new GameObjectContextMenuItem("[月海] 循环暂停状态", (a) =>
             {
                 _mediator.Publish(new CyclePauseMessage(UserData));
             }, false));

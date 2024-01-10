@@ -179,12 +179,12 @@ public class DrawUserPair : DrawPairBase
     {
         if (!entry.IsPaused)
         {
-            if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "打开档案"))
+            if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "打开月海档案"))
             {
                 _displayHandler.OpenProfile(entry);
                 ImGui.CloseCurrentPopup();
             }
-            UiSharedService.AttachToolTip("在新窗口中打开此用户的档案");
+            UiSharedService.AttachToolTip("在新窗口中打开此用户的月海档案");
         }
         if (entry.IsVisible)
         {
@@ -252,7 +252,7 @@ public class DrawUserPair : DrawPairBase
                 ImGui.CloseCurrentPopup();
                 _showModalReport = true;
             }
-            UiSharedService.AttachToolTip("向管理团队举报此用户的月海档案文件");
+            UiSharedService.AttachToolTip("向管理团队举报此用户的月海档案");
         }
     }
 }
