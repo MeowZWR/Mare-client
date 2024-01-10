@@ -100,7 +100,7 @@ public partial class ApiController
                     _doNotNotifyOnNextInfo = false;
                     break;
                 }
-                Mediator.Publish(new NotificationMessage("警告来自 " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Info, 5000));
+                Mediator.Publish(new NotificationMessage("信息来自 " + _serverManager.CurrentServer!.ServerName, message, NotificationType.Info, 5000));
                 break;
         }
 
