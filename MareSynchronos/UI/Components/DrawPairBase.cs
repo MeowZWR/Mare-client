@@ -42,23 +42,23 @@ public abstract class DrawPairBase
 
         if (_showModalReport && !_reportPopupOpen)
         {
-            ImGui.OpenPopup("举报月海档案");
+            ImGui.OpenPopup("Report Profile");
             _reportPopupOpen = true;
         }
 
         if (!_showModalReport) _reportPopupOpen = false;
 
-        if (ImGui.BeginPopupModal("举报月海档案", ref _showModalReport, UiSharedService.PopupWindowFlags))
+        if (ImGui.BeginPopupModal("Report Profile", ref _showModalReport, UiSharedService.PopupWindowFlags))
         {
-            UiSharedService.TextWrapped("举报 " + (_pair.UserData.AliasOrUID) + " 的月海档案");
+            UiSharedService.TextWrapped("Report " + (_pair.UserData.AliasOrUID) + " Mare Profile");
             ImGui.InputTextMultiline("##reportReason", ref _reportReason, 500, new System.Numerics.Vector2(500 - ImGui.GetStyle().ItemSpacing.X * 2, 200));
-            UiSharedService.TextWrapped($"注意：发送举报后，有问题的档案可能会被全面禁用。{Environment.NewLine}" +
-                $"报告将发送给当前连接中为您提供月海同步器服务的团队。{Environment.NewLine}" +
-                $"报告将包括您的用户名和联系信息（Discord用户名）。{Environment.NewLine}" +
-                $"根据违规的严重程度，该用户的月海档案或帐户可能被永久禁用或禁止。");
-            UiSharedService.ColorTextWrapped("向管理团队发送垃圾信息或提供错误的举报将不被容忍，可能导致您的账户被永久停用。", ImGuiColors.DalamudRed);
+            UiSharedService.TextWrapped($"Note: Sending a report will disable the offending profile globally.{Environment.NewLine}" +
+                $"The report will be sent to the team of your currently connected Mare Synchronos Service.{Environment.NewLine}" +
+                $"The report will include your user and your contact info (Discord User).{Environment.NewLine}" +
+                $"Depending on the severity of the offense the users Mare profile or account can be permanently disabled or banned.");
+            UiSharedService.ColorTextWrapped("Report spam and wrong reports will not be tolerated and can lead to permanent account suspension.", ImGuiColors.DalamudRed);
             if (string.IsNullOrEmpty(_reportReason)) ImGui.BeginDisabled();
-            if (ImGui.Button("发送举报"))
+            if (ImGui.Button("Send Report"))
             {
                 ImGui.CloseCurrentPopup();
                 var reason = _reportReason;

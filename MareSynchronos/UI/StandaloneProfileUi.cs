@@ -25,7 +25,7 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
 
     public StandaloneProfileUi(ILogger<StandaloneProfileUi> logger, MareMediator mediator, UiSharedService uiBuilder,
         ServerConfigurationManager serverManager, MareProfileManager mareProfileManager, Pair pair)
-        : base(logger, mediator, pair.UserData.AliasOrUID + "的月海档案" + "##MareSynchronosStandaloneProfileUI" + pair.UserData.AliasOrUID)
+        : base(logger, mediator, "Mare Profile of " + pair.UserData.AliasOrUID + "##MareSynchronosStandaloneProfileUI" + pair.UserData.AliasOrUID)
     {
         _uiSharedService = uiBuilder;
         _serverManager = serverManager;
@@ -116,7 +116,7 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
             {
                 UiSharedService.ColorText(note, ImGuiColors.DalamudGrey);
             }
-            string status = Pair.IsVisible ? "可见" : (Pair.IsOnline ? "在线" : "离线");
+            string status = Pair.IsVisible ? "Visible" : (Pair.IsOnline ? "Online" : "Offline");
             UiSharedService.ColorText(status, (Pair.IsVisible || Pair.IsOnline) ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed);
             if (Pair.IsVisible)
             {
@@ -125,21 +125,21 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
             }
             if (Pair.UserPair != null)
             {
-                ImGui.TextUnformatted("独立配对");
+                ImGui.TextUnformatted("Directly paired");
                 if (Pair.UserPair.OwnPermissions.IsPaused())
                 {
                     ImGui.SameLine();
-                    UiSharedService.ColorText("你：已暂停", ImGuiColors.DalamudYellow);
+                    UiSharedService.ColorText("You: paused", ImGuiColors.DalamudYellow);
                 }
                 if (Pair.UserPair.OtherPermissions.IsPaused())
                 {
                     ImGui.SameLine();
-                    UiSharedService.ColorText("他们：已暂停", ImGuiColors.DalamudYellow);
+                    UiSharedService.ColorText("They: paused", ImGuiColors.DalamudYellow);
                 }
             }
             if (Pair.GroupPair.Any())
             {
-                ImGui.TextUnformatted("通过同步贝配对：");
+                ImGui.TextUnformatted("Paired through Syncshells:");
                 foreach (var groupPair in Pair.GroupPair.Select(k => k.Key))
                 {
                     var groupNote = _serverManager.GetNoteForGid(groupPair.GID);
@@ -167,7 +167,7 @@ public class StandaloneProfileUi : WindowMediatorSubscriberBase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "绘制提示时出错");
+            _logger.LogWarning(ex, "Error during draw tooltip");
         }
     }
 

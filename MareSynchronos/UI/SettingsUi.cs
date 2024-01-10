@@ -109,8 +109,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
     {
         _lastTab = "BlockedTransfers";
         UiSharedService.ColorTextWrapped("您试图上传或下载但创建者禁止传输的文件将显示在此处。 " +
-                             "如果您在此处看到的是驱动器中的文件路径，那么这些文件不允许上传。如果你看到的是哈希值，那么这些文件不允许下载。 " +
-                             "解决办法：让与您配对的朋友通过其他方式向你发送这些mod、自己获取mod或去纠缠mod创建者允许其通过月海发送。",
+                             "如果您在此处看到驱动器中的文件路径，则不允许上载这些文件。如果你看到哈希值，那么这些文件是不允许下载的。 " +
+                             "让与您配对的朋友通过其他方式向你发送有问题的mod、自己获取mod或去纠缠mod创建者允许其通过月海发送。",
             ImGuiColors.DalamudGrey);
 
         if (ImGui.BeginTable("TransfersTable", 2, ImGuiTableFlags.SizingStretchProp))
@@ -235,11 +235,11 @@ public class SettingsUi : WindowMediatorSubscriberBase
         ImGui.TextColored(proxyStatusColor, $"代理测试结果: {this.proxyStatus}");
 
         ImGui.Separator();
-        UiSharedService.FontText("传输设置", _uiShared.UidFont);
+        UiSharedService.FontText("Transfer Settings", _uiShared.UidFont);
 
         int maxParallelDownloads = _configService.Current.ParallelDownloads;
         bool useAlternativeUpload = _configService.Current.UseAlternativeFileUpload;
-        if (ImGui.SliderInt("最大并行下载数", ref maxParallelDownloads, 1, 10))
+        if (ImGui.SliderInt("最大并行下载量", ref maxParallelDownloads, 1, 10))
         {
             _configService.Current.ParallelDownloads = maxParallelDownloads;
             _configService.Save();
@@ -693,7 +693,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             _configService.Current.ShowCharacterNameInsteadOfNotesForVisible = showNameInsteadOfNotes;
             _configService.Save();
         }
-        UiSharedService.DrawHelpText("当角色可见时，显示用户的角色名称");
+        UiSharedService.DrawHelpText("当角色可见时，这将显示角色名称，而不是自定义备注");
 
         ImGui.Indent();
         if (!_configService.Current.ShowCharacterNameInsteadOfNotesForVisible) ImGui.BeginDisabled();
@@ -715,7 +715,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         UiSharedService.DrawHelpText("鼠标悬停一段时间后显示该用户自己设置的月海档案");
         ImGui.Indent();
         if (!showProfiles) ImGui.BeginDisabled();
-        if (ImGui.Checkbox("在右侧弹出月海档案", ref profileOnRight))
+        if (ImGui.Checkbox("在右侧弹出个人档案", ref profileOnRight))
         {
             _configService.Current.ProfilePopoutRight = profileOnRight;
             _configService.Save();

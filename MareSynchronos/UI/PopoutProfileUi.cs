@@ -131,7 +131,7 @@ public class PopoutProfileUi : WindowMediatorSubscriberBase
             }
             if (_pair.UserPair != null)
             {
-                ImGui.TextUnformatted("独立配对");
+                ImGui.TextUnformatted("直接配对");
                 if (_pair.UserPair.OwnPermissions.IsPaused())
                 {
                     ImGui.SameLine();

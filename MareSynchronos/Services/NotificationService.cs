@@ -32,13 +32,13 @@ public class NotificationService : DisposableMediatorSubscriberBase
 
     private void PrintInfoChat(string? message)
     {
-        SeStringBuilder se = new SeStringBuilder().AddText("[月海同步器] 信息：").AddItalics(message ?? string.Empty);
+        SeStringBuilder se = new SeStringBuilder().AddText("[Mare Synchronos] Info: ").AddItalics(message ?? string.Empty);
         _chatGui.Print(se.BuiltString);
     }
 
     private void PrintWarnChat(string? message)
     {
-        SeStringBuilder se = new SeStringBuilder().AddText("[月海同步器] ").AddUiForeground("警告：" + (message ?? string.Empty), 31).AddUiForegroundOff();
+        SeStringBuilder se = new SeStringBuilder().AddText("[Mare Synchronos] ").AddUiForeground("Warning: " + (message ?? string.Empty), 31).AddUiForegroundOff();
         _chatGui.Print(se.BuiltString);
     }
 
@@ -108,6 +108,6 @@ public class NotificationService : DisposableMediatorSubscriberBase
 
     private void ShowToast(NotificationMessage msg)
     {
-        _uiBuilder.AddNotification(msg.Message ?? string.Empty, "[月海同步器] " + msg.Title, msg.Type, msg.TimeShownOnScreen);
+        _uiBuilder.AddNotification(msg.Message ?? string.Empty, "[Mare Synchronos] " + msg.Title, msg.Type, msg.TimeShownOnScreen);
     }
 }

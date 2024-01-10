@@ -31,7 +31,7 @@ public class EditProfileUi : WindowMediatorSubscriberBase
 
     public EditProfileUi(ILogger<EditProfileUi> logger, MareMediator mediator,
         ApiController apiController, UiBuilder uiBuilder, UiSharedService uiSharedService,
-        FileDialogManager fileDialogManager, MareProfileManager mareProfileManager) : base(logger, mediator, "月海同步器档案编辑器###MareSynchronosEditProfileUI")
+        FileDialogManager fileDialogManager, MareProfileManager mareProfileManager) : base(logger, mediator, "Mare Synchronos Edit Profile###MareSynchronosEditProfileUI")
     {
         IsOpen = false;
         this.SizeConstraints = new()
@@ -118,21 +118,21 @@ public class EditProfileUi : WindowMediatorSubscriberBase
         ImGui.EndDisabled();
 
         ImGui.Separator();
-        _uiSharedService.BigText("月海档案的备注和规则");
+        _uiSharedService.BigText("档案的备注和规则");
 
-        ImGui.TextWrapped($"- 所有与您配对且未暂停的用户都将能够看到您的月海档案图片和描述。{Environment.NewLine}" +
-            $"- 其他用户可以举报您的月海档案违反规则。{Environment.NewLine}" +
-            $"- !!!禁止：任何可被视为高度非法或淫秽的月海档案图片（兽交、任何可被视为与未成年人（包括拉拉菲尔族）发生性行为的东西等）。{Environment.NewLine}" +
-            $"- !!!禁止：描述中任何可能被视为高度冒犯性的侮辱词汇。{Environment.NewLine}" +
-            $"- 如果其他用户提供的举报有效，这可能会导致您的月海档案被永久禁用或您的月海帐户被无限期终止。{Environment.NewLine}" +
-            $"- 插件的管理团队作出的关于您的月海档案是否合规的结论是不可争议的，并且永久禁用您的月海档案/帐户的决定也是不可争议的。{Environment.NewLine}" +
-            $"- 如果您的月海档案图片或月海档案描述不适合在公共场合查看，请启用下面的NSFW开关。");
+        ImGui.TextWrapped($"- 所有与您配对且未暂停的用户都将能够看到您的个人档案图片和描述。{Environment.NewLine}" +
+            $"- 其他用户可以举报您的个人档案违反规则。{Environment.NewLine}" +
+            $"- !!!禁止：任何可被视为高度非法或淫秽的个人档案图片（兽交、任何可被视为与未成年人（包括拉拉菲尔族）发生性行为的东西等）。{Environment.NewLine}" +
+            $"- !!!避免：描述中任何可能被视为高度冒犯性的侮辱词汇。{Environment.NewLine}" +
+            $"- 如果其他用户提供的举报有效，这可能会导致您的个人档案被永久禁用或您的月海帐户被无限期终止。{Environment.NewLine}" +
+            $"- 插件的管理团队作出的关于您的个人档案是否合规的结论是不可争议的，并且永久禁用您的个人档案/帐户的决定也是不可争议的。{Environment.NewLine}" +
+            $"- 如果您的个人档案图片或个人档案描述应该被视为NSFW，请启用下面的开关。");
         ImGui.Separator();
         _uiSharedService.BigText("档案设置");
 
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.FileUpload, "上传新的月海档案图片"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.FileUpload, "上传新的个人档案图片"))
         {
-            _fileDialogManager.OpenFileDialog("选择新的月海档案图片", ".png", (success, file) =>
+            _fileDialogManager.OpenFileDialog("选择新的个人档案图片", ".png", (success, file) =>
             {
                 if (!success) return;
                 Task.Run(async () =>
@@ -159,23 +159,23 @@ public class EditProfileUi : WindowMediatorSubscriberBase
                 });
             });
         }
-        UiSharedService.AttachToolTip("选择并上传新的月海档案图片");
+        UiSharedService.AttachToolTip("选择并上传新的个人档案图片");
         ImGui.SameLine();
-        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "清除上传的月海档案图片"))
+        if (UiSharedService.IconTextButton(FontAwesomeIcon.Trash, "清除上传的个人档案图片"))
         {
             _ = _apiController.UserSetProfile(new UserProfileDto(new UserData(_apiController.UID), false, null, "", null));
         }
-        UiSharedService.AttachToolTip("清除您当前上传的月海档案图片");
+        UiSharedService.AttachToolTip("清除您当前上传的个人档案图片");
         if (_showFileDialogError)
         {
-            UiSharedService.ColorTextWrapped("月海档案图片必须是PNG文件，最大高度和宽度为256px，大小不超过250KiB", ImGuiColors.DalamudRed);
+            UiSharedService.ColorTextWrapped("个人档案图片必须是PNG文件，最大高度和宽度为256px，大小不超过250KiB", ImGuiColors.DalamudRed);
         }
         var isNsfw = profile.IsNSFW;
-        if (ImGui.Checkbox("档案是NSFW（不适合在公共场合查看）", ref isNsfw))
+        if (ImGui.Checkbox("档案是NSFW", ref isNsfw))
         {
             _ = _apiController.UserSetProfile(new UserProfileDto(new UserData(_apiController.UID), false, isNsfw, null, null));
         }
-        UiSharedService.DrawHelpText("如果您的月海档案描述或图片不适合在公共场合查看，请勾选");
+        UiSharedService.DrawHelpText("如果您的个人档案描述或图片为NSFW，请勾选");
         var widthTextBox = 400;
         var posX = ImGui.GetCursorPosX();
         ImGui.TextUnformatted($"描述 {_descriptionText.Length}/1500");

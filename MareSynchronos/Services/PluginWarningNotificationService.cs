@@ -62,7 +62,7 @@ public class PluginWarningNotificationService
         if (missingPluginsForData.Any())
         {
             _mediator.Publish(new NotificationMessage("Missing plugins for " + playerName,
-                $"收到的来自 {playerName} 的数据——其中包含您尚未安装的插件的信息。请安装 {string.Join("，", missingPluginsForData)} 来增强体验。",
+                $"Received data for {playerName} that contained information for plugins you have not installed. Install {string.Join(", ", missingPluginsForData)} to experience their character fully.",
                 NotificationType.Warning, 10000));
         }
     }
