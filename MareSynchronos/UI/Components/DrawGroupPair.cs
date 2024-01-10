@@ -191,7 +191,7 @@ public class DrawGroupPair : DrawPairBase
 
                 if (soundsDisabled)
                 {
-                    var userSoundsText = "在 " + _pair.UserData.AliasOrUID + " 的声音同步已禁用";
+                    var userSoundsText = "来自 " + _pair.UserData.AliasOrUID + " 的声音同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.VolumeOff.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userSoundsText);
@@ -199,7 +199,7 @@ public class DrawGroupPair : DrawPairBase
 
                 if (animDisabled)
                 {
-                    var userAnimText = "在 " + _pair.UserData.AliasOrUID + " 的情感动作同步已禁用";
+                    var userAnimText = "来自 " + _pair.UserData.AliasOrUID + " 的情感动作同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.Stop.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userAnimText);
@@ -207,7 +207,7 @@ public class DrawGroupPair : DrawPairBase
 
                 if (vfxDisabled)
                 {
-                    var userVFXText = "在 " + _pair.UserData.AliasOrUID + " 的视觉特效同步已禁用";
+                    var userVFXText = "来自 " + _pair.UserData.AliasOrUID + " 的视觉特效同步已禁用";
                     UiSharedService.FontText(FontAwesomeIcon.Circle.ToIconString(), UiBuilder.IconFont);
                     ImGui.SameLine(40 * ImGuiHelpers.GlobalScale);
                     ImGui.Text(userVFXText);
@@ -290,12 +290,12 @@ public class DrawGroupPair : DrawPairBase
             ImGui.Separator();
             if (!_pair.IsPaused)
             {
-                if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "打开档案"))
+                if (UiSharedService.IconTextButton(FontAwesomeIcon.User, "打开月海档案"))
                 {
                     _displayHandler.OpenProfile(_pair);
                     ImGui.CloseCurrentPopup();
                 }
-                UiSharedService.AttachToolTip("在新窗口中打开此用户的档案文件");
+                UiSharedService.AttachToolTip("在新窗口中打开此用户的月海档案");
                 if (UiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "举报月海档案"))
                 {
                     ImGui.CloseCurrentPopup();
