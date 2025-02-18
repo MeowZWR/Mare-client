@@ -638,7 +638,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
             return;
         }
 
-        var applierNameWithWorld = player.Name + "@" + player.HomeWorld.GameData?.Name.RawString;
+        var applierNameWithWorld = player.Name + "@" + player.HomeWorld.Value.Name.ExtractText();
 
         Logger.LogDebug($"[ApplyStatusesToSelf] Calling Moodles to apply status from {applierNameWithWorld} to {clientPlayerNameWithWorld}.");
         await _ipcManager.Moodles.ApplyStatusesFromPairToSelf(applierNameWithWorld, clientPlayerNameWithWorld, dto.Statuses).ConfigureAwait(false);

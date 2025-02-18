@@ -128,7 +128,7 @@ public sealed record GposeLobbyUserData(UserData UserData)
 
     public string WorldDataDescriptor { get; private set; } = string.Empty;
     public Vector2 MapCoordinates { get; private set; }
-    public Lumina.Excel.GeneratedSheets.Map Map { get; private set; }
+    public Lumina.Excel.Sheets.Map Map { get; private set; }
     public HandledCharaDataEntry? HandledChara { get; set; }
 
     public async Task SetWorldDataDescriptor(DalamudUtilService dalamudUtilService)

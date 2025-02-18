@@ -10,7 +10,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using MareSynchronos.API.Dto.CharaData;
 using MareSynchronos.Interop;
 using MareSynchronos.PlayerData.Handlers;
@@ -64,24 +64,24 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _performanceCollector = performanceCollector;
         WorldData = new(() =>
         {
-            return gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.World>(Dalamud.Game.ClientLanguage.English)!
-                .Where(w => !w.Name.RawData.IsEmpty && w.DataCenter.Row != 0 && (w.IsPublic || char.IsUpper((char)w.Name.RawData[0])) || w is { Region:5, RowId: >= 1000})
+            return gameData.GetExcelSheet<Lumina.Excel.Sheets.World>(Dalamud.Game.ClientLanguage.ChineseSimplified)!
+                .Where(w => !w.Name.IsEmpty && w.DataCenter.RowId != 0 && (w.IsPublic || char.IsUpper(w.Name.ToString()[0])) || w is { Region:5, RowId: >= 1000})
                 .ToDictionary(w => (ushort)w.RowId, w => w.Name.ToString());
         });
         JobData = new(() =>
         {
-            return gameData.GetExcelSheet<ClassJob>(Dalamud.Game.ClientLanguage.English)!
+            return gameData.GetExcelSheet<ClassJob>(Dalamud.Game.ClientLanguage.ChineseSimplified)!
                 .ToDictionary(k => k.RowId, k => k.NameEnglish.ToString());
         });
         TerritoryData = new(() =>
         {
-            return gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.TerritoryType>(Dalamud.Game.ClientLanguage.English)!
+            return gameData.GetExcelSheet<Lumina.Excel.Sheets.TerritoryType>(Dalamud.Game.ClientLanguage.ChineseSimplified)!
             .Where(w => w.RowId != 0)
             .ToDictionary(w => w.RowId, w =>
             {
                 StringBuilder sb = new();
                 sb.Append(w.PlaceNameRegion.Value.Name);
-                if (w.PlaceName.Value != null)
+                if (w.PlaceName.ValueNullable != null)
                 {
                     sb.Append(" - ");
                     sb.Append(w.PlaceName.Value.Name);
@@ -91,18 +91,18 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         });
         MapData = new(() =>
         {
-            return gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Map>(Dalamud.Game.ClientLanguage.English)!
+            return gameData.GetExcelSheet<Lumina.Excel.Sheets.Map>(Dalamud.Game.ClientLanguage.ChineseSimplified)!
             .Where(w => w.RowId != 0)
             .ToDictionary(w => w.RowId, w =>
             {
                 StringBuilder sb = new();
                 sb.Append(w.PlaceNameRegion.Value.Name);
-                if (w.PlaceName.Value != null)
+                if (w.PlaceName.ValueNullable != null)
                 {
                     sb.Append(" - ");
                     sb.Append(w.PlaceName.Value.Name);
                 }
-                if (w.PlaceNameSub.Value != null && !string.IsNullOrEmpty(w.PlaceNameSub.Value.Name.ToString()))
+                if (w.PlaceNameSub.ValueNullable != null && !string.IsNullOrEmpty(w.PlaceNameSub.Value.Name.ToString()))
                 {
                     sb.Append(" - ");
                     sb.Append(w.PlaceNameSub.Value.Name);
@@ -144,7 +144,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     public Lazy<Dictionary<uint, string>> JobData { get; private set; }
     public Lazy<Dictionary<ushort, string>> WorldData { get; private set; }
     public Lazy<Dictionary<uint, string>> TerritoryData { get; private set; }
-    public Lazy<Dictionary<uint, (Lumina.Excel.GeneratedSheets.Map Map, string MapName)>> MapData { get; private set; }
+    public Lazy<Dictionary<uint, (Lumina.Excel.Sheets.Map Map, string MapName)>> MapData { get; private set; }
     public bool IsLodEnabled { get; private set; }
 
     public MareMediator Mediator { get; }
@@ -269,7 +269,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     public string GetPlayerNameWithWorld()
     {
         EnsureIsOnFramework();
-        return _clientState.LocalPlayer?.Name + "@" + _clientState.LocalPlayer?.HomeWorld.GameData?.Name.RawString;
+        return _clientState.LocalPlayer?.Name + "@" + _clientState.LocalPlayer?.HomeWorld.Value.Name.ExtractText();
     }
 
     public IPlayerCharacter? SearchPlayerByName(string name)
@@ -319,13 +319,13 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     public uint GetHomeWorldId()
     {
         EnsureIsOnFramework();
-        return _clientState.LocalPlayer?.HomeWorld.Id ?? 0;
+        return _clientState.LocalPlayer?.HomeWorld.RowId ?? 0;
     }
 
     public uint GetWorldId()
     {
         EnsureIsOnFramework();
-        return _clientState.LocalPlayer!.CurrentWorld.Id;
+        return _clientState.LocalPlayer!.CurrentWorld.RowId;
     }
 
     public unsafe LocationInfo GetMapData()
@@ -335,7 +335,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         var houseMan = HousingManager.Instance();
         uint serverId = 0;
         if (_clientState.LocalPlayer == null) serverId = 0;
-        else serverId = _clientState.LocalPlayer.CurrentWorld.Id;
+        else serverId = _clientState.LocalPlayer.CurrentWorld.RowId;
         uint mapId = agentMap == null ? 0 : agentMap->CurrentMapId;
         uint territoryId = agentMap == null ? 0 : agentMap->CurrentTerritoryId;
         uint divisionId = houseMan == null ? 0 : (uint)(houseMan->GetCurrentDivision());
@@ -375,7 +375,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         var agentMap = AgentMap.Instance();
         if (agentMap == null) return;
         agentMap->OpenMapByMapId(map.RowId);
-        agentMap->SetFlagMapMarker(map.TerritoryType.Row, map.RowId, position);
+        agentMap->SetFlagMapMarker(map.TerritoryType.RowId, map.RowId, position);
     }
 
     public async Task<LocationInfo> GetMapDataAsync()
@@ -454,7 +454,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _framework.Update += FrameworkOnUpdate;
         if (IsLoggedIn)
         {
-            _classJobId = _clientState.LocalPlayer!.ClassJob.Id;
+            _classJobId = _clientState.LocalPlayer!.ClassJob.RowId;
         }
 
         _logger.LogInformation("Started DalamudUtilService");
@@ -719,7 +719,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
             var localPlayer = _clientState.LocalPlayer;
             if (localPlayer != null)
             {
-                _classJobId = localPlayer.ClassJob.Id;
+                _classJobId = localPlayer.ClassJob.RowId;
             }
 
             if (!IsInCombatOrPerforming)

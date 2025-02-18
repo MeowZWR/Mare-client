@@ -220,11 +220,11 @@ public sealed class CharaDataNearbyManager : DisposableMediatorSubscriberBase
 
 
                 bool addEntry = (!isInHousing && poseLocation.MapId == ownLocation.MapId
-                        && (!onlyCurrentServer || poseLocation.ServerId == currentServer.Id))
+                        && (!onlyCurrentServer || poseLocation.ServerId == currentServer.RowId))
                     || (isInHousing
                         && (((ignoreHousingLimits && !onlyCurrentServer)
-                            || (ignoreHousingLimits && onlyCurrentServer) && poseLocation.ServerId == currentServer.Id)
-                            || poseLocation.ServerId == currentServer.Id)
+                            || (ignoreHousingLimits && onlyCurrentServer) && poseLocation.ServerId == currentServer.RowId)
+                            || poseLocation.ServerId == currentServer.RowId)
                         && ((poseLocation.HouseId == 0 && poseLocation.DivisionId == ownLocation.DivisionId
                                 && (ignoreHousingLimits || poseLocation.WardId == ownLocation.WardId))
                             || (poseLocation.HouseId > 0
