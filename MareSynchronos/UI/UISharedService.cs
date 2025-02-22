@@ -85,6 +85,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     private int _serverSelectionIndex = -1;
     private Dictionary<string, DateTime> _oauthTokenExpiry = new();
+    private static List<string> _supporters = new();
 
     public UiSharedService(ILogger<UiSharedService> logger, IpcManager ipcManager, ApiController apiController,
         CacheMonitor cacheMonitor, FileDialogManager fileDialogManager,
@@ -1136,5 +1137,15 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         {
             drawOnOpened();
         }
+    }
+
+    public static void UpdateSupporters(List<string> supporters)
+    {
+        _supporters = supporters;
+    }
+
+    public static bool IsSupporter(string supporter)
+    {
+        return _supporters.Contains(supporter);
     }
 }

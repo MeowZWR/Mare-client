@@ -64,6 +64,9 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         Mediator.Subscribe<CyclePauseMessage>(this, (msg) => _ = CyclePauseAsync(msg.UserData));
         Mediator.Subscribe<CensusUpdateMessage>(this, (msg) => _lastCensus = msg);
         Mediator.Subscribe<PauseMessage>(this, (msg) => _ = PauseAsync(msg.UserData));
+        // Called whenever we are requesting to apply a set of moodles from our clients Moodle Statuses, to another pair.
+        Mediator.Subscribe<MoodlesApplyStatusToPair>(this, (msg) => ApplyMoodlesToUsers(msg.StatusDto));
+        Mediator.Subscribe<UpdateSupportersMessage>(this, (msg) => UpdateSupporters(msg.SupporterDto.Supporters));
 
         ServerState = ServerState.Offline;
 
@@ -71,16 +74,6 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         {
             DalamudUtilOnLogIn();
         }
-
-        // Called whenever we are requesting to apply a set of moodles from our clients Moodle Statuses, to another pair.
-        Mediator.Subscribe<MoodlesApplyStatusToPair>(this, (msg) =>
-        {
-            Logger.LogDebug("Applying Statuses from your Moodles to {msg}",msg.StatusDto.User.AliasOrUID);
-            _ = Task.Run(async () =>
-            {
-                await UserApplyMoodlesByStatus(msg.StatusDto).ConfigureAwait(false);
-            });
-        });
     }
 
     public string AuthFailureMessage { get; private set; } = string.Empty;
@@ -644,6 +637,22 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         await _ipcManager.Moodles.ApplyStatusesFromPairToSelf(applierNameWithWorld, clientPlayerNameWithWorld, dto.Statuses).ConfigureAwait(false);
         // Log the Interaction Event.
         Mediator.Publish(new EventMessage(new(player.Name.TextValue, dto.User, dto.User.UID, EventSeverity.Informational, "Moodle 效果已添加")));
+    }
+
+
+    private void ApplyMoodlesToUsers(ApplyMoodlesByStatusDto msg)
+    {
+        Logger.LogDebug("Applying Statuses from your Moodles to {msg}",msg.User.AliasOrUID);
+        _ = Task.Run(async () =>
+        {
+            await UserApplyMoodlesByStatus(msg).ConfigureAwait(false);
+        });
+    }
+
+    private void UpdateSupporters(List<string> supporters)
+    {
+        Logger.LogDebug("Updating Supporters with {count} supporters",supporters.Count);
+        UI.UiSharedService.UpdateSupporters(supporters);
     }
 }
 #pragma warning restore MA0040

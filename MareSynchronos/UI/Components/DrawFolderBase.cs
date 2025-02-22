@@ -74,9 +74,15 @@ public abstract class DrawFolderBase : IDrawFolder
             using var indent = ImRaii.PushIndent(_uiSharedService.GetIconSize(FontAwesomeIcon.EllipsisV).X + ImGui.GetStyle().ItemSpacing.X, false);
             if (DrawPairs.Any())
             {
-                foreach (var item in DrawPairs)
+                var supporters = DrawPairs.Where(x => UiSharedService.IsSupporter(x.Pair.UserData.UID)).ToList();
+                foreach (var item in supporters)
                 {
-                    item.DrawPairedClient();
+                    item.DrawPairedClient(true);
+                }
+                var nonSupporters = DrawPairs.Where(x => !UiSharedService.IsSupporter(x.Pair.UserData.UID)).ToList();
+                foreach (var item in nonSupporters)
+                {
+                    item.DrawPairedClient(false);
                 }
             }
             else

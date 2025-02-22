@@ -239,6 +239,13 @@ public partial class ApiController
         return Task.CompletedTask;
     }
 
+    public Task Client_UpdateSupporterList(SupporterDto supporterDto)
+    {
+        Logger.LogDebug("Client_UpdateSupporterList: {dto}", supporterDto);
+        ExecuteSafely(() => Mediator.Publish(new UpdateSupportersMessage(supporterDto)));
+        return Task.CompletedTask;
+    }
+
     public void OnDownloadReady(Action<Guid> act)
     {
         if (_initialized) return;
@@ -405,6 +412,12 @@ public partial class ApiController
     {
         if (_initialized) return;
         _mareHub!.On(nameof(Client_GposeLobbyPushWorldData), act);
+    }
+
+    public void OnSupporterUpdate(Action<SupporterDto> act)
+    {
+        if (_initialized) return;
+        _mareHub!.On(nameof(Client_UpdateSupporterList), act);
     }
 
     private void ExecuteSafely(Action act)

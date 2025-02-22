@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using ImGuiScene;
@@ -87,7 +88,7 @@ public class IdDisplayHandler
         }
     }
 
-    public void DrawPairText(string id, Pair pair, float textPosX, Func<float> editBoxWidth)
+    public void DrawPairText(string id, Pair pair, float textPosX, Func<float> editBoxWidth, bool isSupporter = false)
     {
         ImGui.SameLine(textPosX);
         (bool textIsUid, string playerText) = GetPlayerText(pair);
@@ -95,7 +96,17 @@ public class IdDisplayHandler
         {
             ImGui.AlignTextToFramePadding();
 
-            using (ImRaii.PushFont(UiBuilder.MonoFont, textIsUid)) ImGui.TextUnformatted(playerText);
+            using (ImRaii.PushFont(UiBuilder.MonoFont, textIsUid))
+            {
+                if (isSupporter)
+                {
+                    ImGui.TextColored(ImGuiColors.DalamudRed, playerText);
+                }
+                else
+                {
+                    ImGui.TextUnformatted(playerText);
+                }
+            }
 
             if (ImGui.IsItemHovered())
             {

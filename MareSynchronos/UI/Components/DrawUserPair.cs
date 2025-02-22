@@ -58,7 +58,7 @@ public class DrawUserPair
     public Pair Pair => _pair;
     public UserFullPairDto UserPair => _pair.UserPair!;
 
-    public void DrawPairedClient()
+    public void DrawPairedClient(bool isSupporter = false)
     {
         using var id = ImRaii.PushId(GetType() + _id);
         var color = ImRaii.PushColor(ImGuiCol.ChildBg, ImGui.GetColorU32(ImGuiCol.FrameBgHovered), _wasHovered);
@@ -68,7 +68,7 @@ public class DrawUserPair
             ImGui.SameLine();
             var posX = ImGui.GetCursorPosX();
             var rightSide = DrawRightSide();
-            DrawName(posX, rightSide);
+            DrawName(posX, rightSide, isSupporter);
         }
         _wasHovered = ImGui.IsItemHovered();
         color.Dispose();
@@ -309,9 +309,9 @@ public class DrawUserPair
         ImGui.SameLine();
     }
 
-    private void DrawName(float leftSide, float rightSide)
+    private void DrawName(float leftSide, float rightSide, bool isSupporter = false)
     {
-        _displayHandler.DrawPairText(_id, _pair, leftSide, () => rightSide - leftSide);
+        _displayHandler.DrawPairText(_id, _pair, leftSide, () => rightSide - leftSide, isSupporter);
     }
 
     private void DrawPairedClientMenu()
