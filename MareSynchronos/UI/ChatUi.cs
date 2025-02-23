@@ -1,3 +1,5 @@
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Dto.Group;
@@ -117,7 +119,12 @@ namespace MareSynchronos.UI
                     var name = _apiController.UID == msg.Sender ?
                         _apiController.DisplayName :
                         _idDisplayHandler.GetPlayerText(_pairManager.GetPairByUID(msg.Sender)).text;
-                    ImGui.TextWrapped($"[{msg.LocalTime:HH:mm:ss}] {name}: {msg.Message}");
+                    var color = UiSharedService.IsSupporter(msg.Sender) ? ImGuiColors.ParsedGold : ImGuiColors.DalamudWhite2;
+                    ImGui.TextUnformatted($"[{msg.LocalTime:HH:mm:ss}]");
+                    ImGui.SameLine();
+                    UiSharedService.ColorText($"{name}", color);
+                    ImGui.TextWrapped($"{msg.Message}");
+                    ImGui.Spacing();
                 }
                 // 自动滚动到最新消息
                 if (ImGui.GetScrollY() >= ImGui.GetScrollMaxY())
