@@ -157,6 +157,21 @@ public class DrawFolderGroup : DrawFolderBase
                 _mareMediator.Publish(new OpenSyncshellAdminPanel(_groupFullInfoDto));
             }
         }
+
+        if (UiSharedService.IsSupporter(_groupFullInfoDto.OwnerUID))
+        {
+            ImGui.Separator();
+            if (_uiSharedService.IconTextButton(FontAwesomeIcon.Plus, "加入同步贝聊天", menuWidth, true))
+            {
+                ImGui.CloseCurrentPopup();
+                if (!ChatUi.JoinedGroups.Contains(_groupFullInfoDto.GID))
+                {
+                    ChatUi.JoinedGroups.Add(_groupFullInfoDto.GID);
+                }
+
+                _mareMediator.Publish(new OpenChatUi());
+            }
+        }
     }
 
     protected override void DrawName(float width)

@@ -455,6 +455,9 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         OnGposeLobbyPushPoseData((dto, data) => _ = Client_GposeLobbyPushPoseData(dto, data));
         OnGposeLobbyPushWorldData((dto, data) => _ = Client_GposeLobbyPushWorldData(dto, data));
 
+        OnSupporterUpdate((dto) => _ = Client_UpdateSupporterList(dto));
+        OnReceiveGroupChat(dto => _ = Client_GroupChat(dto));
+
         _healthCheckTokenSource?.Cancel();
         _healthCheckTokenSource?.Dispose();
         _healthCheckTokenSource = new CancellationTokenSource();

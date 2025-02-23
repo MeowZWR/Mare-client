@@ -105,6 +105,12 @@ public partial class ApiController
         return await _mareHub!.InvokeAsync<int>(nameof(GroupPrune), group, days, execute).ConfigureAwait(false);
     }
 
+    public async Task GroupChatServer(GroupChatDto groupChatDto)
+    {
+        CheckConnection();
+        await _mareHub!.InvokeAsync(nameof(GroupChatServer), groupChatDto).ConfigureAwait(false);
+    }
+
     public async Task<List<GroupFullInfoDto>> GroupsGetAll()
     {
         CheckConnection();

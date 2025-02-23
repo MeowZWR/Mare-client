@@ -100,7 +100,7 @@ public class IdDisplayHandler
             {
                 if (isSupporter)
                 {
-                    ImGui.TextColored(ImGuiColors.DalamudRed, playerText);
+                    ImGui.TextColored(ImGuiColors.ParsedGold, playerText);
                 }
                 else
                 {

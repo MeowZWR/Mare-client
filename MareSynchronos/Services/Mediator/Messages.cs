@@ -100,5 +100,11 @@ public record GPoseLobbyReceivePoseData(UserData UserData, PoseData PoseData) : 
 public record GPoseLobbyReceiveWorldData(UserData UserData, WorldData WorldData) : MessageBase;
 public record OpenCharaDataHubWithFilterMessage(UserData UserData) : MessageBase;
 public record UpdateSupportersMessage(SupporterDto SupporterDto) : MessageBase;
+
+public record ChatMessage(string Sender, string Group, DateTime Time, string Message) : MessageBase
+{
+    public DateTime LocalTime => TimeZoneInfo.ConvertTimeFromUtc(Time, TimeZoneInfo.Local);
+};
+public record OpenChatUi():MessageBase;
 #pragma warning restore S2094
 #pragma warning restore MA0048 // File name must match type name

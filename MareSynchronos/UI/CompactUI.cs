@@ -106,7 +106,22 @@ public class CompactUi : WindowMediatorSubscriberBase
                     ImGui.Text("打开Mare事件查看器");
                     ImGui.EndTooltip();
                 }
-            }
+            },
+            new TitleBarButton()
+            {
+                Icon = FontAwesomeIcon.Blog,
+                Click = (msg) =>
+                {
+                    Mediator.Publish(new UiToggleMessage(typeof(ChatUi)));
+                },
+                IconOffset = new(2,1),
+                ShowTooltip = () =>
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.Text("打开聊天框");
+                    ImGui.EndTooltip();
+                }
+            },
         };
 
         _drawFolders = GetDrawFolders().ToList();

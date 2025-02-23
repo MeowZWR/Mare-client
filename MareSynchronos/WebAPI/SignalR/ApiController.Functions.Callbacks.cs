@@ -246,6 +246,12 @@ public partial class ApiController
         return Task.CompletedTask;
     }
 
+    public Task Client_GroupChat(GroupChatDto groupChatDto)
+    {
+        ExecuteSafely(() => Mediator.Publish(new ChatMessage(groupChatDto.User.UID, groupChatDto.GID, groupChatDto.Time, groupChatDto.Message)));
+        return Task.CompletedTask;
+    }
+
     public void OnDownloadReady(Action<Guid> act)
     {
         if (_initialized) return;
@@ -418,6 +424,12 @@ public partial class ApiController
     {
         if (_initialized) return;
         _mareHub!.On(nameof(Client_UpdateSupporterList), act);
+    }
+
+    public void OnReceiveGroupChat(Action<GroupChatDto> act)
+    {
+        if (_initialized) return;
+        _mareHub!.On(nameof(Client_GroupChat), act);
     }
 
     private void ExecuteSafely(Action act)
