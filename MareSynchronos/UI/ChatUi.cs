@@ -107,9 +107,8 @@ namespace MareSynchronos.UI
             unsafe
             {
                 // 计算输入框的动态高度
-                float availableWidth = ImGui.GetContentRegionAvail().X - 40; // 窗口可用宽度减去按钮宽度
+                float availableWidth = ImGui.GetContentRegionAvail().X - 50; // 窗口可用宽度减去按钮宽度
                 float inputHeight = ImGui.GetFrameHeightWithSpacing();
-                inputHeight = Math.Min(inputHeight, 200f); // 设置最大高度限制，例如 200
 
                 // 设置聊天记录区域的高度，确保留出输入区域的空间
                 float totalInputAreaHeight = inputHeight + ImGui.GetStyle().ItemSpacing.Y * 2; // 输入框 + 分隔线 + 按钮
@@ -134,9 +133,11 @@ namespace MareSynchronos.UI
                 // 分隔线
                 ImGui.Separator();
                 // 使用精确的宽度确保换行一致
-                var send = ImGui.InputTextMultiline("##chat_input", ref _newMessage, 4096, new Vector2(availableWidth, inputHeight), ImGuiInputTextFlags.CtrlEnterForNewLine | ImGuiInputTextFlags.EnterReturnsTrue);
+                var send = ImGui.InputTextMultiline("##chat_input", ref _newMessage, 4096,
+                    new Vector2(availableWidth, inputHeight),
+                    ImGuiInputTextFlags.CtrlEnterForNewLine | ImGuiInputTextFlags.EnterReturnsTrue);
                 ImGui.SameLine();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + inputHeight - ImGui.GetFrameHeight()); // 按钮底部对齐输入框
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (inputHeight - ImGui.GetFrameHeight()) / 2); // 按钮底部对齐输入框
                 if (ImGui.Button("发送") || send)
                 {
                     if (!string.IsNullOrEmpty(_newMessage))
