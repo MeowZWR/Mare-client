@@ -115,6 +115,12 @@ namespace MareSynchronos.UI
                 ImGui.BeginChild($"{group}##chatlog", new Vector2(0, -totalInputAreaHeight), true);
                 foreach (ChatMessage msg in _chatLogs.Where(x => x.Group == group))
                 {
+                    if (msg.Sender == "SYSTEM-INFO")
+                    {
+                        ImGui.TextWrapped($"[{msg.LocalTime:HH:mm:ss}] 系统信息: {msg.Message}");
+                        continue;
+                    }
+
                     var name = _apiController.UID == msg.Sender ?
                         _apiController.DisplayName :
                         _idDisplayHandler.GetPlayerText(_pairManager.GetPairByUID(msg.Sender)).text;
