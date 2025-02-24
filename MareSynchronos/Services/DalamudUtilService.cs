@@ -294,6 +294,18 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         return await RunOnFrameworkThread(GetPlayerName).ConfigureAwait(false);
     }
 
+    public async Task<ulong> GetCIDAsync()
+    {
+        return await RunOnFrameworkThread(GetCID).ConfigureAwait(false);
+    }
+
+    public unsafe ulong GetCID()
+    {
+        EnsureIsOnFramework();
+        var playerChar = GetPlayerCharacter();
+        return ((BattleChara*)playerChar.Address)->Character.ContentId;
+    }
+
     public async Task<string> GetPlayerNameHashedAsync()
     {
         return await RunOnFrameworkThread(() => GetHashedAccIdFromPlayerPointer(GetPlayerPointer())).ConfigureAwait(false);
@@ -474,13 +486,18 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     {
         if (!_clientState.IsLoggedIn) return;
 
-        logger.LogTrace("[{redrawId}] Starting wait for {handler} to draw", redrawId, handler);
+        if (ct == null)
+            ct = CancellationToken.None;
 
         const int tick = 250;
         int curWaitTime = 0;
         try
         {
-            while ((!ct?.IsCancellationRequested ?? true)
+            logger.LogTrace("[{redrawId}] Starting wait for {handler} to draw", redrawId, handler);
+            await Task.Delay(tick, ct.Value).ConfigureAwait(true);
+            curWaitTime += tick;
+
+            while ((!ct.Value.IsCancellationRequested)
                    && curWaitTime < timeOut
                    && await handler.IsBeingDrawnRunOnFrameworkAsync().ConfigureAwait(false)) // 0b100000000000 is "still rendering" or something
             {
@@ -744,7 +761,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
                 Mediator.Publish(new DalamudLogoutMessage());
             }
 
-            if (_gameConfig != null 
+            if (_gameConfig != null
                 && _gameConfig.TryGet(Dalamud.Game.Config.SystemConfigOption.LodType_DX11, out bool lodEnabled))
             {
                 IsLodEnabled = lodEnabled;

@@ -75,6 +75,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
     private Task<List<FileCacheEntity>>? _validationTask;
     private bool _wasOpen = false;
+
     public SettingsUi(ILogger<SettingsUi> logger,
         UiSharedService uiShared, MareConfigService configService,
         PairManager pairManager,
@@ -1508,6 +1509,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                         " 请确保输入正确的角色名称或使用底部的“添加当前角色”按钮。", ImGuiColors.DalamudYellow);
                     int i = 0;
                     _uiShared.DrawUpdateOAuthUIDsButton(selectedServer);
+
                     if (selectedServer.UseOAuth2 && !string.IsNullOrEmpty(selectedServer.OAuthToken))
                     {
                         bool hasSetSecretKeysButNoUid = selectedServer.Authentications.Exists(u => u.SecretKeyIdx != -1 && string.IsNullOrEmpty(u.UID));
@@ -1555,6 +1557,35 @@ public class SettingsUi : WindowMediatorSubscriberBase
                         }
                     }
                     ImGui.Separator();
+                    string youName = _dalamudUtilService.GetPlayerName();
+                    uint youWorld = _dalamudUtilService.GetHomeWorldId();
+                    ulong youCid = _dalamudUtilService.GetCID();
+                    if (!selectedServer.Authentications.Exists(a => string.Equals(a.CharacterName, youName, StringComparison.Ordinal) && a.WorldId == youWorld))
+                    {
+                        _uiShared.BigText("Your Character is not Configured", ImGuiColors.DalamudRed);
+                        UiSharedService.ColorTextWrapped("You have currently no character configured that corresponds to your current name and world.", ImGuiColors.DalamudRed);
+                        var authWithCid = selectedServer.Authentications.Find(f => f.LastSeenCID == youCid);
+                        if (authWithCid != null)
+                        {
+                            ImGuiHelpers.ScaledDummy(5);
+                            UiSharedService.ColorText("A potential rename/world change from this character was detected:", ImGuiColors.DalamudYellow);
+                            using (ImRaii.PushIndent(10f))
+                                UiSharedService.ColorText("Entry: " + authWithCid.CharacterName + " - " + _dalamudUtilService.WorldData.Value[(ushort)authWithCid.WorldId], ImGuiColors.ParsedGreen);
+                            UiSharedService.ColorText("Press the button below to adjust that entry to your current character:", ImGuiColors.DalamudYellow);
+                            using (ImRaii.PushIndent(10f))
+                                UiSharedService.ColorText("Current: " + youName + " - " + _dalamudUtilService.WorldData.Value[(ushort)youWorld], ImGuiColors.ParsedGreen);
+                            ImGuiHelpers.ScaledDummy(5);
+                            if (_uiShared.IconTextButton(FontAwesomeIcon.ArrowRight, "Update Entry to Current Character"))
+                            {
+                                authWithCid.CharacterName = youName;
+                                authWithCid.WorldId = youWorld;
+                                _serverConfigurationManager.Save();
+                            }
+                        }
+                        ImGuiHelpers.ScaledDummy(5);
+                        ImGui.Separator();
+                        ImGuiHelpers.ScaledDummy(5);
+                    }
                     foreach (var item in selectedServer.Authentications.ToList())
                     {
                         using var charaId = ImRaii.PushId("selectedChara" + i);
@@ -1566,8 +1597,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
                             worldPreview = data.First().Value;
                         }
 
-                        var friendlyName = string.Empty;
-                        string friendlyNameTranslation = string.Empty;
                         Dictionary<int, SecretKey> keys = [];
 
                         if (!useOauth)
@@ -1578,19 +1607,11 @@ public class SettingsUi : WindowMediatorSubscriberBase
                             {
                                 secretKey = new();
                             }
-
-                            friendlyName = secretKey.FriendlyName;
-                            friendlyNameTranslation = "密钥";
-                        }
-                        else
-                        {
-                            friendlyName = item.UID ?? "-";
-                            friendlyNameTranslation = "UID";
                         }
 
                         bool thisIsYou = false;
-                        if (string.Equals(_dalamudUtilService.GetPlayerName(), item.CharacterName, StringComparison.OrdinalIgnoreCase)
-                            && _dalamudUtilService.GetWorldId() == worldIdx)
+                        if (string.Equals(youName, item.CharacterName, StringComparison.OrdinalIgnoreCase)
+                            && youWorld == worldIdx)
                         {
                             thisIsYou = true;
                         }
@@ -1603,61 +1624,84 @@ public class SettingsUi : WindowMediatorSubscriberBase
                         {
                             misManaged = true;
                         }
-                        if (ImGui.TreeNode($"chara", (misManaged ? "[!! 配置错误 !!] " : "") + (thisIsYou ? "[当前] " : "") + $"角色: {item.CharacterName}, 服务器: {worldPreview}, {friendlyNameTranslation}: {friendlyName}"))
+                        Vector4 color = ImGuiColors.ParsedGreen;
+                        string text = thisIsYou ? "当前角色" : string.Empty;
+                        if (misManaged)
                         {
-                            var charaName = item.CharacterName;
-                            if (ImGui.InputText("角色名", ref charaName, 64))
-                            {
-                                item.CharacterName = charaName;
-                                _serverConfigurationManager.Save();
-                            }
-
-                            _uiShared.DrawCombo("服务器##" + item.CharacterName + i, data, (w) => w.Value,
-                                (w) =>
-                                {
-                                    if (item.WorldId != w.Key)
-                                    {
-                                        item.WorldId = w.Key;
-                                        _serverConfigurationManager.Save();
-                                    }
-                                }, EqualityComparer<KeyValuePair<ushort, string>>.Default.Equals(data.FirstOrDefault(f => f.Key == worldIdx), default) ? data.First() : data.First(f => f.Key == worldIdx));
-
-                            if (!useOauth)
-                            {
-                                _uiShared.DrawCombo("密钥###" + item.CharacterName + i, keys, (w) => w.Value.FriendlyName,
-                                    (w) =>
-                                    {
-                                        if (w.Key != item.SecretKeyIdx)
-                                        {
-                                            item.SecretKeyIdx = w.Key;
-                                            _serverConfigurationManager.Save();
-                                        }
-                                    }, EqualityComparer<KeyValuePair<int, SecretKey>>.Default.Equals(keys.FirstOrDefault(f => f.Key == item.SecretKeyIdx), default) ? keys.First() : keys.First(f => f.Key == item.SecretKeyIdx));
-                            }
-                            else
-                            {
-                                _uiShared.DrawUIDComboForAuthentication(i, item, selectedServer.ServerUri, _logger);
-                            }
-                            bool isAutoLogin = item.AutoLogin;
-                            if (ImGui.Checkbox("自动登录到Mare", ref isAutoLogin))
-                            {
-                                item.AutoLogin = isAutoLogin;
-                                _serverConfigurationManager.Save();
-                            }
-                            _uiShared.DrawHelpText("当该选项启用时, 登录本角色时会自动登录到当前Mare服务器.");
-                            if (_uiShared.IconTextButton(FontAwesomeIcon.Trash, "删除角色") && UiSharedService.CtrlPressed())
-                                _serverConfigurationManager.RemoveCharacterFromServer(idx, item);
-                            UiSharedService.AttachToolTip("按住CTRL键可删除此条目。");
-
-                            ImGui.TreePop();
+                            text += " [配置错误 (" + (selectedServer.UseOAuth2 ? "未设置UID" : "未设置密钥") + ")]";
+                            color = ImGuiColors.DalamudRed;
+                        }
+                        if (selectedServer.Authentications.Where(e => e != item).Any(e => string.Equals(e.CharacterName, item.CharacterName, StringComparison.Ordinal)
+                            && e.WorldId == item.WorldId))
+                        {
+                            text += " [弃用]";
+                            color = ImGuiColors.DalamudRed;
                         }
 
+                        if (!string.IsNullOrEmpty(text))
+                        {
+                            text = text.Trim();
+                            _uiShared.BigText(text, color);
+                        }
+
+                        var charaName = item.CharacterName;
+                        if (ImGui.InputText("角色名", ref charaName, 64))
+                        {
+                            item.CharacterName = charaName;
+                            _serverConfigurationManager.Save();
+                        }
+
+                        _uiShared.DrawCombo("服务器##" + item.CharacterName + i, data, (w) => w.Value,
+                            (w) =>
+                            {
+                                if (item.WorldId != w.Key)
+                                {
+                                    item.WorldId = w.Key;
+                                    _serverConfigurationManager.Save();
+                                }
+                            }, EqualityComparer<KeyValuePair<ushort, string>>.Default.Equals(data.FirstOrDefault(f => f.Key == worldIdx), default) ? data.First() : data.First(f => f.Key == worldIdx));
+
+                        if (!useOauth)
+                        {
+                            _uiShared.DrawCombo("密钥###" + item.CharacterName + i, keys, (w) => w.Value.FriendlyName,
+                                (w) =>
+                                {
+                                    if (w.Key != item.SecretKeyIdx)
+                                    {
+                                        item.SecretKeyIdx = w.Key;
+                                        _serverConfigurationManager.Save();
+                                    }
+                                }, EqualityComparer<KeyValuePair<int, SecretKey>>.Default.Equals(keys.FirstOrDefault(f => f.Key == item.SecretKeyIdx), default) ? keys.First() : keys.First(f => f.Key == item.SecretKeyIdx));
+                        }
+                        else
+                        {
+                            _uiShared.DrawUIDComboForAuthentication(i, item, selectedServer.ServerUri, _logger);
+                        }
+                        bool isAutoLogin = item.AutoLogin;
+                        if (ImGui.Checkbox("自动登录", ref isAutoLogin))
+                        {
+                            item.AutoLogin = isAutoLogin;
+                            _serverConfigurationManager.Save();
+                        }
+                        _uiShared.DrawHelpText("启用后, 当你登录后会自动连接到Mare服务器.");
+                        if (_uiShared.IconTextButton(FontAwesomeIcon.Trash, "删除角色") && UiSharedService.CtrlPressed())
+                            _serverConfigurationManager.RemoveCharacterFromServer(idx, item);
+                        UiSharedService.AttachToolTip("按住CTRL并点击以删除.");
+
                         i++;
+                        if (item != selectedServer.Authentications.ToList()[^1])
+                        {
+                            ImGuiHelpers.ScaledDummy(5);
+                            ImGui.Separator();
+                            ImGuiHelpers.ScaledDummy(5);
+                        }
                     }
 
-                    ImGui.Separator();
-                    if (!selectedServer.Authentications.Exists(c => string.Equals(c.CharacterName, _uiShared.PlayerName, StringComparison.Ordinal)
-                        && c.WorldId == _uiShared.WorldId))
+                    if (selectedServer.Authentications.Any())
+                        ImGui.Separator();
+
+                    if (!selectedServer.Authentications.Exists(c => string.Equals(c.CharacterName, youName, StringComparison.Ordinal)
+                        && c.WorldId == youWorld))
                     {
                         if (_uiShared.IconTextButton(FontAwesomeIcon.User, "添加当前角色"))
                         {

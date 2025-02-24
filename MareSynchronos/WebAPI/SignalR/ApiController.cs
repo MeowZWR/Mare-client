@@ -273,23 +273,30 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
                 {
                     Logger.LogError("Detected modified game files on connection");
                     if (!_mareConfigService.Current.DebugStopWhining)
-                        Mediator.Publish(new NotificationMessage("发现了被修改的游戏文件",
-                            "Dalamud has reported modified game files in your FFXIV installation. " +
-                            "You will be able to connect, but the synchronization functionality might be (partially) broken. " +
-                            "Exit the game and repair it through XIVLauncher to get rid of this message.",
+                        Mediator.Publish(new NotificationMessage("检测到被修改的游戏文件",
+                            "Dalamud is reporting your FFXIV installation has modified game files. Any mods installed through TexTools will produce this message. " +
+                            "Mare Synchronos, Penumbra, and some other plugins assume your FFXIV installation is unmodified in order to work. " +
+                            "Synchronization with pairs/shells can break because of this. Exit the game, open XIVLauncher, click the arrow next to Log In" +
+                            "and select 'repair game files' to resolve this issue. Afterwards, do not install any mods with TexTools. Your plugin configurations will remain, as will mods enabled in Penumbra.",
                             NotificationType.Error, TimeSpan.FromSeconds(15)));
                 }
 
-                if (_dalamudUtil.IsLodEnabled)
+                if (_dalamudUtil.IsLodEnabled && !_naggedAboutLod)
                 {
+                    _naggedAboutLod = true;
                     Logger.LogWarning("Model LOD is enabled during connection");
                     if (!_mareConfigService.Current.DebugStopWhining)
                     {
                         Mediator.Publish(new NotificationMessage("细节层次未关闭",
                             "You have \"Use low-detail models on distant objects (LOD)\" enabled. Having model LOD enabled is known to be a reason to cause " +
-                            "random crashes when loading in or rendering modded pairs. Disable LOD while using Mare: " +
+                            "random crashes when loading in or rendering modded pairs. Disabling LOD has a very low performance impact. Disable LOD while using Mare: " +
                             "Go to XIV Menu -> System Configuration -> Graphics Settings and disable the model LOD option.", NotificationType.Warning, TimeSpan.FromSeconds(15)));
                     }
+                }
+
+                if (_naggedAboutLod && !_dalamudUtil.IsLodEnabled)
+                {
+                    _naggedAboutLod = false;
                 }
 
                 await LoadIninitialPairsAsync().ConfigureAwait(false);
@@ -329,6 +336,8 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
             }
         }
     }
+
+    private bool _naggedAboutLod = false;
 
     public Task CyclePauseAsync(UserData userData)
     {
@@ -550,8 +559,6 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
 
     private async Task<bool> RefreshTokenAsync(CancellationToken ct)
     {
-        Logger.LogDebug("Checking token");
-
         bool requireReconnect = false;
         try
         {

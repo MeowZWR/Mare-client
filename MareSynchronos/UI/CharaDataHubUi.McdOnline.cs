@@ -11,6 +11,11 @@ namespace MareSynchronos.UI;
 
 internal sealed partial class CharaDataHubUi
 {
+    private string _createDescFilter = string.Empty;
+    private string _createCodeFilter = string.Empty;
+    private bool _createOnlyShowFav = false;
+    private bool _createOnlyShowNotDownloadable = false;
+
     private void DrawEditCharaData(CharaDataFullExtendedDto? dataDto)
     {
         using var imguiid = ImRaii.PushId(dataDto?.Id ?? "无数据");
@@ -30,8 +35,17 @@ internal sealed partial class CharaDataHubUi
             return;
         }
 
+        int otherUpdates = 0;
+        foreach (var item in _charaDataManager.OwnCharaData.Values.Where(v => !string.Equals(v.Id, dataDto.Id, StringComparison.Ordinal)))
+        {
+            if (_charaDataManager.GetUpdateDto(item.Id)?.HasChanges ?? false)
+            {
+                otherUpdates++;
+            }
+        }
+
         bool canUpdate = updateDto.HasChanges;
-        if (canUpdate || _charaDataManager.CharaUpdateTask != null)
+        if (canUpdate || otherUpdates > 0 || (!_charaDataManager.CharaUpdateTask?.IsCompleted ?? false))
         {
             ImGuiHelpers.ScaledDummy(5);
         }
@@ -91,9 +105,27 @@ internal sealed partial class CharaDataHubUi
                 }
             });
         }
+
+        if (otherUpdates > 0)
+        {
+            ImGuiHelpers.ScaledDummy(5);
+            UiSharedService.DrawGrouped(() =>
+            {
+                ImGui.AlignTextToFramePadding();
+                UiSharedService.ColorTextWrapped($"You have {otherUpdates} other entries with unsaved changes.", ImGuiColors.DalamudYellow);
+                ImGui.SameLine();
+                using (ImRaii.Disabled(_charaDataManager.CharaUpdateTask != null && !_charaDataManager.CharaUpdateTask.IsCompleted))
+                {
+                    if (_uiSharedService.IconTextButton(FontAwesomeIcon.ArrowAltCircleUp, "Save all to server"))
+                    {
+                        _charaDataManager.UploadAllCharaData();
+                    }
+                }
+            });
+        }
         indent.Dispose();
 
-        if (canUpdate || _charaDataManager.CharaUpdateTask != null)
+        if (canUpdate || otherUpdates > 0 || (!_charaDataManager.CharaUpdateTask?.IsCompleted ?? false))
         {
             ImGuiHelpers.ScaledDummy(5);
         }
@@ -113,7 +145,7 @@ internal sealed partial class CharaDataHubUi
     {
         _uiSharedService.BigText("访问权限设置");
 
-        ImGui.SetNextItemWidth(200);
+        UiSharedService.ScaledNextItemWidth(200);
         var dtoAccessType = updateDto.AccessType;
         if (ImGui.BeginCombo("访问权限", GetAccessTypeString(dtoAccessType)))
         {
@@ -138,7 +170,7 @@ internal sealed partial class CharaDataHubUi
 
         DrawSpecific(updateDto);
 
-        ImGui.SetNextItemWidth(200);
+        UiSharedService.ScaledNextItemWidth(200);
         var dtoShareType = updateDto.ShareType;
         if (ImGui.BeginCombo("Sharing", GetShareTypeString(dtoShareType)))
         {
@@ -183,12 +215,12 @@ internal sealed partial class CharaDataHubUi
         ImGui.TextUnformatted("包含Glamourer数据");
         ImGui.SameLine();
         bool hasGlamourerdata = !string.IsNullOrEmpty(updateDto.GlamourerData);
-        ImGui.SameLine(200);
+        UiSharedService.ScaledSameLine(200);
         _uiSharedService.BooleanToColoredIcon(hasGlamourerdata, false);
 
         ImGui.TextUnformatted("包含文件");
         var hasFiles = (updateDto.FileGamePaths ?? []).Any() || (dataDto.OriginalFiles.Any());
-        ImGui.SameLine(200);
+        UiSharedService.ScaledSameLine(200);
         _uiSharedService.BooleanToColoredIcon(hasFiles, false);
         if (hasFiles && updateDto.IsAppearanceEqual)
         {
@@ -232,13 +264,13 @@ internal sealed partial class CharaDataHubUi
 
         ImGui.TextUnformatted("包含 Manipulation 数据");
         bool hasManipData = !string.IsNullOrEmpty(updateDto.ManipulationData);
-        ImGui.SameLine(200);
+        UiSharedService.ScaledSameLine(200);
         _uiSharedService.BooleanToColoredIcon(hasManipData, false);
 
         ImGui.TextUnformatted("包含 Customize+ 数据");
         ImGui.SameLine();
         bool hasCustomizeData = !string.IsNullOrEmpty(updateDto.CustomizeData);
-        ImGui.SameLine(200);
+        UiSharedService.ScaledSameLine(200);
         _uiSharedService.BooleanToColoredIcon(hasCustomizeData, false);
 
         // ImGui.TextUnformatted("包含 Moodles 数据");
@@ -253,7 +285,7 @@ internal sealed partial class CharaDataHubUi
         string code = dataDto.FullId;
         using (ImRaii.Disabled())
         {
-            ImGui.SetNextItemWidth(200);
+            UiSharedService.ScaledNextItemWidth(200);
             ImGui.InputText("##CharaDataCode", ref code, 255, ImGuiInputTextFlags.ReadOnly);
         }
         ImGui.SameLine();
@@ -270,7 +302,7 @@ internal sealed partial class CharaDataHubUi
         string downloadCount = dataDto.DownloadCount.ToString();
         using (ImRaii.Disabled())
         {
-            ImGui.SetNextItemWidth(200);
+            UiSharedService.ScaledNextItemWidth(200);
             ImGui.InputText("##CreationDate", ref creationTime, 255, ImGuiInputTextFlags.ReadOnly);
         }
         ImGui.SameLine();
@@ -280,7 +312,7 @@ internal sealed partial class CharaDataHubUi
         ImGui.SameLine();
         using (ImRaii.Disabled())
         {
-            ImGui.SetNextItemWidth(200);
+            UiSharedService.ScaledNextItemWidth(200);
             ImGui.InputText("##LastUpdate", ref updateTime, 255, ImGuiInputTextFlags.ReadOnly);
         }
         ImGui.SameLine();
@@ -290,14 +322,14 @@ internal sealed partial class CharaDataHubUi
         ImGui.SameLine();
         using (ImRaii.Disabled())
         {
-            ImGui.SetNextItemWidth(50);
+            UiSharedService.ScaledNextItemWidth(50);
             ImGui.InputText("##DlCount", ref downloadCount, 255, ImGuiInputTextFlags.ReadOnly);
         }
         ImGui.SameLine();
         ImGui.TextUnformatted("下载量");
 
         string description = updateDto.Description;
-        ImGui.SetNextItemWidth(735);
+        UiSharedService.ScaledNextItemWidth(735);
         if (ImGui.InputText("##Description", ref description, 200))
         {
             updateDto.Description = description;
@@ -317,7 +349,7 @@ internal sealed partial class CharaDataHubUi
         using (ImRaii.Disabled(!isExpiring))
         {
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(100);
+            UiSharedService.ScaledNextItemWidth(100);
             if (ImGui.BeginCombo("年", expiryDate.Year.ToString()))
             {
                 for (int year = DateTime.UtcNow.Year; year < DateTime.UtcNow.Year + 4; year++)
@@ -332,7 +364,7 @@ internal sealed partial class CharaDataHubUi
             ImGui.SameLine();
 
             int daysInMonth = DateTime.DaysInMonth(expiryDate.Year, expiryDate.Month);
-            ImGui.SetNextItemWidth(100);
+            UiSharedService.ScaledNextItemWidth(100);
             if (ImGui.BeginCombo("月", expiryDate.Month.ToString()))
             {
                 for (int month = 1; month <= 12; month++)
@@ -346,7 +378,7 @@ internal sealed partial class CharaDataHubUi
             }
             ImGui.SameLine();
 
-            ImGui.SetNextItemWidth(100);
+            UiSharedService.ScaledNextItemWidth(100);
             if (ImGui.BeginCombo("日", expiryDate.Day.ToString()))
             {
                 for (int day = 1; day <= daysInMonth; day++)
@@ -415,7 +447,7 @@ internal sealed partial class CharaDataHubUi
 
             if (pose.Id == null)
             {
-                ImGui.SameLine(50);
+                UiSharedService.ScaledSameLine(50);
                 _uiSharedService.IconText(FontAwesomeIcon.Plus, ImGuiColors.DalamudYellow);
                 UiSharedService.AttachToolTip("姿势还未保存到服务器. 保存后将进行上传.");
             }
@@ -423,12 +455,12 @@ internal sealed partial class CharaDataHubUi
             bool poseHasChanges = updateDto.PoseHasChanges(pose);
             if (poseHasChanges)
             {
-                ImGui.SameLine(50);
+                UiSharedService.ScaledSameLine(50);
                 _uiSharedService.IconText(FontAwesomeIcon.ExclamationTriangle, ImGuiColors.DalamudYellow);
                 UiSharedService.AttachToolTip("姿势变更还未保存到服务器.");
             }
 
-            ImGui.SameLine(75);
+            UiSharedService.ScaledSameLine(75);
             if (pose.Description == null && pose.WorldData == null && pose.PoseData == null)
             {
                 UiSharedService.ColorText("计划删除姿势", ImGuiColors.DalamudYellow);
@@ -554,26 +586,81 @@ internal sealed partial class CharaDataHubUi
             UiSharedService.AttachToolTip("每分钟仅能进行一次请求. 请稍后.");
         }
 
-        using (var table = ImRaii.Table("拥有的数据", 12, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.ScrollY,
-            new Vector2(ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X, 110)))
+        using (var table = ImRaii.Table("拥有的角色数据", 12, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.ScrollY,
+            new Vector2(ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X, 140 * ImGuiHelpers.GlobalScale)))
         {
             if (table)
             {
-                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 18);
-                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 18);
+                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 18 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 18 * ImGuiHelpers.GlobalScale);
                 ImGui.TableSetupColumn("代码");
                 ImGui.TableSetupColumn("描述", ImGuiTableColumnFlags.WidthStretch);
                 ImGui.TableSetupColumn("创建于");
                 ImGui.TableSetupColumn("更新于");
-                ImGui.TableSetupColumn("下载量", ImGuiTableColumnFlags.WidthFixed, 18);
-                ImGui.TableSetupColumn("可下载", ImGuiTableColumnFlags.WidthFixed, 18);
-                ImGui.TableSetupColumn("文件", ImGuiTableColumnFlags.WidthFixed, 32);
-                ImGui.TableSetupColumn("Glamourer", ImGuiTableColumnFlags.WidthFixed, 18);
-                ImGui.TableSetupColumn("Customize+", ImGuiTableColumnFlags.WidthFixed, 18);
-                ImGui.TableSetupColumn("过期", ImGuiTableColumnFlags.WidthFixed, 18);
-                ImGui.TableSetupScrollFreeze(0, 1);
+                ImGui.TableSetupColumn("下载量", ImGuiTableColumnFlags.WidthFixed, 18 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("可下载", ImGuiTableColumnFlags.WidthFixed, 18 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("文件", ImGuiTableColumnFlags.WidthFixed, 32 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Glamourer", ImGuiTableColumnFlags.WidthFixed, 18 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Customize+", ImGuiTableColumnFlags.WidthFixed, 18 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("过期", ImGuiTableColumnFlags.WidthFixed, 18 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupScrollFreeze(0, 2);
                 ImGui.TableHeadersRow();
-                foreach (var entry in _charaDataManager.OwnCharaData.Values.OrderBy(b => b.CreatedDate))
+
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+                ImGui.TableNextColumn();
+                ImGui.Checkbox("###createOnlyShowfav", ref _createOnlyShowFav);
+                UiSharedService.AttachToolTip("Filter by favorites");
+                ImGui.TableNextColumn();
+                var x1 = ImGui.GetContentRegionAvail().X;
+                ImGui.SetNextItemWidth(x1);
+                ImGui.InputTextWithHint("###createFilterCode", "Filter by code", ref _createCodeFilter, 200);
+                ImGui.TableNextColumn();
+                var x2 = ImGui.GetContentRegionAvail().X;
+                ImGui.SetNextItemWidth(x2);
+                ImGui.InputTextWithHint("###createFilterDesc", "Filter by description", ref _createDescFilter, 200);
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+                ImGui.TableNextColumn();
+                ImGui.Checkbox("###createShowNotDl", ref _createOnlyShowNotDownloadable);
+                UiSharedService.AttachToolTip("Filter by not downloadable");
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+                ImGui.TableNextColumn();
+                ImGui.Dummy(new(0, 0));
+
+
+                foreach (var entry in _charaDataManager.OwnCharaData.Values
+                    .Where(v =>
+                    {
+                        bool show = true;
+                        if (!string.IsNullOrWhiteSpace(_createCodeFilter))
+                        {
+                            show &= v.FullId.Contains(_createCodeFilter, StringComparison.OrdinalIgnoreCase);
+                        }
+                        if (!string.IsNullOrWhiteSpace(_createDescFilter))
+                        {
+                            show &= v.Description.Contains(_createDescFilter, StringComparison.OrdinalIgnoreCase);
+                        }
+                        if (_createOnlyShowFav)
+                        {
+                            show &= _configService.Current.FavoriteCodes.ContainsKey(v.FullId);
+                        }
+                        if (_createOnlyShowNotDownloadable)
+                        {
+                            show &= !(!v.HasMissingFiles && !string.IsNullOrEmpty(v.GlamourerData));
+                        }
+
+                        return show;
+                    }).OrderBy(b => b.CreatedDate))
                 {
                     var uDto = _charaDataManager.GetUpdateDto(entry.Id);
                     ImGui.TableNextColumn();
@@ -697,7 +784,7 @@ internal sealed partial class CharaDataHubUi
         var charaDataEntries = _charaDataManager.OwnCharaData.Count;
         if (charaDataEntries != _dataEntries && _selectNewEntry && _charaDataManager.OwnCharaData.Any())
         {
-            SelectedDtoId = _charaDataManager.OwnCharaData.Last().Value.Id;
+            SelectedDtoId = _charaDataManager.OwnCharaData.OrderBy(o => o.Value.CreatedDate).Last().Value.Id;
             _selectNewEntry = false;
         }
         _dataEntries = _charaDataManager.OwnCharaData.Count;
@@ -734,7 +821,7 @@ internal sealed partial class CharaDataHubUi
                     _uiSharedService.DrawHelpText("添加到本列表中的角色无论你是否和他们配对都可以查看该MCD数据." + UiSharedService.TooltipSeparator
                         + "注意: 错误输入将被自动清除.");
 
-                    using (var lb = ImRaii.ListBox("允许的UID", new(200, 200)))
+                    using (var lb = ImRaii.ListBox("允许的用户", new(200 * ImGuiHelpers.GlobalScale, 200 * ImGuiHelpers.GlobalScale)))
                     {
                         foreach (var user in updateDto.UserList)
                         {
@@ -754,6 +841,28 @@ internal sealed partial class CharaDataHubUi
                             _selectedSpecificUserIndividual = string.Empty;
                         }
                     }
+
+                    using (ImRaii.Disabled(!UiSharedService.CtrlPressed()))
+                    {
+                        if (_uiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "应用当前的用户许可到所有MCD条目"))
+                        {
+                            foreach (var own in _charaDataManager.OwnCharaData.Values.Where(k => !string.Equals(k.Id, updateDto.Id, StringComparison.Ordinal)))
+                            {
+                                var otherUpdateDto = _charaDataManager.GetUpdateDto(own.Id);
+                                if (otherUpdateDto == null) continue;
+                                foreach (var user in otherUpdateDto.UserList.Select(k => k.UID).Concat(otherUpdateDto.AllowedUsers ?? []).Distinct(StringComparer.Ordinal).ToList())
+                                {
+                                    otherUpdateDto.RemoveUserFromList(user);
+                                }
+                                foreach (var user in updateDto.UserList.Select(k => k.UID).Concat(updateDto.AllowedUsers ?? []).Distinct(StringComparer.Ordinal).ToList())
+                                {
+                                    otherUpdateDto.AddUserToList(user);
+                                }
+                            }
+                        }
+                    }
+                    UiSharedService.AttachToolTip("这会将当前的用户许可设置应用到你所有的Mare角色数据条目中." + UiSharedService.TooltipSeparator
+                        + "按住CTRL并点击.");
                 }
             }
             ImGui.SameLine();
@@ -781,7 +890,7 @@ internal sealed partial class CharaDataHubUi
                     _uiSharedService.DrawHelpText("在该GID对应的配对贝中的所有用户将可以查看该MCD数据, 无论你是否暂停了配对." + UiSharedService.TooltipSeparator
                         + "注意: 错误输入将被自动清除.");
 
-                    using (var lb = ImRaii.ListBox("允许的配对贝", new(200, 200)))
+                    using (var lb = ImRaii.ListBox("允许的配对贝", new(200 * ImGuiHelpers.GlobalScale, 200 * ImGuiHelpers.GlobalScale)))
                     {
                         foreach (var group in updateDto.GroupList)
                         {
@@ -801,6 +910,28 @@ internal sealed partial class CharaDataHubUi
                             _selectedSpecificGroupIndividual = string.Empty;
                         }
                     }
+
+                    using (ImRaii.Disabled(!UiSharedService.CtrlPressed()))
+                    {
+                        if (_uiSharedService.IconTextButton(FontAwesomeIcon.ExclamationTriangle, "将目前允许的同步贝同步到所有MCD条目中"))
+                        {
+                            foreach (var own in _charaDataManager.OwnCharaData.Values.Where(k => !string.Equals(k.Id, updateDto.Id, StringComparison.Ordinal)))
+                            {
+                                var otherUpdateDto = _charaDataManager.GetUpdateDto(own.Id);
+                                if (otherUpdateDto == null) continue;
+                                foreach (var group in otherUpdateDto.GroupList.Select(k => k.GID).Concat(otherUpdateDto.AllowedGroups ?? []).Distinct(StringComparer.Ordinal).ToList())
+                                {
+                                    otherUpdateDto.RemoveGroupFromList(group);
+                                }
+                                foreach (var group in updateDto.GroupList.Select(k => k.GID).Concat(updateDto.AllowedGroups ?? []).Distinct(StringComparer.Ordinal).ToList())
+                                {
+                                    otherUpdateDto.AddGroupToList(group);
+                                }
+                            }
+                        }
+                    }
+                    UiSharedService.AttachToolTip("这会将当前的同步贝许可设置应用到你所有的Mare角色数据条目中." + UiSharedService.TooltipSeparator
+                        + "按住CTRL并点击.");
                 }
             }
 
@@ -813,7 +944,7 @@ internal sealed partial class CharaDataHubUi
         Func<T, (string Id, string? Alias, string AliasOrId, string? Note)> parseEntry)
     {
         const float ComponentWidth = 200;
-        ImGui.SetNextItemWidth(ComponentWidth - ImGui.GetFrameHeight());
+        UiSharedService.ScaledNextItemWidth(ComponentWidth - ImGui.GetFrameHeight());
         ImGui.InputText(inputId, ref value, 20);
         ImGui.SameLine(0.0f, 0.0f);
 

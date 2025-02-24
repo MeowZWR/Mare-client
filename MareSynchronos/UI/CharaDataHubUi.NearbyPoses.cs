@@ -58,7 +58,7 @@ internal partial class CharaDataHubUi
             }
             _uiSharedService.DrawHelpText("开启时, 将在有姿势的位置绘制幽灵.");
             int poseDetectionDistance = _configService.Current.NearbyDistanceFilter;
-            ImGui.SetNextItemWidth(100);
+            UiSharedService.ScaledNextItemWidth(100);
             if (ImGui.SliderInt("检测距离", ref poseDetectionDistance, 5, 1000))
             {
                 _configService.Current.NearbyDistanceFilter = poseDetectionDistance;
