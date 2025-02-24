@@ -33,7 +33,7 @@ namespace MareSynchronos.UI;
 
 public partial class UiSharedService : DisposableMediatorSubscriberBase
 {
-    public const string TooltipSeparator = "--SEP--";
+    public const string TooltipSeparator = "------";
     public static readonly ImGuiWindowFlags PopupWindowFlags = ImGuiWindowFlags.NoResize |
                                                ImGuiWindowFlags.NoScrollbar |
                                            ImGuiWindowFlags.NoScrollWithMouse;
@@ -758,44 +758,44 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     public bool DrawOtherPluginState()
     {
-        ImGui.TextUnformatted("Mandatory Plugins:");
+        ImGui.TextUnformatted("相关插件:");
 
         ImGui.SameLine(150);
         ColorText("Penumbra", GetBoolColor(_penumbraExists));
-        AttachToolTip($"Penumbra is " + (_penumbraExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"Penumbra目前" + (_penumbraExists ? "已为最新." : "未安装或需要更新."));
 
         ImGui.SameLine();
         ColorText("Glamourer", GetBoolColor(_glamourerExists));
-        AttachToolTip($"Glamourer is " + (_glamourerExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"Glamourer目前" + (_glamourerExists ? "已为最新." : "未安装或需要更新."));
 
         ImGui.TextUnformatted("Optional Plugins:");
         ImGui.SameLine(150);
         ColorText("SimpleHeels", GetBoolColor(_heelsExists));
-        AttachToolTip($"SimpleHeels is " + (_heelsExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"SimpleHeels目前" + (_heelsExists ? "已为最新." : "未安装或需要更新."));
 
         ImGui.SameLine();
         ColorText("Customize+", GetBoolColor(_customizePlusExists));
-        AttachToolTip($"Customize+ is " + (_customizePlusExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"Customize+目前" + (_customizePlusExists ? "已为最新." : "未安装或需要更新."));
 
         ImGui.SameLine();
         ColorText("Honorific", GetBoolColor(_honorificExists));
-        AttachToolTip($"Honorific is " + (_honorificExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"Honorific目前" + (_honorificExists ? "已为最新." : "未安装或需要更新."));
 
         ImGui.SameLine();
         ColorText("Moodles", GetBoolColor(_moodlesExists));
-        AttachToolTip($"Moodles is " + (_moodlesExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"Moodles目前" + (_moodlesExists ? "已为最新." : "未安装或需要更新."));
 
         ImGui.SameLine();
         ColorText("PetNicknames", GetBoolColor(_petNamesExists));
-        AttachToolTip($"PetNicknames is " + (_petNamesExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"PetNicknames目前" + (_petNamesExists ? "已为最新." : "未安装或需要更新."));
 
         ImGui.SameLine();
         ColorText("Brio", GetBoolColor(_brioExists));
-        AttachToolTip($"Brio is " + (_brioExists ? "available and up to date." : "unavailable or not up to date."));
+        AttachToolTip($"Brio目前" + (_brioExists ? "已为最新." : "未安装或需要更新."));
 
         if (!_penumbraExists || !_glamourerExists)
         {
-            ImGui.TextColored(ImGuiColors.DalamudRed, "You need to install both Penumbra and Glamourer and keep them up to date to use Mare Synchronos.");
+            ImGui.TextColored(ImGuiColors.DalamudRed, "你需要安装 Penumbra 和 Glamourer 的最新版本才能使用Mare.");
             return false;
         }
 
@@ -817,9 +817,9 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         for (int i = 0; i < comboEntries.Length; i++)
         {
             if (string.Equals(_serverConfigurationManager.CurrentServer?.ServerName, comboEntries[i], StringComparison.OrdinalIgnoreCase))
-                comboEntries[i] += " [Current]";
+                comboEntries[i] += " [当前]";
         }
-        if (ImGui.BeginCombo("Select Service", comboEntries[_serverSelectionIndex]))
+        if (ImGui.BeginCombo("选择服务器", comboEntries[_serverSelectionIndex]))
         {
             for (int i = 0; i < comboEntries.Length; i++)
             {
@@ -845,8 +845,8 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         if (showConnect)
         {
             ImGui.SameLine();
-            var text = "Connect";
-            if (_serverSelectionIndex == _serverConfigurationManager.CurrentServerIndex) text = "Reconnect";
+            var text = "连接";
+            if (_serverSelectionIndex == _serverConfigurationManager.CurrentServerIndex) text = "重新连接";
             if (IconTextButton(FontAwesomeIcon.Link, text))
             {
                 _serverConfigurationManager.SelectServer(_serverSelectionIndex);
@@ -854,13 +854,13 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
             }
         }
 
-        if (ImGui.TreeNode("Add Custom Service"))
+        if (ImGui.TreeNode("添加自定义服务器"))
         {
             ImGui.SetNextItemWidth(250);
-            ImGui.InputText("Custom Service URI", ref _customServerUri, 255);
+            ImGui.InputText("自定义服务器 URI", ref _customServerUri, 255);
             ImGui.SetNextItemWidth(250);
-            ImGui.InputText("Custom Service Name", ref _customServerName, 255);
-            if (IconTextButton(FontAwesomeIcon.Plus, "Add Custom Service")
+            ImGui.InputText("自定义服务器 Name", ref _customServerName, 255);
+            if (IconTextButton(FontAwesomeIcon.Plus, "添加自定义服务器")
                 && !string.IsNullOrEmpty(_customServerUri)
                 && !string.IsNullOrEmpty(_customServerName))
             {
@@ -890,7 +890,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
                 (v) =>
                 {
                     if (v is null)
-                        return "No UID set";
+                        return "未设置UID";
 
                     if (!string.IsNullOrEmpty(v.Alias))
                     {
@@ -898,7 +898,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
                     }
 
                     if (string.IsNullOrEmpty(v.UID))
-                        return "No UID set";
+                        return "未设置UID";
 
                     return $"{v.UID}";
                 },
@@ -915,7 +915,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
         if (_discordOAuthUIDs == null)
         {
-            AttachToolTip("Use the button above to update your UIDs from the service before you can assign UIDs to characters.");
+            AttachToolTip("分配UID前请点击上方按钮从服务器获取最新UID列表.");
         }
     }
 
@@ -941,7 +941,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         using (ImRaii.Disabled(string.IsNullOrEmpty(selectedServer.OAuthToken)))
         {
             if ((_discordOAuthUIDs == null || _discordOAuthUIDs.IsCompleted)
-                && IconTextButton(FontAwesomeIcon.ArrowsSpin, "Update UIDs from Service")
+                && IconTextButton(FontAwesomeIcon.ArrowsSpin, "从服务器获取UID列表")
                 && !string.IsNullOrEmpty(selectedServer.OAuthToken))
             {
                 _discordOAuthUIDs = _serverConfigurationManager.GetUIDsWithDiscordToken(selectedServer.ServerUri, selectedServer.OAuthToken);
@@ -966,7 +966,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         }
         if (string.IsNullOrEmpty(selectedServer.OAuthToken) || tokenExpiry < DateTime.UtcNow)
         {
-            ColorTextWrapped("You have no OAuth token or the OAuth token is expired. Please use the Service Settings to (re)link your OAuth account.", ImGuiColors.DalamudRed);
+            ColorTextWrapped("你尚未设置OAuth令牌或令牌已过期. 请在服务器设置中重新连接到Discord账号.", ImGuiColors.DalamudRed);
         }
     }
 

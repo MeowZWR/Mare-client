@@ -288,19 +288,19 @@ public class DrawUserPair
 
             _uiSharedService.IconText(FontAwesomeIcon.ExclamationTriangle, ImGuiColors.DalamudYellow);
 
-            string userWarningText = "WARNING: This user exceeds one or more of your defined thresholds:" + UiSharedService.TooltipSeparator;
+            string userWarningText = "警告: 该用户超过了你设置的警告阈值:" + UiSharedService.TooltipSeparator;
             bool shownVram = false;
             if (_performanceConfigService.Current.VRAMSizeWarningThresholdMiB > 0
                 && _performanceConfigService.Current.VRAMSizeWarningThresholdMiB * 1024 * 1024 < _pair.LastAppliedApproximateVRAMBytes)
             {
                 shownVram = true;
-                userWarningText += $"Approx. VRAM Usage: Used: {UiSharedService.ByteToString(_pair.LastAppliedApproximateVRAMBytes)}, Threshold: {_performanceConfigService.Current.VRAMSizeWarningThresholdMiB} MiB";
+                userWarningText += $"预计. VRAM 用量: 已使用: {UiSharedService.ByteToString(_pair.LastAppliedApproximateVRAMBytes)}, 阈值: {_performanceConfigService.Current.VRAMSizeWarningThresholdMiB} MiB";
             }
             if (_performanceConfigService.Current.TrisWarningThresholdThousands > 0
                 && _performanceConfigService.Current.TrisWarningThresholdThousands * 1024 < _pair.LastAppliedDataTris)
             {
                 if (shownVram) userWarningText += Environment.NewLine;
-                userWarningText += $"Approx. Triangle count: Used: {_pair.LastAppliedDataTris}, Threshold: {_performanceConfigService.Current.TrisWarningThresholdThousands * 1000}";
+                userWarningText += $"预计. 面数: 已使用: {_pair.LastAppliedDataTris}, 阈值: {_performanceConfigService.Current.TrisWarningThresholdThousands * 1000}";
             }
 
             UiSharedService.AttachToolTip(userWarningText);
@@ -467,8 +467,8 @@ public class DrawUserPair
             currentRightSide -= (_uiSharedService.GetIconSize(FontAwesomeIcon.Running).X + (spacingX / 2f));
             ImGui.SameLine(currentRightSide);
             _uiSharedService.IconText(FontAwesomeIcon.Running);
-            UiSharedService.AttachToolTip($"This user has shared {sharedData.Count} Character Data Sets with you." + UiSharedService.TooltipSeparator
-                + "Click to open the Character Data Hub and show the entries.");
+            UiSharedService.AttachToolTip($"该用户分享了 {sharedData.Count} 个角色数据." + UiSharedService.TooltipSeparator
+                + "点击打开角色数据界面来查看.");
             if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
             {
                 _mediator.Publish(new OpenCharaDataHubWithFilterMessage(_pair.UserData));
