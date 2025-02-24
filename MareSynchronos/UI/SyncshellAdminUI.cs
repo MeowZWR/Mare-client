@@ -452,6 +452,18 @@ public class SyncshellAdminUI : WindowMediatorSubscriberBase
                         _ = _apiController.GroupDelete(new(GroupFullInfo.Group));
                     }
                     UiSharedService.AttachToolTip("按住CTRL+hift并点击删除同步贝." + Environment.NewLine + "警告: 该操作无法取消.");
+
+                    if (UiSharedService.IsSupporter(_apiController.UID))
+                    {
+                        ImGui.Spacing();
+                        ImGui.Separator();
+                        var enabled = GroupFullInfo.GroupPermissions.IsEnabledChat();
+                        if (ImGui.Checkbox("开启同步贝内聊天功能", ref enabled))
+                        {
+                            perm.SetEnabledChat(enabled);
+                            _ = _apiController.GroupChangeGroupPermissionState(new(GroupFullInfo.Group, perm));
+                        }
+                    }
                 }
                 ownerTab.Dispose();
             }
