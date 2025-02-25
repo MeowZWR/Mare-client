@@ -120,7 +120,7 @@ namespace MareSynchronos.UI
                 float inputHeight = ImGui.GetFrameHeightWithSpacing();
 
                 // 设置聊天记录区域的高度，确保留出输入区域的空间
-                float totalInputAreaHeight = inputHeight * 2 + ImGui.GetStyle().ItemSpacing.Y; // 输入框 + 分隔线 + 按钮
+                float totalInputAreaHeight = inputHeight * 2 + ImGui.GetStyle().ItemSpacing.Y * 2; // 输入框 + 分隔线 + 按钮
                 ImGui.BeginChild($"{group}##chatlog", new Vector2(0, -totalInputAreaHeight), true);
                 foreach (ChatMessage msg in _chatLogs.Where(x => x.Group == group))
                 {
