@@ -63,4 +63,5 @@ public class MareConfig : IMareConfiguration
     public string ProxyProtocol { get; set; } = "socks5";
     public string ProxyHost { get; set; } = "127.0.0.1";
     public int ProxyPort { get; set; } = 1080;
+    public bool PortToChatGui { get; set; } = false;
 }

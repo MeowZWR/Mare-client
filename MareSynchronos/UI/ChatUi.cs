@@ -1,18 +1,16 @@
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Dto.Group;
+using MareSynchronos.MareConfiguration;
+using MareSynchronos.MareConfiguration.Models;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.UI.Handlers;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
 using System.Numerics;
-using System.Text;
-using System.Xml;
 
 namespace MareSynchronos.UI
 {
@@ -25,18 +23,23 @@ namespace MareSynchronos.UI
         private ApiController _apiController;
         private PairManager _pairManager;
         private IdDisplayHandler _idDisplayHandler;
+        private MareConfigService _mareConfig;
+        private NotificationService _notificationService;
 
         private string _newMessage = string.Empty;
         private static List<ChatMessage> _chatLogs = new();
         private string _lastActiveGroup;
 
         public ChatUi(ILogger<ChatUi> logger, MareMediator mediator, PerformanceCollectorService performanceCollectorService,
-            UiSharedService uiSharedService, ApiController apiController, PairManager pairManager,IdDisplayHandler idDisplayHandler) : base(logger, mediator, "同步贝聊天", performanceCollectorService)
+            UiSharedService uiSharedService, ApiController apiController, PairManager pairManager,IdDisplayHandler idDisplayHandler,
+            MareConfigService mareConfig, NotificationService notificationService) : base(logger, mediator, "同步贝聊天", performanceCollectorService)
         {
             _uiSharedService = uiSharedService;
             _apiController = apiController;
             _pairManager = pairManager;
             _idDisplayHandler = idDisplayHandler;
+            _mareConfig = mareConfig;
+            _notificationService = notificationService;
             _logger = logger;
 
             Mediator.Subscribe<ChatMessage>(this, HandleChatMessage);
@@ -51,15 +54,21 @@ namespace MareSynchronos.UI
             };
         }
 
-        private void HandleChatMessage(ChatMessage dto)
+        private void HandleChatMessage(ChatMessage msg)
         {
-            if (!JoinedGroups.Contains(dto.Group)) return;
-            _chatLogs.Add(dto);
-            if (_chatLogs.Count(x => x.Group == dto.Group) > 50)
+            if (!JoinedGroups.Contains(msg.Group)) return;
+            _chatLogs.Add(msg);
+            if (_chatLogs.Count(x => x.Group == msg.Group) > 50)
             {
-                _chatLogs.RemoveAt(_chatLogs.FindIndex(x => x.Group == dto.Group));
+                _chatLogs.RemoveAt(_chatLogs.FindIndex(x => x.Group == msg.Group));
             }
-            _logger.LogDebug($"Received chat message: '{dto.Message}' from {dto.Sender} in group {dto.Group}");
+            _logger.LogDebug($"Received chat message: '{msg.Message}' from {msg.Sender} in group {msg.Group}");
+            if (_mareConfig.Current.PortToChatGui)
+            {
+                var groupName = _idDisplayHandler
+                    .GetGroupText(_pairManager.Groups.First(x => x.Key.GID == msg.Group).Value).text;
+                Mediator.Publish(new NotificationMessage(groupName, $"({GetName(msg)}): " + msg.Message, NotificationType.Chat));
+            }
         }
 
         protected override void DrawInternal()
@@ -111,7 +120,7 @@ namespace MareSynchronos.UI
                 float inputHeight = ImGui.GetFrameHeightWithSpacing();
 
                 // 设置聊天记录区域的高度，确保留出输入区域的空间
-                float totalInputAreaHeight = inputHeight + ImGui.GetStyle().ItemSpacing.Y * 2; // 输入框 + 分隔线 + 按钮
+                float totalInputAreaHeight = inputHeight * 2 + ImGui.GetStyle().ItemSpacing.Y; // 输入框 + 分隔线 + 按钮
                 ImGui.BeginChild($"{group}##chatlog", new Vector2(0, -totalInputAreaHeight), true);
                 foreach (ChatMessage msg in _chatLogs.Where(x => x.Group == group))
                 {
@@ -121,9 +130,7 @@ namespace MareSynchronos.UI
                         continue;
                     }
 
-                    var name = _apiController.UID == msg.Sender ?
-                        _apiController.DisplayName :
-                        _idDisplayHandler.GetPlayerText(_pairManager.GetPairByUID(msg.Sender)).text;
+                    var name = GetName(msg);
                     var color = UiSharedService.IsSupporter(msg.Sender) ? ImGuiColors.ParsedGold : ImGuiColors.DalamudWhite2;
                     ImGui.TextUnformatted($"[{msg.LocalTime:HH:mm:ss}]");
                     ImGui.SameLine();
@@ -138,6 +145,12 @@ namespace MareSynchronos.UI
 
                 // 分隔线
                 ImGui.Separator();
+                var port = _mareConfig.Current.PortToChatGui;
+                if (ImGui.Checkbox("将聊天输出到游戏聊天框", ref port))
+                {
+                    _mareConfig.Current.PortToChatGui = port;
+                    _mareConfig.Save();
+                }
                 // 使用精确的宽度确保换行一致
                 var send = ImGui.InputTextMultiline("##chat_input", ref _newMessage, 4096,
                     new Vector2(availableWidth, inputHeight),
@@ -154,6 +167,13 @@ namespace MareSynchronos.UI
                     }
                 }
             }
+        }
+
+        private string GetName(ChatMessage msg)
+        {
+            return _apiController.UID == msg.Sender ?
+                _apiController.DisplayName :
+                _idDisplayHandler.GetPlayerText(_pairManager.GetPairByUID(msg.Sender)).text;
         }
     }
 }

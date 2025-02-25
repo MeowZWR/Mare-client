@@ -94,7 +94,15 @@ public class NotificationService : DisposableMediatorSubscriberBase, IHostedServ
             case NotificationType.Error:
                 ShowNotificationLocationBased(msg, _configurationService.Current.ErrorNotification);
                 break;
+            case NotificationType.Chat:
+                PrintChat(msg);
+                break;
         }
+    }
+
+    private void PrintChat(NotificationMessage msg)
+    {
+        _chatGui.Print(new SeStringBuilder().AddUiForeground(31).AddText($"[{msg.Title}] {msg.Message}").AddUiForegroundOff().BuiltString);
     }
 
     private void ShowNotificationLocationBased(NotificationMessage msg, NotificationLocation location)
