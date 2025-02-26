@@ -436,12 +436,14 @@ public class CompactUi : WindowMediatorSubscriberBase
     private void DrawUIDHeader()
     {
         var uidText = GetUidText();
+        var color = UiSharedService.IsSupporter(_apiController.UID) && _apiController.ServerState is ServerState.Connected ?
+            ImGuiColors.ParsedGold : GetUidColor();
 
         using (_uiSharedService.UidFont.Push())
         {
             var uidTextSize = ImGui.CalcTextSize(uidText);
             ImGui.SetCursorPosX((ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X) / 2 - (uidTextSize.X / 2));
-            ImGui.TextColored(GetUidColor(), uidText);
+            ImGui.TextColored(color, uidText);
         }
 
         if (_apiController.ServerState is ServerState.Connected)
@@ -456,7 +458,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             {
                 var origTextSize = ImGui.CalcTextSize(_apiController.UID);
                 ImGui.SetCursorPosX((ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X) / 2 - (origTextSize.X / 2));
-                ImGui.TextColored(GetUidColor(), _apiController.UID);
+                ImGui.TextColored(color, _apiController.UID);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText(_apiController.UID);

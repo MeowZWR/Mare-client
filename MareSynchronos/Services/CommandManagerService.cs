@@ -42,7 +42,8 @@ public sealed class CommandManagerService : IDisposable
                 "\t /mare toggle on|off - 根据参数连接或断开连接" + Environment.NewLine +
                 "\t /mare gpose - 打开Mare角色数据中心界面" + Environment.NewLine +
                 "\t /mare analyze - 打开Mare角色数据分析界面" + Environment.NewLine +
-                "\t /mare settings - 打开设置界面"
+                "\t /mare settings - 打开设置界面" + Environment.NewLine +
+                "\t /mare chat - 打开聊天窗口"
         });
     }
 
@@ -121,6 +122,10 @@ public sealed class CommandManagerService : IDisposable
         else if (string.Equals(splitArgs[0], "settings", StringComparison.OrdinalIgnoreCase))
         {
             _mediator.Publish(new UiToggleMessage(typeof(SettingsUi)));
+        }
+        else if (string.Equals(splitArgs[0], "chat", StringComparison.OrdinalIgnoreCase))
+        {
+            _mediator.Publish(new UiToggleMessage(typeof(ChatUi)));
         }
     }
 }
