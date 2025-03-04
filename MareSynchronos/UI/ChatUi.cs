@@ -74,6 +74,7 @@ namespace MareSynchronos.UI
 
         protected override void DrawInternal()
         {
+            if (!_apiController.IsConnected) return;
             using (_uiSharedService.GameFont.Push())
             {
                 if (ImGui.BeginTabBar("ChatLogs"))
@@ -82,6 +83,7 @@ namespace MareSynchronos.UI
                     var groups = new List<string>(JoinedGroups);
                     foreach (string group in groups)
                     {
+                        if (_pairManager.Groups.All(x => x.Key.GID != group)) continue;
                         var IsOpen = true;
                         var groupName = _idDisplayHandler
                             .GetGroupText(_pairManager.Groups.First(x => x.Key.GID == group).Value).text;
