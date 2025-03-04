@@ -52,6 +52,7 @@ namespace MareSynchronos.UI
                 MinimumSize = new Vector2(375, 400),
                 MaximumSize = new Vector2(1000, 2000),
             };
+            JoinedGroups = _mareConfig.Current.AutoJoinChats;
         }
 
         private void HandleChatMessage(ChatMessage msg)
@@ -151,6 +152,22 @@ namespace MareSynchronos.UI
                     _mareConfig.Current.PortToChatGui = port;
                     _mareConfig.Save();
                 }
+
+                ImGui.SameLine();
+
+                var autoJoin = _mareConfig.Current.AutoJoinChats.Contains(group);
+                if (ImGui.Checkbox("自动加入该聊天", ref autoJoin))
+                {
+                    if (autoJoin)
+                    {
+                        if (!_mareConfig.Current.AutoJoinChats.Contains(group))
+                            _mareConfig.Current.AutoJoinChats.Add(group);
+                    }
+                    else if (_mareConfig.Current.AutoJoinChats.Contains(group))
+                        _mareConfig.Current.AutoJoinChats.Remove(group);
+                    _mareConfig.Save();
+                }
+
                 // 使用精确的宽度确保换行一致
                 var send = ImGui.InputTextMultiline("##chat_input", ref _newMessage, 4096,
                     new Vector2(availableWidth, inputHeight),
