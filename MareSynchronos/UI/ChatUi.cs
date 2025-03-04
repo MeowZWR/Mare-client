@@ -52,7 +52,7 @@ namespace MareSynchronos.UI
                 MinimumSize = new Vector2(375, 400),
                 MaximumSize = new Vector2(1000, 2000),
             };
-            JoinedGroups = _mareConfig.Current.AutoJoinChats;
+            JoinedGroups = new List<string>(_mareConfig.Current.AutoJoinChats);
         }
 
         private void HandleChatMessage(ChatMessage msg)
