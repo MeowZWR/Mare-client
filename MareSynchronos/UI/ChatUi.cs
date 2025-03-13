@@ -44,9 +44,8 @@ namespace MareSynchronos.UI
 
             Mediator.Subscribe<ChatMessage>(this, HandleChatMessage);
             mediator.Subscribe<OpenChatUi>(this, _ => IsOpen = true);
-#if DEBUG
-            IsOpen = true;
-#endif
+            IsOpen = _mareConfig.Current.ShowChatWindowOnLogin;
+
             SizeConstraints = new WindowSizeConstraints()
             {
                 MinimumSize = new Vector2(375, 400),
@@ -111,6 +110,7 @@ namespace MareSynchronos.UI
                     }
                     ImGui.EndTabBar();
                 }
+
             }
         }
 
@@ -148,14 +148,6 @@ namespace MareSynchronos.UI
 
                 // 分隔线
                 ImGui.Separator();
-                var port = _mareConfig.Current.PortToChatGui;
-                if (ImGui.Checkbox("将聊天输出到游戏聊天框", ref port))
-                {
-                    _mareConfig.Current.PortToChatGui = port;
-                    _mareConfig.Save();
-                }
-
-                ImGui.SameLine();
 
                 var autoJoin = _mareConfig.Current.AutoJoinChats.Contains(group);
                 if (ImGui.Checkbox("自动加入该聊天", ref autoJoin))

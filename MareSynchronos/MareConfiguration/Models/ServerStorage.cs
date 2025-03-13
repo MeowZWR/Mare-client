@@ -13,4 +13,7 @@ public class ServerStorage
     public bool UseOAuth2 { get; set; } = false;
     public string? OAuthToken { get; set; } = null;
     public HttpTransportType HttpTransportType { get; set; } = HttpTransportType.WebSockets;
+    public bool PortToChatGui { get; set; } = false;
+    public List<string> AutoJoinChats { get; set; } = new List<string>();
+    public bool ShowChatWindowOnLogin { get; set; } = true;
 }

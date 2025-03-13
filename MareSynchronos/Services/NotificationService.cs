@@ -100,9 +100,10 @@ public class NotificationService : DisposableMediatorSubscriberBase, IHostedServ
         }
     }
 
+    private readonly ushort[] colors = new ushort[] { 1, 17, 25, 37, 43, 48, 524 };
     private void PrintChat(NotificationMessage msg)
     {
-        _chatGui.Print(new SeStringBuilder().AddUiForeground(31).AddText($"[{msg.Title}] {msg.Message}").AddUiForegroundOff().BuiltString);
+        _chatGui.Print(new SeStringBuilder().AddUiForeground(colors[_configurationService.Current.ChatColor]).AddText($"[{msg.Title}] {msg.Message}").AddUiForegroundOff().BuiltString);
     }
 
     private void ShowNotificationLocationBased(NotificationMessage msg, NotificationLocation location)

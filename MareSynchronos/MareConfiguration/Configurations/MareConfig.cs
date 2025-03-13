@@ -65,4 +65,6 @@ public class MareConfig : IMareConfiguration
     public int ProxyPort { get; set; } = 1080;
     public bool PortToChatGui { get; set; } = false;
     public List<string> AutoJoinChats { get; set; } = new List<string>();
+    public bool ShowChatWindowOnLogin { get; set; } = true;
+    public int ChatColor { get; set; } = 0;
 }

@@ -3,6 +3,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Comparer;
@@ -72,6 +73,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
     private int proxyProtocolIndex;
     private string proxyStatus = "未知";
     private readonly string[] proxyProtocols = new string[] { "http", "https", "socks5" };
+    private readonly string[] colors = new[] { "1", "17", "25", "37", "43", "48", "524" };
+    private readonly unsafe RaptureAtkModule* raptureAtkModule = RaptureAtkModule.Instance();
 
     private Task<List<FileCacheEntity>>? _validationTask;
     private bool _wasOpen = false;
@@ -1001,6 +1004,41 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var groupUpSyncshells = _configService.Current.GroupUpSyncshells;
         var groupInVisible = _configService.Current.ShowSyncshellUsersInVisible;
         var syncshellOfflineSeparate = _configService.Current.ShowSyncshellOfflineUsersSeparately;
+
+
+        var port = _configService.Current.PortToChatGui;
+        if (ImGui.Checkbox("将聊天输出到游戏聊天框", ref port))
+        {
+            _configService.Current.PortToChatGui = port;
+            _configService.Save();
+        }
+
+        ImGui.Indent();
+        var index = _configService.Current.ChatColor;
+        ImGui.TextUnformatted("聊天文字颜色");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(100f);
+        if (ImGui.Combo(" -> ##chatcolor",ref index, colors, colors.Length))
+        {
+            _configService.Current.ChatColor = index;
+            _configService.Save();
+        }
+        unsafe
+        {
+            var color = uint.Parse(colors[index]);
+            var uintColor = raptureAtkModule->AtkUIColorHolder.GetColor(false, color);
+            ImGui.SameLine();
+            ImGui.TextColored(ColorHelpers.RgbaUintToVector4(uintColor),"大概就是这么个颜色");
+        }
+        ImGui.Unindent();
+
+        var open = _configService.Current.ShowChatWindowOnLogin;
+        if (ImGui.Checkbox("登录时自动打开聊天窗口", ref open))
+        {
+            _configService.Current.ShowChatWindowOnLogin = open;
+            _configService.Save();
+        }
+
 
         if (ImGui.Checkbox("启用游戏右键菜单", ref enableRightClickMenu))
         {
