@@ -216,23 +216,33 @@ public partial class IntroUi : WindowMediatorSubscriberBase
 
             UiSharedService.TextWrapped("如果您要加入非官方服务器，请联系该服务提供商来获取密钥。");
 
-            ImGui.Separator();
+            UiSharedService.DistanceSeparator();
 
             UiSharedService.TextWrapped("一旦您获取到密钥，您就可以使用下面提供的工具来连接该服务。");
 
-            var serverIdx = _uiShared.DrawServiceSelection(selectOnChange: true, showConnect: false);
-            if (serverIdx != _prevIdx)
-            {
-                _uiShared.RestOAuthTasksState();
-                _prevIdx = serverIdx;
-            }
+            int serverIdx = 0;
             var selectedServer = _serverConfigurationManager.GetServerByIndex(serverIdx);
-            _useLegacyLogin = !selectedServer.UseOAuth2;
 
-            if (ImGui.Checkbox("使用密钥登录", ref _useLegacyLogin))
+            using (var node = ImRaii.TreeNode("进阶选项"))
             {
-                _serverConfigurationManager.GetServerByIndex(serverIdx).UseOAuth2 = !_useLegacyLogin;
-                _serverConfigurationManager.Save();
+                if (node)
+                {
+                    serverIdx = _uiShared.DrawServiceSelection(selectOnChange: true, showConnect: false);
+                    if (serverIdx != _prevIdx)
+                    {
+                        _uiShared.ResetOAuthTasksState();
+                        _prevIdx = serverIdx;
+                    }
+
+                    selectedServer = _serverConfigurationManager.GetServerByIndex(serverIdx);
+                    _useLegacyLogin = !selectedServer.UseOAuth2;
+
+                    if (ImGui.Checkbox("使用密钥登录（传统）", ref _useLegacyLogin))
+                    {
+                        _serverConfigurationManager.GetServerByIndex(serverIdx).UseOAuth2 = !_useLegacyLogin;
+                        _serverConfigurationManager.Save();
+                    }
+                }
             }
 
             if (_useLegacyLogin)
@@ -310,28 +320,26 @@ public partial class IntroUi : WindowMediatorSubscriberBase
                     var auth = selectedServer.Authentications.Find(a => string.Equals(a.CharacterName, playerName, StringComparison.Ordinal) && a.WorldId == playerWorld);
                     if (auth == null)
                     {
-                        selectedServer.Authentications.Add(new Authentication()
+                        auth = new Authentication()
                         {
                             CharacterName = playerName,
                             WorldId = playerWorld
-                        });
+                        };
+                        selectedServer.Authentications.Add(auth);
                         _serverConfigurationManager.Save();
                     }
 
-                    if (auth != null)
-                    {
-                        _uiShared.DrawUIDComboForAuthentication(0, auth, selectedServer.ServerUri);
+                    _uiShared.DrawUIDComboForAuthentication(0, auth, selectedServer.ServerUri);
 
-                        using (ImRaii.Disabled(string.IsNullOrEmpty(auth.UID)))
+                    using (ImRaii.Disabled(string.IsNullOrEmpty(auth.UID)))
+                    {
+                        if (_uiShared.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Link, "连接到服务器"))
                         {
-                            if (_uiShared.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Link, "连接到服务器"))
-                            {
-                                _ = Task.Run(() => _uiShared.ApiController.CreateConnectionsAsync());
-                            }
+                            _ = Task.Run(() => _uiShared.ApiController.CreateConnectionsAsync());
                         }
-                        if (string.IsNullOrEmpty(auth.UID))
-                            UiSharedService.AttachToolTip("选择一个UID以连接到服务器");
                     }
+                    if (string.IsNullOrEmpty(auth.UID))
+                        UiSharedService.AttachToolTip("选择一个UID以连接到服务器");
                 }
             }
         }

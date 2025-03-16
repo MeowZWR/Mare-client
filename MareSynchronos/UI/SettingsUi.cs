@@ -131,7 +131,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
     public override void OnOpen()
     {
-        _uiShared.RestOAuthTasksState();
+        _uiShared.ResetOAuthTasksState();
         _speedTestCts = new();
     }
 
@@ -1521,7 +1521,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         var idx = _uiShared.DrawServiceSelection();
         if (_lastSelectedServerIndex != idx)
         {
-            _uiShared.RestOAuthTasksState();
+            _uiShared.ResetOAuthTasksState();
             _secretKeysConversionCts = _secretKeysConversionCts.CancelRecreate();
             _secretKeysConversionTask = null;
             _lastSelectedServerIndex = idx;
