@@ -67,6 +67,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         // Called whenever we are requesting to apply a set of moodles from our clients Moodle Statuses, to another pair.
         Mediator.Subscribe<MoodlesApplyStatusToPair>(this, (msg) => ApplyMoodlesToUsers(msg.StatusDto));
         Mediator.Subscribe<UpdateSupportersMessage>(this, (msg) => UpdateSupporters(msg.SupporterDto.Supporters));
+        Mediator.Subscribe<MoodlesShareMessage>(this, HandleMoodlesMessage);
 
         ServerState = ServerState.Offline;
 
@@ -466,6 +467,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
 
         OnSupporterUpdate((dto) => _ = Client_UpdateSupporterList(dto));
         OnReceiveGroupChat(dto => _ = Client_GroupChat(dto));
+        OnMoodlesShare(dto => _ = Client_MoodlesShare(dto));
 
         _healthCheckTokenSource?.Cancel();
         _healthCheckTokenSource?.Dispose();
@@ -663,6 +665,12 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
     {
         Logger.LogDebug("Updating Supporters with {count} supporters",supporters.Count);
         UI.UiSharedService.UpdateSupporters(supporters);
+    }
+
+    private void HandleMoodlesMessage(MoodlesShareMessage msg)
+    {
+        var dto = new MoodlesDto(new UserData(UID), msg.Action, msg.Status);
+        _ = MoodlesShare(dto);
     }
 }
 #pragma warning restore MA0040

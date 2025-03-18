@@ -1,6 +1,8 @@
 ﻿using MareSynchronos.API.Dto.Group;
+using MareSynchronos.API.Dto.User;
 using MareSynchronos.WebAPI.SignalR.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
 
 namespace MareSynchronos.WebAPI;
 
@@ -121,6 +123,13 @@ public partial class ApiController
     {
         CheckConnection();
         await _mareHub!.SendAsync(nameof(GroupUnbanUser), groupPair).ConfigureAwait(false);
+    }
+
+    public async Task MoodlesShare(MoodlesDto moodlesDto)
+    {
+        CheckConnection();
+        await _mareHub!.SendAsync(nameof(MoodlesShare), moodlesDto).ConfigureAwait(false);
+        Logger.LogDebug("Handling Moodles message {action}: {msg}", moodlesDto.Action, moodlesDto.Statuses);
     }
 
     private void CheckConnection()

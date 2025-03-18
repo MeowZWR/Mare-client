@@ -102,6 +102,7 @@ public record ChatMessage(string Sender, string Group, DateTime Time, string Mes
 {
     public DateTime LocalTime => TimeZoneInfo.ConvertTimeFromUtc(Time, TimeZoneInfo.Local);
 };
+public record MoodlesShareMessage(MoodlesAction Action, string Status) : MessageBase;
 public record OpenChatUi():MessageBase;
 #pragma warning restore S2094
 #pragma warning restore MA0048 // File name must match type name

@@ -14,6 +14,7 @@ public sealed class IpcCallerMoodles : IIpcCaller
     private readonly ICallGateSubscriber<nint, string> _moodlesGetStatus;
     private readonly ICallGateSubscriber<nint, string, object> _moodlesSetStatus;
     private readonly ICallGateSubscriber<nint, object> _moodlesRevertStatus;
+    private readonly ICallGateSubscriber<string, string, object> _moodlesShare;
     private readonly ILogger<IpcCallerMoodles> _logger;
     private readonly DalamudUtilService _dalamudUtil;
     private readonly MareMediator _mareMediator;
@@ -34,6 +35,7 @@ public sealed class IpcCallerMoodles : IIpcCaller
         _moodlesRevertStatus = pi.GetIpcSubscriber<nint, object>("Moodles.ClearStatusManagerByPtr");
 
         _applyStatusesFromPair = pi.GetIpcSubscriber<string, string, string, object>("Moodles.ApplyStatusesFromMarePlayers");
+        _moodlesShare = pi.GetIpcSubscriber<string, string, object>("Moodles.ShareMoodles");
 
         _moodlesOnChange.Subscribe(OnMoodlesChange);
 
@@ -117,6 +119,19 @@ public sealed class IpcCallerMoodles : IIpcCaller
         catch (Exception e)
         {
             _logger.LogWarning(e,"Could not Apply Moodles Status:");
+        }
+    }
+
+    public async Task SendMoodlesToPlugin(string status, string uid)
+    {
+        if (!APIAvailable) return;
+        try
+        {
+            await _dalamudUtil.RunOnFrameworkThread(() => _moodlesShare.InvokeAction(status, uid)).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e,"Failed to send Moodles to plugin:");
         }
     }
 }

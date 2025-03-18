@@ -252,6 +252,18 @@ public partial class ApiController
         return Task.CompletedTask;
     }
 
+    public Task Client_MoodlesShare(MoodlesDto moodlesDto)
+    {
+        switch (moodlesDto.Action)
+        {
+            case MoodlesAction.Download:
+                _ = _ipcManager.Moodles.SendMoodlesToPlugin(moodlesDto.Statuses, UID);
+                break;
+        }
+        Logger.LogDebug("Received MoodlesDto from server: {action}}", moodlesDto.Action);
+        return Task.CompletedTask;
+    }
+
     public void OnDownloadReady(Action<Guid> act)
     {
         if (_initialized) return;
@@ -430,6 +442,12 @@ public partial class ApiController
     {
         if (_initialized) return;
         _mareHub!.On(nameof(Client_GroupChat), act);
+    }
+
+    public void OnMoodlesShare(Action<MoodlesDto> act)
+    {
+        if (_initialized) return;
+        _mareHub!.On(nameof(Client_MoodlesShare), act);
     }
 
     private void ExecuteSafely(Action act)

@@ -23,6 +23,7 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
 
     private readonly PairManager  _pairManager;
     private ICallGateProvider<string, string, string, object?>? _applyStatusesToPairRequest;
+    private ICallGateProvider<int, string, object?>? _moodlesShare;
 
     public MareMediator Mediator { get; init; }
 
@@ -60,9 +61,17 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
 
         _applyStatusesToPairRequest = _pi.GetIpcProvider<string, string, string, object?>("MareSynchronos.ApplyStatusesToMarePlayers");
         _applyStatusesToPairRequest.RegisterAction(HandleApplyStatusesToPairRequest);
+        _moodlesShare = _pi.GetIpcProvider<int, string, object?>("MareSynchronos.MoodlesShare");
+        _moodlesShare.RegisterAction(ShareMoodles);
 
         _logger.LogInformation("Started IpcProviderService");
         return Task.CompletedTask;
+    }
+
+    private void ShareMoodles(int action, string status)
+    {
+        var msg = new MoodlesShareMessage((MoodlesAction)action, status);
+        Mediator.Publish(msg);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
