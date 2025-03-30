@@ -84,6 +84,7 @@ public sealed class TokenProvider : IDisposable, IMediatorSubscriber
                     request.Content = new FormUrlEncodedContent([
                         new KeyValuePair<string, string>("uid", identifier.UID),
                         new KeyValuePair<string, string>("charaIdent", identifier.CharaHash),
+                        new KeyValuePair<string, string>("nameWithWorld", identifier.NameWithWorld),
                         new KeyValuePair<string, string>("machineId", Dalamud.Utility.DeviceUtils.GetDeviceId().GetHash256())
                         ]);
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", identifier.SecretKeyOrOAuth);
@@ -154,6 +155,7 @@ public sealed class TokenProvider : IDisposable, IMediatorSubscriber
         try
         {
             var playerIdentifier = await _dalamudUtil.GetPlayerNameHashedAsync().ConfigureAwait(false);
+            var nameWithWorld = await _dalamudUtil.GetPlayerNameWithWorldAsync().ConfigureAwait(false);
 
             if (string.IsNullOrEmpty(playerIdentifier))
             {
@@ -168,7 +170,7 @@ public sealed class TokenProvider : IDisposable, IMediatorSubscriber
 
                 jwtIdentifier = new(_serverManager.CurrentApiUrl,
                     playerIdentifier,
-                    UID, OAuthToken);
+                    UID, OAuthToken, nameWithWorld.GetHash256());
             }
             else
             {
@@ -178,7 +180,8 @@ public sealed class TokenProvider : IDisposable, IMediatorSubscriber
                 jwtIdentifier = new(_serverManager.CurrentApiUrl,
                                     playerIdentifier,
                                     string.Empty,
-                                    secretKey);
+                                    secretKey,
+                                    nameWithWorld.GetHash256());
             }
             _lastJwtIdentifier = jwtIdentifier;
         }
