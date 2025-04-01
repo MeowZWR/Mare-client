@@ -125,6 +125,12 @@ public sealed class TokenProvider : IDisposable, IMediatorSubscriber
                 Mediator.Publish(new DisconnectedMessage());
                 throw new MareAuthFailureException(response);
             }
+            if (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                Mediator.Publish(new NotificationMessage(isRenewal ?"更新令牌时发生错误" : "生成令牌时发生错误", ex.Message,
+                    NotificationType.Error));
+                throw new MareAuthFailureException(response);
+            }
 
             throw;
         }
