@@ -165,7 +165,7 @@ internal sealed partial class CharaDataHubUi : WindowMediatorSubscriberBase
             UpdateFilteredFavorites();
         }
 
-        _hasValidGposeTarget = _charaDataManager.CanApplyInGpose(out _gposeTarget);
+        (_hasValidGposeTarget, _gposeTarget) = _charaDataManager.CanApplyInGpose().GetAwaiter().GetResult();
 
         if (!_charaDataManager.BrioAvailable)
         {
@@ -383,7 +383,7 @@ internal sealed partial class CharaDataHubUi : WindowMediatorSubscriberBase
                 UiSharedService.AttachToolTip($"选中GPose角色 {CharaName(actor.Name.TextValue)}");
                 ImGui.AlignTextToFramePadding();
                 var pos = ImGui.GetCursorPosX();
-                using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.HealerGreen, actor.Address == (_dalamudUtilService.GposeTargetGameObject?.Address ?? nint.Zero)))
+                using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.HealerGreen, actor.Address == (_dalamudUtilService.GetGposeTargetGameObjectAsync().GetAwaiter().GetResult()?.Address ?? nint.Zero)))
                 {
                     ImGui.TextUnformatted(CharaName(actor.Name.TextValue));
                 }
@@ -832,7 +832,7 @@ internal sealed partial class CharaDataHubUi : WindowMediatorSubscriberBase
                         {
                             if (_uiSharedService.IconTextButton(FontAwesomeIcon.ArrowRight, "应用"))
                             {
-                                _charaDataManager.McdfApplyToGposeTarget();
+                                _ = _charaDataManager.McdfApplyToGposeTarget();
                             }
                             UiSharedService.AttachToolTip($"应用到 {_gposeTarget}");
                             ImGui.SameLine();

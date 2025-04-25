@@ -1845,6 +1845,21 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     + "如果你使用VPN或其他网络工具出现问题, 先试试ServerSentEvents然后才是LongPolling." + UiSharedService.TooltipSeparator
                     + "注意: 如果服务器不支持, 会按照以下顺序回退: WebSockets > ServerSentEvents > LongPolling");
 
+                if (_dalamudUtilService.IsWine)
+                {
+                    bool forceWebSockets = selectedServer.ForceWebSockets;
+                    if (ImGui.Checkbox("[wine only] Force WebSockets", ref forceWebSockets))
+                    {
+                        selectedServer.ForceWebSockets = forceWebSockets;
+                        _serverConfigurationManager.Save();
+                    }
+                    _uiShared.DrawHelpText("On wine, Mare will automatically fall back to ServerSentEvents/LongPolling, even if WebSockets is selected. "
+                        + "WebSockets are known to crash XIV entirely on wine 8.5 shipped with Dalamud. "
+                        + "Only enable this if you are not running wine 8.5." + Environment.NewLine
+                        + "Note: If the issue gets resolved at some point this option will be removed.");
+                }
+
+                ImGuiHelpers.ScaledDummy(5);
 
                 if (ImGui.Checkbox("使用 Discord OAuth2 认证", ref useOauth))
                 {
@@ -1855,9 +1870,15 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 if (useOauth)
                 {
                     _uiShared.DrawOAuth(selectedServer);
+                    if (string.IsNullOrEmpty(_serverConfigurationManager.GetDiscordUserFromToken(selectedServer)))
+                    {
+                        ImGuiHelpers.ScaledDummy(10f);
+                        UiSharedService.ColorTextWrapped("You have enabled OAuth2 but it is not linked. Press the buttons Check, then Authenticate to link properly.", ImGuiColors.DalamudRed);
+                    }
                     if (!string.IsNullOrEmpty(_serverConfigurationManager.GetDiscordUserFromToken(selectedServer))
                         && selectedServer.Authentications.TrueForAll(u => string.IsNullOrEmpty(u.UID)))
                     {
+                        ImGuiHelpers.ScaledDummy(10f);
                         UiSharedService.ColorTextWrapped("你已经启用了OAuth2登录, 但并未为当前角色分配UID. 请在 \"角色管理\"中进行分配.",
                             ImGuiColors.DalamudRed);
                     }

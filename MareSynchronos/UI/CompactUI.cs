@@ -257,35 +257,6 @@ public class CompactUi : WindowMediatorSubscriberBase
         }
     }
 
-    private void DrawAddCharacter()
-    {
-        ImGuiHelpers.ScaledDummy(10f);
-        var keys = _serverManager.CurrentServer!.SecretKeys;
-        if (keys.Any())
-        {
-            if (_secretKeyIdx == -1) _secretKeyIdx = keys.First().Key;
-            if (_uiSharedService.IconTextButton(FontAwesomeIcon.Plus, "为当前角色添加密钥"))
-            {
-                _serverManager.CurrentServer!.Authentications.Add(new MareConfiguration.Models.Authentication()
-                {
-                    CharacterName = _uiSharedService.PlayerName,
-                    WorldId = _uiSharedService.WorldId,
-                    SecretKeyIdx = _secretKeyIdx
-                });
-
-                _serverManager.Save();
-
-                _ = _apiController.CreateConnectionsAsync();
-            }
-
-            _uiSharedService.DrawCombo("密钥##addCharacterSecretKey", keys, (f) => f.Value.FriendlyName, (f) => _secretKeyIdx = f.Key);
-        }
-        else
-        {
-            UiSharedService.ColorTextWrapped("没有为当前服务器配置密钥。", ImGuiColors.DalamudYellow);
-        }
-    }
-
     private void DrawPairs()
     {
         var ySize = _transferPartHeight == 0
@@ -469,21 +440,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         else
         {
             UiSharedService.ColorTextWrapped(GetServerError(), GetUidColor());
-            if (_apiController.ServerState is ServerState.NoSecretKey)
-            {
-                DrawAddCharacter();
-            }
-            if (_apiController.ServerState is ServerState.OAuthLoginTokenStale)
-            {
-                DrawRenewOAuth2();
-            }
         }
-    }
-
-    private void DrawRenewOAuth2()
-    {
-        ImGuiHelpers.ScaledDummy(10f);
-        // add some text and a button to restart discord authentication
     }
 
     private IEnumerable<IDrawFolder> GetDrawFolders()
@@ -634,11 +591,11 @@ public class CompactUi : WindowMediatorSubscriberBase
                 "您的插件或连接到的服务器已过期。请立即更新您的插件。如果您已经这样做了，请联系服务器提供商，将其服务器更新到最新版本。",
             ServerState.RateLimited => "您因过于频繁地重新连接而受到限制。请断开连接并等待10分钟，然后重试。",
             ServerState.Connected => string.Empty,
-            ServerState.NoSecretKey => "您没有为当前角色设置密钥。使用下面的按钮或打开设置为当前角色设置密钥。您可以对多个角色使用同一密钥。",
-            ServerState.MultiChara => "你的角色设置中有多个角色拥有相同的角色名和服务器. 在修正该问题前你将无法连接到服务器. 请删除重复的角色设置: 设置 -> 服务设置 -> 角色管理 并手动重连.",
-            ServerState.OAuthMisconfigured => "OAuth2 已启用但未正确配置, 请检查 设置 -> 服务设置 中有OAuth连接, 并且, 你已为当前角色分配了一个UID.",
-            ServerState.OAuthLoginTokenStale => "您的 OAuth2 登录令牌已过期，无法更新. 请前往 设置 -> 服务设置 解除并重新设置OAuth令牌.",
-            ServerState.NoAutoLogon => "本角色已禁用Mare自动登录. 请点击连接按钮手动连接.",
+            ServerState.NoSecretKey => "你没有为本角色配置密钥. 打开 设置 -> 服务器设置 并为本角色设置一个密钥. 你可以让多个角色共用此密钥.",
+            ServerState.MultiChara => "角色设置中有多个角色拥有相同的服务器和角色名. 请修正该问题以连接到服务器. 在 设置 -> 服务器设置 -> 角色管理 中删除重复的角色并手动重新连接.",
+            ServerState.OAuthMisconfigured => "OAuth2 已启用但未正确配置, 请检查 设置 -> 服务器设置 中已进行OAuth2的链接 且 已为当前角色选择了对应的UID.",
+            ServerState.OAuthLoginTokenStale => "使用的OAuth2令牌无效且无法更新. 前往 设置 -> 服务器设置 取消链接并重新配置OAuth2.",
+            ServerState.NoAutoLogon => "本角色未启用自动连接到Mare服务器. 请点击连接按钮手动连接到服务器.",
             _ => string.Empty
         };
     }

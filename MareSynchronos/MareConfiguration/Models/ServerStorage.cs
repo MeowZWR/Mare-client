@@ -16,4 +16,5 @@ public class ServerStorage
     public bool PortToChatGui { get; set; } = false;
     public List<string> AutoJoinChats { get; set; } = new List<string>();
     public bool ShowChatWindowOnLogin { get; set; } = true;
+    public bool ForceWebSockets { get; set; } = false;
 }
