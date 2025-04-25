@@ -1848,15 +1848,15 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 if (_dalamudUtilService.IsWine)
                 {
                     bool forceWebSockets = selectedServer.ForceWebSockets;
-                    if (ImGui.Checkbox("[wine only] Force WebSockets", ref forceWebSockets))
+                    if (ImGui.Checkbox("[仅wine] 强制使用 WebSockets", ref forceWebSockets))
                     {
                         selectedServer.ForceWebSockets = forceWebSockets;
                         _serverConfigurationManager.Save();
                     }
-                    _uiShared.DrawHelpText("On wine, Mare will automatically fall back to ServerSentEvents/LongPolling, even if WebSockets is selected. "
-                        + "WebSockets are known to crash XIV entirely on wine 8.5 shipped with Dalamud. "
-                        + "Only enable this if you are not running wine 8.5." + Environment.NewLine
-                        + "Note: If the issue gets resolved at some point this option will be removed.");
+                    _uiShared.DrawHelpText("wine环境下, Mare将自动回退至 ServerSentEvents/LongPolling. "
+                        + "WebSockets 在 wine 8.5 环境下会使FF崩溃. "
+                        + "请在你未使用 wine 8.5时选用本选项." + Environment.NewLine
+                        + "注意: 如果未来的某个时间问题被解决,本选项将被移除.");
                 }
 
                 ImGuiHelpers.ScaledDummy(5);
@@ -1873,7 +1873,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                     if (string.IsNullOrEmpty(_serverConfigurationManager.GetDiscordUserFromToken(selectedServer)))
                     {
                         ImGuiHelpers.ScaledDummy(10f);
-                        UiSharedService.ColorTextWrapped("You have enabled OAuth2 but it is not linked. Press the buttons Check, then Authenticate to link properly.", ImGuiColors.DalamudRed);
+                        UiSharedService.ColorTextWrapped("你已经启用了OAuth2但未关联Discord账户. 点击按钮以检查, 之后进行授权.", ImGuiColors.DalamudRed);
                     }
                     if (!string.IsNullOrEmpty(_serverConfigurationManager.GetDiscordUserFromToken(selectedServer))
                         && selectedServer.Authentications.TrueForAll(u => string.IsNullOrEmpty(u.UID)))
