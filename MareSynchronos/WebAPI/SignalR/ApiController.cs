@@ -399,6 +399,11 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
             bool requireReconnect = await RefreshTokenAsync(ct).ConfigureAwait(false);
 
             if (requireReconnect) break;
+            if (_mareHub.State != HubConnectionState.Connected)
+            {
+                Logger.LogDebug("Not connected to server, skip Health Check.");
+                continue;
+            }
 
             _ = await CheckClientHealth().ConfigureAwait(false);
         }

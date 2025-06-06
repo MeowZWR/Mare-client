@@ -336,28 +336,21 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
 
     public async Task<string> GetPlayerNameHashedAsync()
     {
-        //return await RunOnFrameworkThread(() => _aid.Value.ToString().GetHash256()).ConfigureAwait(false);
-        return await RunOnFrameworkThread(() => GetHashedAccIdFromPlayerPointer(GetPlayerPtr())).ConfigureAwait(false);
+        return await RunOnFrameworkThread(() => _aid.Value.ToString().GetHash256()).ConfigureAwait(false);
     }
 
-    private unsafe static string GetHashedAccIdFromPlayerPointer(nint ptr)
+    private unsafe string GetHashedAccIdFromPlayerPointer(nint ptr)
     {
-        if (ptr == nint.Zero) return string.Empty;
-        return ((BattleChara*)ptr)->Character.AccountId.ToString().GetHash256();
+        if (ptr == nint.Zero) return "UNK" + _aidCounter++;
+        var aid = ((BattleChara*)ptr)->Character.AccountId;
+        if (!_aidCache.TryGetValue(aid, out string? hash))
+        {
+            var player = GetPlayerCharacter();
+            if (player == null) return "UNK" + _aidCounter++;
+            _aidCache[aid] = hash = unchecked((uint)(((((BattleChara*)player.Address)->Character.AccountId ^ aid) >> 31) ^ _aid.Value)).ToString().GetHash256();
+        }
+        return hash;
     }
-
-    // private unsafe string GetHashedAccIdFromPlayerPointer(nint ptr)
-    // {
-    //     if (ptr == nint.Zero) return "UNK" + _aidCounter++;
-    //     var aid = ((BattleChara*)ptr)->Character.AccountId;
-    //     if (!_aidCache.TryGetValue(aid, out string? hash))
-    //     {
-    //         var player = GetPlayerCharacter();
-    //         if (player == null) return "UNK" + _aidCounter++;
-    //         _aidCache[aid] = hash = unchecked((uint)(((((BattleChara*)player.Address)->Character.AccountId ^ aid) >> 31) ^ _aid.Value)).ToString().GetHash256();
-    //     }
-    //     return hash;
-    // }
 
     public IntPtr GetPlayerPtr()
     {
