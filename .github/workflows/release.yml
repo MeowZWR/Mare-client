@@ -18,9 +18,11 @@ jobs:
           $jsonpath = './repo/CN/MareSynchronos.json'
           $pluginjson = Get-Content -Raw $jsonpath | ConvertFrom-Json
           $ver = $pluginjson.AssemblyVersion
+          $api = $pluginjson.DalamudApiLevel
           $path = './repo/plogonmaster.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           $json[0].AssemblyVersion = $ver
+          $json[0].DalamudApiLevel = $api
           $json[0].DownloadLinkInstall = $json.DownloadLinkInstall -replace '(\d+\.){4}zip',"$ver.zip"
           $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '(\d+\.){4}zip',"$ver.zip"
           $json[0].DownloadLinkUpdate = $json.DownloadLinkUpdate -replace '(\d+\.){4}zip',"$ver.zip"
