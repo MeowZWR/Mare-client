@@ -112,7 +112,7 @@ public sealed class TokenProvider : IDisposable, IMediatorSubscriber
         {
             _tokenCache.TryRemove(identifier, out _);
 
-            _logger.LogError(ex, "GetNewToken: Failure to get token");
+            _logger.LogError(ex, "GetNewToken: Failure to get token : {response} : ", response);
 
             if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
