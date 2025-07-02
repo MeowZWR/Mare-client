@@ -158,7 +158,7 @@ public class DrawFolderGroup : DrawFolderBase
             }
         }
 
-        if (UiSharedService.IsSupporter(_groupFullInfoDto.OwnerUID) && _groupFullInfoDto.GroupPermissions.IsEnabledChat())
+        if (_groupFullInfoDto.GroupPermissions.IsEnabledChat())
         {
             ImGui.Separator();
             if (_uiSharedService.IconTextButton(FontAwesomeIcon.Plus, "加入同步贝聊天", menuWidth, true))
