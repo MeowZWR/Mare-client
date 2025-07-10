@@ -198,9 +198,9 @@ namespace MareSynchronos.UI
                     if (ImGui.Button("删除##" + pf.Guid))
                     {
                         var clone = pf.DeepClone();
-                        clone.StartTime = DateTime.MinValue;
-                        clone.EndTime = DateTime.MinValue + TimeSpan.FromSeconds(1);
-                        _ = _apiController.UpdatePFinder(clone);
+                        clone.StartTime = DateTimeOffset.MinValue;
+                        clone.EndTime = DateTimeOffset.MinValue.AddMinutes(1);
+                        var result = _apiController.UpdatePFinder(clone).Result;
                         _pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
                     }
                     ImGui.EndDisabled();
