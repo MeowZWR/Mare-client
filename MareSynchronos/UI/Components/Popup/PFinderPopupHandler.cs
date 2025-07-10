@@ -24,6 +24,7 @@ public class PFinderPopupHandler : IPopupHandler
     DateTimeOffset pfEndTime;
     int index;
     GroupFullInfoDto[] groups = [];
+    private GroupJoinDto? tempGroup = null;
 
 
 
@@ -182,6 +183,22 @@ public class PFinderPopupHandler : IPopupHandler
                 }
                 UiSharedService.ColorText("*你必须有至少一个贝的管理权限才能发布非公开招募.", ImGuiColors.DalamudYellow);
             }
+            //
+            // if (true) //TODO:允许创建临时贝并加入
+            // {
+            //     if (tempGroup == null)
+            //     {
+            //         if (ImGui.Button("创建一个临时同步贝"))
+            //         {
+            //
+            //         }
+            //     }
+            //     else if (pf.Group.GID != tempGroup.GID)
+            //     {
+            //         pf.Group = new GroupData(tempGroup.GID, tempGroup.GroupAlias);
+            //     }
+            // }
+
             ImGui.EndChild();
         }
 
