@@ -1,0 +1,414 @@
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Colors;
+using ImGuiNET;
+using MareSynchronos.API.Data;
+using MareSynchronos.API.Data.Enum;
+using MareSynchronos.API.Dto.Group;
+using MareSynchronos.Services.Mediator;
+using MareSynchronos.WebAPI;
+using System.Globalization;
+using System.Numerics;
+
+namespace MareSynchronos.UI.Components.Popup;
+
+public class PFinderPopupHandler : IPopupHandler
+{
+    private readonly ApiController _apiController;
+    private readonly UiSharedService _uiSharedService;
+    private PFinderDto pf;
+    private string pfTitle;
+    string pfDescription;
+    bool pfIsNsfw;
+    string pfTags;
+    DateTimeOffset pfStartTime;
+    DateTimeOffset pfEndTime;
+    int index;
+    GroupFullInfoDto[] groups = [];
+
+
+
+    public PFinderPopupHandler(ApiController apiController, UiSharedService uiSharedService)
+    {
+        _apiController = apiController;
+        _uiSharedService = uiSharedService;
+    }
+
+    public Vector2 PopupSize => new(800, 600);
+
+    public bool ShowClose => false;
+
+    public void DrawContent()
+    {
+
+        if (ImGui.BeginChild(pf.Guid.ToString() + "##preview", new Vector2(ImGui.GetContentRegionAvail().X,200), true, ImGuiWindowFlags.NoScrollbar))
+        {
+            _uiSharedService.BigText(pf.Title, ImGuiColors.ParsedBlue);
+
+            UiSharedService.ColorText( pf.IsNSFW ? "NSFW" : "", ImGuiColors.DalamudRed);
+            UiSharedService.AttachToolTip("NSFW/R18+");
+            ImGui.SameLine();
+            UiSharedService.ColorText(pf.Tags, ImGuiColors.DalamudGrey);
+
+            var goingon = pf.StartTime < DateTime.Now && pf.EndTime > DateTime.Now;
+            UiSharedService.ColorTextWrapped($"{pf.StartTime.ToLocalTime():g} - {pf.EndTime.ToLocalTime():g}", goingon ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudWhite);
+            ImGui.SameLine(360);
+            UiSharedService.TextWrapped(pf.Open ? "公开" : $"{pf.Group.AliasOrGID}");
+            ImGui.SameLine(640);
+            UiSharedService.ColorTextWrapped(pf.User.AliasOrUID, UiSharedService.IsSupporter(pf.User.UID) ? ImGuiColors.ParsedGold : ImGuiColors.DalamudWhite);
+
+            ImGui.SetCursorPosY(80);
+            if (ImGui.BeginChild(pf.Guid + "##preview" + "###desc", new Vector2(ImGui.GetContentRegionAvail().X, 105), true))
+            {
+                UiSharedService.TextWrapped(pf.Description);
+                ImGui.EndChild();
+            }
+            ImGui.EndChild();
+
+        }
+        UiSharedService.DrawGroupedCenteredColorText("↑ 预览 ↑", ImGuiColors.ParsedGreen);
+
+        if (ImGui.BeginChild(pf.Guid.ToString(), new Vector2(780,300), true))
+        {
+
+            ImGui.Text("标题:");
+            ImGui.SameLine();
+            if (ImGui.InputText("##标题", ref pfTitle, 120))
+            {
+                pf.Title = pfTitle;
+            }
+            if (string.IsNullOrEmpty(pf.Title))
+            {
+                ImGui.SameLine();
+                UiSharedService.ColorTextWrapped("必填", ImGuiColors.DPSRed);
+            }
+
+
+            if (ImGui.Checkbox("##NSFW", ref pfIsNsfw))
+            {
+                pf.IsNSFW = pfIsNsfw;
+            }
+            ImGui.SameLine();
+            UiSharedService.ColorText("NSFW", ImGuiColors.DalamudRed);
+            UiSharedService.AttachToolTip("NSFW/R18+");
+
+
+            ImGui.Text("Tag:");
+            ImGui.SameLine();
+            if (ImGui.InputText("##Tag", ref pfTags, 200))
+            {
+                pf.Tags = pfTags;
+            }
+
+
+            ImGui.Text("起始时间:");
+            ImGui.SameLine();
+            if (ImGuiAdvancedWidgets.DateTimePickerInLocalZone("my_dt_picker", ref pfStartTime))
+            {
+                pf.StartTime = pfStartTime;
+            }
+
+            ImGui.SameLine();
+            ImGui.Text(" -  结束时间:");
+            ImGui.SameLine();
+
+            if (ImGuiAdvancedWidgets.DateTimePickerInLocalZone("my_dt_picker2", ref pfEndTime))
+            {
+                pf.EndTime = pfEndTime;
+            }
+
+            if (pf.StartTime > DateTime.Now + TimeSpan.FromDays(3))
+            {
+                ImGui.SameLine();
+                UiSharedService.ColorTextWrapped("开始时间不能超过大后天.", ImGuiColors.DPSRed);
+            }
+
+            if (pf.StartTime > pf.EndTime)
+            {
+                ImGui.SameLine();
+                UiSharedService.ColorTextWrapped("开始时间不能晚于结束时间.", ImGuiColors.DPSRed);
+            }
+            if (pf.EndTime < DateTime.Now)
+            {
+                ImGui.SameLine();
+                UiSharedService.ColorTextWrapped("结束时间不能早于当前时间.", ImGuiColors.DPSRed);
+            }
+            else if (pf.EndTime < DateTime.Now.AddHours(1))
+            {
+                ImGui.SameLine();
+                UiSharedService.ColorTextWrapped("将在一小时内结束.", ImGuiColors.DalamudYellow);
+            }
+
+            if (pf.StartTime + TimeSpan.FromDays(1) < pf.EndTime)
+            {
+                ImGui.SameLine();
+                UiSharedService.ColorTextWrapped("持续时间不能超过1天.", ImGuiColors.DPSRed);
+            }
+
+            ImGui.Text("描述:");
+            ImGui.SameLine();
+            if (ImGui.InputTextMultiline("##描述", ref pfDescription, 1000,
+                    new Vector2(600, ImGui.GetTextLineHeight() * 4), ImGuiInputTextFlags.NoHorizontalScroll))
+            {
+                pf.Description = pfDescription;
+            }
+            if (string.IsNullOrEmpty(pf.Description))
+            {
+                ImGui.SameLine();
+                UiSharedService.ColorTextWrapped("必填", ImGuiColors.DPSRed);
+            }
+
+            bool pfOpen = pf.Open;
+            if (ImGui.Checkbox("公开", ref pfOpen))
+            {
+                pf.Open = pfOpen;
+                if (pf.Open) pf.Group = new GroupData("MSS-GLOBAL", "MareCN公用贝");
+                else
+                {
+                    pf.Group = new GroupData(groups[index].GID, groups[index].GroupAlias);
+                }
+            }
+            UiSharedService.AttachToolTip("选中后所有用户都能看到此招募,否则仅有下方贝中用户可以查看.");
+
+            if (!pf.Open)
+            {
+                if (groups.Length > 0)
+                {
+                    ImGui.Text("所在贝:");
+                    ImGui.SameLine();
+                    if (ImGui.Combo("##所在贝", ref index, groups.Select(x=> x.GroupAliasOrGID).ToArray(), groups.Length))
+                    {
+                        pf.Group = new GroupData(groups[index].GID, groups[index].GroupAlias);
+                    }
+                }
+                UiSharedService.ColorText("*你必须有至少一个贝的管理权限才能发布非公开招募.", ImGuiColors.DalamudYellow);
+            }
+            ImGui.EndChild();
+        }
+
+
+        if (_uiSharedService.IconTextButton(FontAwesomeIcon.Check, "发布/修改"))
+        {
+            if (pf.IsVaild())
+            {
+                pf.LastUpdate = DateTime.Now;
+                var result = _apiController.UpdatePFinder(pf).Result;
+                if (result)
+                {
+                    ImGui.CloseCurrentPopup();
+                }
+            }
+        }
+        ImGui.SameLine(200f);
+        if (_uiSharedService.IconTextButton(FontAwesomeIcon.Times, "关闭"))
+        {
+            ImGui.CloseCurrentPopup();
+        }
+    }
+
+    public void Open(OpenPFinderPopupMessage message)
+    {
+        pf = message.dto;
+        pfTitle = pf.Title;
+        pfDescription = pf.Description;
+        pfIsNsfw = pf.IsNSFW;
+        pfTags = pf.Tags;
+        pfStartTime = pf.StartTime;
+        pfEndTime = pf.EndTime;
+        index = 0;
+        groups = _apiController.GroupsGetAll().Result
+            .Where(x => (x.GroupUserInfo & GroupPairUserInfo.IsModerator) != 0 || x.OwnerUID == _apiController.UID)
+            .ToArray();
+        if (string.IsNullOrEmpty(pf.Group.GID))
+        {
+            pf.Group = new GroupData(groups[index].GID, groups[index].GroupAlias);
+        }
+
+    }
+
+/// <summary>
+/// 包含一个健壮、易用的、支持 DateTimeOffset 的日期时间选择器 ImGui 控件。
+/// </summary>
+private static class ImGuiAdvancedWidgets
+{
+    // 内部状态存储：使用控件的唯一ID来存储其日历视图的状态。
+    // static 确保了状态在多次UI帧渲染之间得以保留。
+    private static readonly Dictionary<uint, DateTimeOffset> _calendarStates = new();
+
+    /// <summary>
+    /// 绘制日历视图。此内部版本现在自己管理日历状态。
+    /// </summary>
+    private static bool DatePicker(string id, ref DateTimeOffset selectedDate)
+    {
+        // 获取此控件在当前上下文中的唯一ID
+        uint widgetId = ImGui.GetID(id);
+
+        // 从内部字典中获取或创建此控件的日历状态
+        if (!_calendarStates.TryGetValue(widgetId, out var calendarState))
+        {
+            // 如果状态不存在（第一次渲染），则使用当前选中日期的月份作为初始视图
+            calendarState = selectedDate;
+        }
+
+        bool valueChanged = false;
+
+        ImGui.PushID(id);
+        ImGui.BeginGroup();
+
+        if (ImGui.ArrowButton("###left", ImGuiDir.Left))
+        {
+            calendarState = calendarState.AddMonths(-1);
+        }
+        ImGui.SameLine();
+
+        // ... [年份和月份选择的逻辑保持不变] ...
+        ImGui.PushItemWidth(90);
+        int year = calendarState.Year;
+        string[] monthNames = CultureInfo.CurrentCulture.DateTimeFormat.MonthNames;
+        int month = calendarState.Month - 1;
+
+        if (ImGui.InputInt("###year", ref year, 0))
+        {
+            year = Math.Clamp(year, 1, 9999);
+            calendarState = new DateTimeOffset(year, calendarState.Month, 1, 0, 0, 0, calendarState.Offset);
+        }
+        ImGui.SameLine();
+        if (ImGui.Combo("###month", ref month, monthNames, monthNames.Length))
+        {
+            calendarState = new DateTimeOffset(calendarState.Year, month + 1, 1, 0, 0, 0, calendarState.Offset);
+        }
+        ImGui.PopItemWidth();
+
+        ImGui.SameLine();
+        if (ImGui.ArrowButton("###right", ImGuiDir.Right))
+        {
+            calendarState = calendarState.AddMonths(1);
+        }
+
+        ImGui.Separator();
+
+        // ... [日期网格的逻辑保持不变] ...
+        if (ImGui.BeginTable("DatePickerGrid", 7))
+        {
+            // ... (代码完全不变)
+            string[] dayNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
+            int firstDayOfWeek = (int)CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek;
+            for (int i = 0; i < 7; i++)
+            {
+                ImGui.TableSetupColumn(dayNames[(i + firstDayOfWeek) % 7], ImGuiTableColumnFlags.WidthStretch);
+            }
+            ImGui.TableHeadersRow();
+
+            int daysInMonth = DateTime.DaysInMonth(calendarState.Year, calendarState.Month);
+            var firstDayOfMonth = new DateTimeOffset(calendarState.Year, calendarState.Month, 1, 0, 0, 0, calendarState.Offset);
+            int startOffset = ((int)firstDayOfMonth.DayOfWeek - firstDayOfWeek + 7) % 7;
+
+            for (int i = 0; i < startOffset; i++) ImGui.TableNextColumn();
+
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                ImGui.TableNextColumn();
+                bool isSelected = selectedDate.Year == calendarState.Year &&
+                                  selectedDate.Month == calendarState.Month &&
+                                  selectedDate.Day == day;
+
+                if (isSelected) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.ButtonActive]);
+
+                ImGui.PushID(day);
+                if (ImGui.Button($"{day}", new Vector2(-1, 0)))
+                {
+                    selectedDate = new DateTimeOffset(calendarState.Year, calendarState.Month, day,
+                                                      selectedDate.Hour, selectedDate.Minute, selectedDate.Second,
+                                                      selectedDate.Offset);
+                    valueChanged = true;
+                    ImGui.CloseCurrentPopup();
+                }
+                ImGui.PopID();
+
+                if (isSelected) ImGui.PopStyleColor();
+            }
+            ImGui.EndTable();
+        }
+
+        ImGui.EndGroup();
+        ImGui.PopID();
+
+        // 将更新后的日历状态存回字典
+        _calendarStates[widgetId] = calendarState;
+
+        return valueChanged;
+    }
+
+    /// <summary>
+    /// 绘制一个完全独立的、支持 DateTimeOffset 的日期时间选择器 (弹出式)。
+    /// API 已简化，不再需要外部 calendarState。
+    /// </summary>
+    public static bool DateTimePicker(string id, ref DateTimeOffset dt)
+    {
+        string popupId = id + "_popup";
+        string datePickerId = id + "_date"; // 为子控件定义一个ID
+        string displayText = dt.ToString("yyyy-MM-dd HH:mm");
+
+        if (ImGui.Button(displayText + "###" + id))
+        {
+            ImGui.OpenPopup(popupId);
+            // 关键：在打开弹窗时，将日历视图的状态初始化为当前选中的日期。
+            // 我们通过子控件的ID来设置它的状态。
+            _calendarStates[ImGui.GetID(datePickerId)] = dt;
+        }
+
+        bool valueChanged = false;
+        if (ImGui.BeginPopup(popupId))
+        {
+            // 调用内部 DatePicker，它会自己管理状态
+            if (DatePicker(datePickerId, ref dt))
+            {
+                valueChanged = true;
+            }
+            ImGui.Separator();
+
+            // ... [时间编辑逻辑不变] ...
+            int hour = dt.Hour;
+            int minute = dt.Minute;
+            int second = dt.Second;
+            bool timeUpdated = false;
+
+            ImGui.PushItemWidth(120);
+            if (ImGui.DragInt("###hour", ref hour, 1f, 0, 23, "%02d 时")) timeUpdated = true;
+            ImGui.SameLine();
+            if (ImGui.DragInt("###minute", ref minute, 1f, 0, 59, "%02d 分")) timeUpdated = true;
+            ImGui.PopItemWidth();
+
+            if (timeUpdated)
+            {
+                dt = new DateTimeOffset(dt.Year, dt.Month, dt.Day,
+                    Math.Clamp(hour, 0, 23), Math.Clamp(minute, 0, 59), 0,
+                    dt.Offset);
+                valueChanged = true;
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return valueChanged;
+    }
+
+    /// <summary>
+    /// [保持不变] 绘制一个方便用户的、在本地时区编辑的日期时间选择器。
+    /// 它现在调用了新的、更简洁的 DateTimePicker。
+    /// </summary>
+    public static bool DateTimePickerInLocalZone(string id, ref DateTimeOffset dt)
+    {
+        var localTime = dt.ToLocalTime();
+
+        // 调用核心 DateTimePicker，现在API更简洁了！
+        bool valueChanged = DateTimePicker(id, ref localTime);
+
+        if (valueChanged)
+        {
+            dt = localTime.ToUniversalTime();
+        }
+
+        return valueChanged;
+    }
+}
+}

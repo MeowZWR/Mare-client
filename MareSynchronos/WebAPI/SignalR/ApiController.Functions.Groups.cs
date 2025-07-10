@@ -136,4 +136,17 @@ public partial class ApiController
     {
         if (ServerState is not (ServerState.Connected or ServerState.Connecting or ServerState.Reconnecting)) throw new InvalidDataException("Not connected");
     }
+
+    public async Task<bool> UpdatePFinder(PFinderDto pFinderDto)
+    {
+        CheckConnection();
+        var result = await _mareHub!.InvokeAsync<bool>(nameof(UpdatePFinder), pFinderDto).ConfigureAwait(false);
+        return result;
+    }
+
+    public async Task<List<PFinderDto>> RefreshPfinderList(UserDto userDto)
+    {
+        CheckConnection();
+        return await _mareHub!.InvokeAsync<List<PFinderDto>>(nameof(RefreshPfinderList), userDto).ConfigureAwait(false);
+    }
 }

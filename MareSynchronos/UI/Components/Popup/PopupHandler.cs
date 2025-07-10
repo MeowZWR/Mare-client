@@ -56,6 +56,15 @@ public class PopupHandler : WindowMediatorSubscriberBase
             _currentHandler = _handlers.OfType<CensusPopupHandler>().Single();
             IsOpen = true;
         });
+
+        Mediator.Subscribe<OpenPFinderPopupMessage>(this, (msg) =>
+        {
+            _openPopup = true;
+            _currentHandler = _handlers.OfType<PFinderPopupHandler>().Single();
+            ((PFinderPopupHandler)_currentHandler).Open(msg);
+            IsOpen = true;
+        });
+
         _uiSharedService = uiSharedService;
         DisableWindowSounds = true;
     }

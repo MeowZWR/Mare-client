@@ -122,6 +122,21 @@ public class CompactUi : WindowMediatorSubscriberBase
                     ImGui.EndTooltip();
                 }
             },
+            new TitleBarButton()
+            {
+                Icon = FontAwesomeIcon.Calendar,
+                Click = (msg) =>
+                {
+                    Mediator.Publish(new UiToggleMessage(typeof(PFinderWindow)));
+                },
+                IconOffset = new(2,1),
+                ShowTooltip = () =>
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.Text("打开招募");
+                    ImGui.EndTooltip();
+                }
+            },
         };
 
         _drawFolders = GetDrawFolders().ToList();
