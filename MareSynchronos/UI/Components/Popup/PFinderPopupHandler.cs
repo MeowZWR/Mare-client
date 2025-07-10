@@ -40,32 +40,69 @@ public class PFinderPopupHandler : IPopupHandler
 
     public void DrawContent()
     {
-
-        if (ImGui.BeginChild(pf.Guid.ToString() + "##preview", new Vector2(ImGui.GetContentRegionAvail().X,200), true, ImGuiWindowFlags.NoScrollbar))
+        // 使用一个带边框的表格来包裹整个条目。
+        if (ImGui.BeginTable("pf_card_" + pf.Guid, 2, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit))
         {
+            // === 定义列的属性 ===
+            ImGui.TableSetupColumn("Content", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 30f);
+
+            // === 绘制表格内容 ===
+            ImGui.TableNextRow();
+
+            // --- 第一列：内容区 ---
+            ImGui.TableSetColumnIndex(0);
+
             _uiSharedService.BigText(pf.Title, ImGuiColors.ParsedBlue);
 
-            UiSharedService.ColorText( pf.IsNSFW ? "NSFW" : "", ImGuiColors.DalamudRed);
-            UiSharedService.AttachToolTip("NSFW/R18+");
-            ImGui.SameLine();
+            if (pf.IsNSFW)
+            {
+                UiSharedService.ColorText("NSFW", ImGuiColors.DalamudRed);
+                UiSharedService.AttachToolTip("NSFW/R18+");
+                ImGui.SameLine();
+            }
             UiSharedService.ColorText(pf.Tags, ImGuiColors.DalamudGrey);
 
             var goingon = pf.StartTime < DateTime.Now && pf.EndTime > DateTime.Now;
             UiSharedService.ColorTextWrapped($"{pf.StartTime.ToLocalTime():g} - {pf.EndTime.ToLocalTime():g}", goingon ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudWhite);
-            ImGui.SameLine(360);
+
+            // 将组信息和用户信息并排显示
             UiSharedService.TextWrapped(pf.Open ? "公开" : $"{pf.Group.AliasOrGID}");
-            ImGui.SameLine(640);
+            ImGui.SameLine(ImGui.GetColumnWidth() - 200); // 使用相对定位，更健壮
             UiSharedService.ColorTextWrapped(pf.User.AliasOrUID, UiSharedService.IsSupporter(pf.User.UID) ? ImGuiColors.ParsedGold : ImGuiColors.DalamudWhite);
 
-            ImGui.SetCursorPosY(80);
-            if (ImGui.BeginChild(pf.Guid + "##preview" + "###desc", new Vector2(ImGui.GetContentRegionAvail().X, 105), true))
+            // 我们仍然使用 Child 窗口来创建一个固定高度、带滚动条的区域
+            ImGui.PushStyleVar(ImGuiStyleVar.ChildRounding, 5.0f);
+            if (ImGui.BeginChild("desc_child_" + pf.Guid, new Vector2(0, 105), true))
             {
-                UiSharedService.TextWrapped(pf.Description);
-                ImGui.EndChild();
+                // 1. 创建一个临时的 string 变量，因为 InputTextMultiline 需要一个 `ref string`
+                var descriptionText = pf.Description ?? string.Empty;
+
+                // 2. (推荐) 移除输入框的背景和边框，让它看起来像普通文本
+                ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0, 0, 0, 0)); // 透明背景
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0)); // 移除内边距
+
+                // 3. 使用 InputTextMultiline 并设置 ReadOnly 标志
+                //    - 使用唯一的隐藏标签 "##..."
+                //    - 尺寸设置为 new Vector2(-1, -1) 或 GetContentRegionAvail() 以填满 Child 容器
+                //    - 传入 ImGuiInputTextFlags.ReadOnly
+                ImGui.InputTextMultiline("##desc_text" + pf.Guid,
+                    ref descriptionText,
+                    (uint)descriptionText.Length + 1, // MaxLength，在只读模式下不重要
+                    ImGui.GetContentRegionAvail(),
+                    ImGuiInputTextFlags.ReadOnly);
+
+                // 4. 恢复样式
+                ImGui.PopStyleVar();
+                ImGui.PopStyleColor();
             }
             ImGui.EndChild();
+            ImGui.PopStyleVar();
 
+            // === 结束表格 ===
+            ImGui.EndTable();
         }
+
         UiSharedService.DrawGroupedCenteredColorText("↑ 预览 ↑", ImGuiColors.ParsedGreen);
 
         if (ImGui.BeginChild(pf.Guid.ToString(), new Vector2(780,300), true))

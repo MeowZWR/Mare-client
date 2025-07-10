@@ -144,9 +144,9 @@ public partial class ApiController
         return result;
     }
 
-    public async Task<List<PFinderDto>> RefreshPfinderList(UserDto userDto)
+    public async Task<List<PFinderDto>> RefreshPFinderList(UserDto userDto)
     {
         CheckConnection();
-        return await _mareHub!.InvokeAsync<List<PFinderDto>>(nameof(RefreshPfinderList), userDto).ConfigureAwait(false);
+        return await _mareHub!.InvokeAsync<List<PFinderDto>>(nameof(RefreshPFinderList), userDto).ConfigureAwait(false);
     }
 }
