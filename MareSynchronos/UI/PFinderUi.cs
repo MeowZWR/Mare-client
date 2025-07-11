@@ -1,6 +1,7 @@
 using Dalamud.Interface.Colors;
 using ImGuiNET;
 using MareSynchronos.API.Data;
+using MareSynchronos.API.Data.Enum;
 using MareSynchronos.API.Dto.Group;
 using MareSynchronos.API.Dto.User;
 using MareSynchronos.FileCache;
@@ -208,6 +209,17 @@ namespace MareSynchronos.UI
                     {
                         UiSharedService.AttachToolTip("按住Ctrl键以删除");
                     }
+                }
+                if (pf.HasTempGroup && !string.IsNullOrEmpty(pf.TempGroupPW))
+                {
+                    ImGui.BeginDisabled(!ImGui.IsKeyDown(ImGuiKey.ModCtrl));
+                    if (ImGui.Button("加入"))
+                    {
+                        _ = _apiController.GroupJoinFinalize(new GroupJoinDto(pf.Group, pf.TempGroupPW,
+                            GroupUserPreferredPermissions.NoneSet));
+                    }
+                    UiSharedService.AttachToolTip($"按住Ctrl并点击将加入临时同步贝 {pf.Group.AliasOrGID}");
+                    ImGui.EndDisabled();
                 }
 
                 // === 结束表格 ===

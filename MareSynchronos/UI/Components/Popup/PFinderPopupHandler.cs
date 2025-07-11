@@ -22,6 +22,7 @@ public class PFinderPopupHandler : IPopupHandler
     string pfTags;
     DateTimeOffset pfStartTime;
     DateTimeOffset pfEndTime;
+    bool hasTempGroup;
     int index;
     GroupFullInfoDto[] groups = [];
     private GroupJoinDto? tempGroup = null;
@@ -196,6 +197,7 @@ public class PFinderPopupHandler : IPopupHandler
             }
 
             bool pfOpen = pf.Open;
+            ImGui.BeginDisabled(!string.IsNullOrEmpty(pf.TempGroupPW));
             if (ImGui.Checkbox("公开", ref pfOpen))
             {
                 pf.Open = pfOpen;
@@ -206,6 +208,7 @@ public class PFinderPopupHandler : IPopupHandler
                 }
             }
             UiSharedService.AttachToolTip("选中后所有用户都能看到此招募,否则仅有下方贝中用户可以查看.");
+            ImGui.EndDisabled();
 
             if (!pf.Open)
             {
@@ -220,21 +223,47 @@ public class PFinderPopupHandler : IPopupHandler
                 }
                 UiSharedService.ColorText("*你必须有至少一个贝的管理权限才能发布非公开招募.", ImGuiColors.DalamudYellow);
             }
-            //
-            // if (true) //TODO:允许创建临时贝并加入
-            // {
-            //     if (tempGroup == null)
-            //     {
-            //         if (ImGui.Button("创建一个临时同步贝"))
-            //         {
-            //
-            //         }
-            //     }
-            //     else if (pf.Group.GID != tempGroup.GID)
-            //     {
-            //         pf.Group = new GroupData(tempGroup.GID, tempGroup.GroupAlias);
-            //     }
-            // }
+            else
+            {
+                ImGui.BeginDisabled(!string.IsNullOrEmpty(pf.TempGroupPW));
+                if (ImGui.Checkbox("使用临时同步贝", ref hasTempGroup))
+                {
+                    pf.HasTempGroup = hasTempGroup;
+                }
+                ImGui.EndDisabled();
+                if (pf.HasTempGroup && string.IsNullOrEmpty(pf.TempGroupPW))
+                {
+                    if (ImGui.Button("创建一个临时同步贝"))
+                    {
+                        var result = _apiController.GroupCreate().Result;
+                        pf.Group = new GroupData(result.GID, result.GroupAlias);
+                        pf.TempGroupPW = result.Password;
+                    }
+                }
+
+                if (pf.HasTempGroup && !string.IsNullOrEmpty(pf.TempGroupPW))
+                {
+                    ImGui.Text($"已创建临时同步贝:");
+                    ImGui.SameLine();
+                    ImGui.TextUnformatted("同步贝ID: " + pf.Group.GID);
+                    ImGui.SameLine();
+                    ImGui.TextUnformatted("同步贝密码: " + pf.TempGroupPW);
+                    UiSharedService.ColorText("请勿修改同步贝密码或删除贝,否则参与者将无法加入.", ImGuiColors.DalamudYellow);
+                    ImGui.SameLine();
+                    ImGui.TextUnformatted("如需同步贝聊天请自行前往贝管理界面开启.");
+
+
+                    ImGui.BeginDisabled(!ImGui.IsKeyDown(ImGuiKey.ModCtrl));
+                    if (ImGui.Button("删除临时贝"))
+                    {
+                        _ = _apiController.GroupDelete(new GroupDto(pf.Group));
+                        pf.Group = new GroupData("MSS-GLOBAL", "MareCN公用贝");
+                        pf.TempGroupPW = null;
+                    }
+                    UiSharedService.AttachToolTip("按住Ctrl并点击以删除");
+                    ImGui.EndDisabled();
+                }
+            }
 
             ImGui.EndChild();
         }
@@ -255,6 +284,10 @@ public class PFinderPopupHandler : IPopupHandler
         ImGui.SameLine(200f);
         if (_uiSharedService.IconTextButton(FontAwesomeIcon.Times, "关闭"))
         {
+            if (!string.IsNullOrEmpty(pf.TempGroupPW))
+            {
+                _ = _apiController.GroupDelete(new GroupDto(pf.Group));
+            }
             ImGui.CloseCurrentPopup();
         }
     }
@@ -277,6 +310,7 @@ public class PFinderPopupHandler : IPopupHandler
             pf.Group = new GroupData(groups[index].GID, groups[index].GroupAlias);
         }
 
+        hasTempGroup = pf.HasTempGroup;
     }
 
 /// <summary>
