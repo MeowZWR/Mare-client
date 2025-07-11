@@ -314,7 +314,6 @@ private static class ImGuiAdvancedWidgets
         }
         ImGui.SameLine();
 
-        // ... [年份和月份选择的逻辑保持不变] ...
         ImGui.PushItemWidth(90);
         int year = calendarState.Year;
         string[] monthNames = CultureInfo.CurrentCulture.DateTimeFormat.MonthNames;
@@ -340,10 +339,8 @@ private static class ImGuiAdvancedWidgets
 
         ImGui.Separator();
 
-        // ... [日期网格的逻辑保持不变] ...
         if (ImGui.BeginTable("DatePickerGrid", 7))
         {
-            // ... (代码完全不变)
             string[] dayNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
             int firstDayOfWeek = (int)CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek;
             for (int i = 0; i < 7; i++)
@@ -374,7 +371,6 @@ private static class ImGuiAdvancedWidgets
                                                       selectedDate.Hour, selectedDate.Minute, selectedDate.Second,
                                                       selectedDate.Offset);
                     valueChanged = true;
-                    ImGui.CloseCurrentPopup();
                 }
                 ImGui.PopID();
 
@@ -394,7 +390,6 @@ private static class ImGuiAdvancedWidgets
 
     /// <summary>
     /// 绘制一个完全独立的、支持 DateTimeOffset 的日期时间选择器 (弹出式)。
-    /// API 已简化，不再需要外部 calendarState。
     /// </summary>
     public static bool DateTimePicker(string id, ref DateTimeOffset dt)
     {
@@ -420,7 +415,6 @@ private static class ImGuiAdvancedWidgets
             }
             ImGui.Separator();
 
-            // ... [时间编辑逻辑不变] ...
             int hour = dt.Hour;
             int minute = dt.Minute;
             int second = dt.Second;
@@ -447,14 +441,12 @@ private static class ImGuiAdvancedWidgets
     }
 
     /// <summary>
-    /// [保持不变] 绘制一个方便用户的、在本地时区编辑的日期时间选择器。
-    /// 它现在调用了新的、更简洁的 DateTimePicker。
+    /// 绘制一个方便用户的、在本地时区编辑的日期时间选择器。
     /// </summary>
     public static bool DateTimePickerInLocalZone(string id, ref DateTimeOffset dt)
     {
         var localTime = dt.ToLocalTime();
 
-        // 调用核心 DateTimePicker，现在API更简洁了！
         bool valueChanged = DateTimePicker(id, ref localTime);
 
         if (valueChanged)
