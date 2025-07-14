@@ -106,5 +106,7 @@ public record MoodlesShareMessage(MoodlesAction Action, string Status) : Message
 public record OpenChatUi():MessageBase;
 
 public record OpenPFinderPopupMessage(PFinderDto dto) : MessageBase;
+
+public record OpenPfinderWindowMessage(string Fliter) : MessageBase;
 #pragma warning restore S2094
 #pragma warning restore MA0048 // File name must match type name

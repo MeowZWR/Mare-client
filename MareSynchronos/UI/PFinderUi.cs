@@ -28,10 +28,10 @@ namespace MareSynchronos.UI
 
         private readonly TimeSpan CoolDown = TimeSpan.FromSeconds(15);
 
-        private List<PFinderDto> _pfs = [];
+        public static List<PFinderDto> Pfs = [];
         private DateTime _lastUpdate = DateTime.MinValue;
-        private bool _autoRefresh = false;
-        private string fliter = "";
+        CancellationTokenSource cts = new();
+        private string _fliter = "";
         private bool Disable => _lastUpdate + CoolDown > DateTime.Now;
 
         public PFinderWindow(ILogger<PFinderWindow> logger, UiSharedService uiShared, MareConfigService configService,
@@ -58,6 +58,25 @@ namespace MareSynchronos.UI
             };
 
             Mediator.Subscribe<DisconnectedMessage>(this, (_) => IsOpen = false);
+            Mediator.Subscribe<OpenPfinderWindowMessage>(this, (msg) =>
+            {
+                IsOpen = true;
+                _fliter = msg.Fliter;
+            });
+
+            _ = UpdatePFs(cts.Token);
+        }
+
+        private async Task UpdatePFs(CancellationToken ct)
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                if (_apiController.IsConnected)
+                {
+                    Pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
+                }
+                await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);
+            }
         }
 
         public override void OnOpen()
@@ -65,9 +84,14 @@ namespace MareSynchronos.UI
             if (!_apiController.IsConnected) return;
             if (_lastUpdate + CoolDown < DateTime.Now)
             {
-                _pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
-                if (_pfs.Count > 0) _lastUpdate = DateTime.Now;
+                Pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
+                if (Pfs.Count > 0) _lastUpdate = DateTime.Now;
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            cts.Cancel();
         }
 
         protected override void DrawInternal()
@@ -75,16 +99,16 @@ namespace MareSynchronos.UI
             if (!_apiController.IsConnected) return;
 
             ImGui.SetNextItemWidth(750);
-            ImGui.InputText("过滤##Fliter", ref fliter, 64);
+            ImGui.InputText("过滤##Fliter", ref _fliter, 64);
 
             var bottomBarHeight = ImGui.GetFrameHeightWithSpacing() + 5.0f;
             var childsize = new Vector2(0, -bottomBarHeight);
             if (ImGui.BeginChild("##PFlist", childsize, true, ImGuiWindowFlags.AlwaysVerticalScrollbar))
             {
-                foreach (var pf in _pfs)
+                foreach (var pf in Pfs)
                 {
                     var str = string.Join("|", pf.Title, pf.Description, pf.Tags, pf.Group.AliasOrGID, pf.User.AliasOrUID);
-                    if (!string.IsNullOrEmpty(fliter) && !str.Contains(fliter)) continue;
+                    if (!string.IsNullOrEmpty(_fliter) && !str.Contains(_fliter)) continue;
                     DrawPF(pf);
                 }
                 ImGui.EndChild();
@@ -94,16 +118,10 @@ namespace MareSynchronos.UI
             if (ImGui.Button("刷新"))
             {
                 _lastUpdate = DateTime.Now;
-                _pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
+                Pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
             }
             ImGui.EndDisabled();
             ImGui.SameLine();
-            ImGui.Checkbox("自动刷新", ref _autoRefresh);
-            if (!Disable && _autoRefresh)
-            {
-                _lastUpdate = DateTime.Now;
-                _pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
-            }
             if (Disable)
             {
                 ImGui.SameLine();
@@ -146,7 +164,20 @@ namespace MareSynchronos.UI
                 UiSharedService.ColorText(pf.Tags, ImGuiColors.DalamudGrey);
 
                 var goingon = pf.StartTime < DateTime.Now && pf.EndTime > DateTime.Now;
-                UiSharedService.ColorTextWrapped($"{pf.StartTime.ToLocalTime():g} - {pf.EndTime.ToLocalTime():g}", goingon ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudWhite);
+                var passed = pf.EndTime < DateTime.Now;
+                if (goingon)
+                {
+                    UiSharedService.ColorTextWrapped($"{pf.StartTime.ToLocalTime():g} - {pf.EndTime.ToLocalTime():g}", ImGuiColors.ParsedGreen);
+                }
+                else if (passed)
+                {
+                    UiSharedService.ColorTextWrapped($"{pf.StartTime.ToLocalTime():g} - {pf.EndTime.ToLocalTime():g}", ImGuiColors.DalamudRed);
+                }
+                else
+                {
+                    UiSharedService.ColorTextWrapped($"{pf.StartTime.ToLocalTime():g} - {pf.EndTime.ToLocalTime():g}", ImGuiColors.DalamudWhite);
+                }
+
 
                 // 将组信息和用户信息并排显示
                 UiSharedService.TextWrapped(pf.Open ? "公开" : $"{pf.Group.AliasOrGID}");
@@ -202,7 +233,7 @@ namespace MareSynchronos.UI
                         clone.StartTime = DateTimeOffset.MinValue;
                         clone.EndTime = DateTimeOffset.MinValue.AddMinutes(1);
                         var result = _apiController.UpdatePFinder(clone).Result;
-                        _pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
+                        Pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
                     }
                     ImGui.EndDisabled();
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))

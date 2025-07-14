@@ -187,6 +187,7 @@ public class DrawFolderGroup : DrawFolderBase
         var pauseButtonSize = _uiSharedService.GetIconButtonSize(pauseIcon);
 
         var userCogButtonSize = _uiSharedService.GetIconSize(FontAwesomeIcon.UsersCog);
+        var calendatButtonSize = _uiSharedService.GetIconSize(FontAwesomeIcon.Calendar);
 
         var individualSoundsDisabled = _groupFullInfoDto.GroupUserPermissions.IsDisableSounds();
         var individualAnimDisabled = _groupFullInfoDto.GroupUserPermissions.IsDisableAnimations();
@@ -194,10 +195,18 @@ public class DrawFolderGroup : DrawFolderBase
 
         var infoIconPosDist = currentRightSideX - pauseButtonSize.X - spacingX;
 
+        ImGui.SameLine(infoIconPosDist - userCogButtonSize.X - spacingX * 2 - calendatButtonSize.X);
+
+        if (PFinderWindow.Pfs.Any(x => x.Group.GID == _groupFullInfoDto.GID))
+        {
+            if (_uiSharedService.IconButton(FontAwesomeIcon.Calendar))
+            {
+                _mareMediator.Publish(new OpenPfinderWindowMessage(_groupFullInfoDto.GroupAliasOrGID));
+            }
+            UiSharedService.AttachToolTip("同步贝中有预定的活动");
+        }
         ImGui.SameLine(infoIconPosDist - userCogButtonSize.X);
-
         ImGui.AlignTextToFramePadding();
-
         _uiSharedService.IconText(FontAwesomeIcon.UsersCog, (_groupFullInfoDto.GroupPermissions.IsPreferDisableAnimations() != individualAnimDisabled
             || _groupFullInfoDto.GroupPermissions.IsPreferDisableSounds() != individualSoundsDisabled
             || _groupFullInfoDto.GroupPermissions.IsPreferDisableVFX() != individualVFXDisabled) ? ImGuiColors.DalamudYellow : null);
