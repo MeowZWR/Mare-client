@@ -295,6 +295,11 @@ public class PFinderPopupHandler : IPopupHandler
     public void Open(OpenPFinderPopupMessage message)
     {
         pf = message.dto;
+        if (pf.EndTime < DateTimeOffset.UtcNow)
+        {
+            pf.StartTime = DateTimeOffset.UtcNow;
+            pf.EndTime = DateTimeOffset.UtcNow;
+        }
         pfTitle = pf.Title;
         pfDescription = pf.Description;
         pfIsNsfw = pf.IsNSFW;

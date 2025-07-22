@@ -33,6 +33,7 @@ namespace MareSynchronos.UI
         CancellationTokenSource cts = new();
         private string _fliter = "";
         private bool Disable => _lastUpdate + CoolDown > DateTime.Now;
+        private bool started = false;
 
         public PFinderWindow(ILogger<PFinderWindow> logger, UiSharedService uiShared, MareConfigService configService,
             CacheMonitor fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator,
@@ -63,12 +64,15 @@ namespace MareSynchronos.UI
                 IsOpen = true;
                 _fliter = msg.Fliter;
             });
-
-            _ = UpdatePFs(cts.Token);
+            Mediator.Subscribe<ConnectedMessage>(this, (msg) =>
+            {
+                if (!started) _ = UpdatePFs(cts.Token);
+            } );
         }
 
         private async Task UpdatePFs(CancellationToken ct)
         {
+            started = true;
             while (!ct.IsCancellationRequested)
             {
                 if (_apiController.IsConnected)
