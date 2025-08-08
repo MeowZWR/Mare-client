@@ -33,12 +33,12 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     private readonly ICondition _condition;
     private readonly IDataManager _gameData;
     private readonly IGameConfig _gameConfig;
+    private readonly ISigScanner _sigScanner;
     private readonly BlockedCharacterHandler _blockedCharacterHandler;
     private readonly IFramework _framework;
     private readonly IGameGui _gameGui;
     private readonly ILogger<DalamudUtilService> _logger;
     private readonly IObjectTable _objectTable;
-    private readonly ISigScanner _sigScanner;
     private readonly PerformanceCollectorService _performanceCollector;
     private uint? _classJobId = 0;
     private DateTime _delayedFrameworkUpdateCheck = DateTime.UtcNow;
@@ -48,9 +48,8 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     private readonly Dictionary<string, (string Name, nint Address)> _playerCharas = new(StringComparer.Ordinal);
     private readonly List<string> _notUpdatedCharas = [];
     private bool _sentBetweenAreas = false;
-    private readonly Dictionary<ulong, string> _aidCache = [];
+    private Lazy<ulong> _cid;
     private Lazy<uint> _aid;
-    private int _aidCounter = 0;
 
     public DalamudUtilService(ILogger<DalamudUtilService> logger, IClientState clientState, IObjectTable objectTable, IFramework framework,
         IGameGui gameGui, ICondition condition, IDataManager gameData, ITargetManager targetManager, IGameConfig gameConfig, ISigScanner sigScanner,
@@ -130,6 +129,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         });
         IsWine = Util.IsWine();
         _aid = RebuildAid();
+        _cid = RebuildCID();
     }
 
     private Lazy<uint> RebuildAid() {
@@ -142,6 +142,8 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
             }
         });
     }
+
+    private Lazy<ulong> RebuildCID() =>  new(GetCID);
 
     public bool IsWine { get; init; }
 
@@ -336,20 +338,17 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
 
     public async Task<string> GetPlayerNameHashedAsync()
     {
-        return await RunOnFrameworkThread(() => _aid.Value.ToString().GetHash256()).ConfigureAwait(false);
+        return await RunOnFrameworkThread(() => _cid.Value.ToString().GetHash256()).ConfigureAwait(false);
     }
 
-    private unsafe string GetHashedAccIdFromPlayerPointer(nint ptr)
+    public string GetLocalPlayerAidAsync()
     {
-        if (ptr == nint.Zero) return "UNK" + _aidCounter++;
-        var aid = ((BattleChara*)ptr)->Character.AccountId;
-        if (!_aidCache.TryGetValue(aid, out string? hash))
-        {
-            var player = GetPlayerCharacter();
-            if (player == null) return "UNK" + _aidCounter++;
-            _aidCache[aid] = hash = unchecked((uint)(((((BattleChara*)player.Address)->Character.AccountId ^ aid) >> 31) ^ _aid.Value)).ToString().GetHash256();
-        }
-        return hash;
+        return _aid.Value.ToString().GetHash256();
+    }
+
+    private unsafe static string GetHashedCIDFromPlayerPointer(nint ptr)
+    {
+        return ((BattleChara*)ptr)->Character.ContentId.ToString().GetHash256();
     }
 
     public IntPtr GetPlayerPtr()
@@ -671,7 +670,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
                         }
 
                         var charaName = ((GameObject*)chara.Address)->NameString;
-                        var hash = GetHashedAccIdFromPlayerPointer(chara.Address);
+                        var hash = GetHashedCIDFromPlayerPointer(chara.Address);
                         if (!IsAnythingDrawing)
                             CheckCharacterForDrawing(chara.Address, charaName);
                         _notUpdatedCharas.Remove(hash);
@@ -787,7 +786,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
                 _logger.LogDebug("Logged in");
                 IsLoggedIn = true;
                 _lastZone = _clientState.TerritoryType;
-                _aid = RebuildAid();
+                _cid = RebuildCID();
                 Mediator.Publish(new DalamudLoginMessage());
             }
             else if (localPlayer == null && IsLoggedIn)
