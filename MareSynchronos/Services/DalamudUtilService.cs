@@ -33,6 +33,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     private readonly ICondition _condition;
     private readonly IDataManager _gameData;
     private readonly IGameConfig _gameConfig;
+    private readonly ISigScanner _sigScanner;
     private readonly BlockedCharacterHandler _blockedCharacterHandler;
     private readonly IFramework _framework;
     private readonly IGameGui _gameGui;
@@ -48,9 +49,10 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     private readonly List<string> _notUpdatedCharas = [];
     private bool _sentBetweenAreas = false;
     private Lazy<ulong> _cid;
+    private Lazy<uint> _aid;
 
     public DalamudUtilService(ILogger<DalamudUtilService> logger, IClientState clientState, IObjectTable objectTable, IFramework framework,
-        IGameGui gameGui, ICondition condition, IDataManager gameData, ITargetManager targetManager, IGameConfig gameConfig,
+        IGameGui gameGui, ICondition condition, IDataManager gameData, ITargetManager targetManager, IGameConfig gameConfig, ISigScanner sigScanner,
         BlockedCharacterHandler blockedCharacterHandler, MareMediator mediator, PerformanceCollectorService performanceCollector)
     {
         _logger = logger;
@@ -63,6 +65,7 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         _gameConfig = gameConfig;
         _blockedCharacterHandler = blockedCharacterHandler;
         Mediator = mediator;
+        _sigScanner = sigScanner;
         _performanceCollector = performanceCollector;
         WorldData = new(() =>
         {
@@ -125,7 +128,19 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
             }).ConfigureAwait(false);
         });
         IsWine = Util.IsWine();
+        _aid = RebuildAid();
         _cid = RebuildCID();
+    }
+
+    private Lazy<uint> RebuildAid() {
+        return new(() =>
+        {
+            unsafe
+            {
+                var address = _sigScanner.GetStaticAddressFromSig("48 8B 0D ?? ?? ?? ?? 4C 8B CA");
+                return (uint)(address != nint.Zero ? (*(ulong**)address)[1] : 0u);
+            }
+        });
     }
 
     private Lazy<ulong> RebuildCID() =>  new(GetCID);
@@ -324,6 +339,11 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
     public async Task<string> GetPlayerNameHashedAsync()
     {
         return await RunOnFrameworkThread(() => _cid.Value.ToString().GetHash256()).ConfigureAwait(false);
+    }
+
+    public string GetLocalPlayerAidAsync()
+    {
+        return _aid.Value.ToString().GetHash256();
     }
 
     private unsafe static string GetHashedCIDFromPlayerPointer(nint ptr)
