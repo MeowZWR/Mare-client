@@ -1,11 +1,14 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
+using MareSynchronos.API.Dto.Group;
 using MareSynchronos.API.Dto.User;
+using MareSynchronos.MareConfiguration;
 using MareSynchronos.PlayerData.Handlers;
 using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
+using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -25,17 +28,28 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
     private ICallGateProvider<string, string, string, object?>? _applyStatusesToPairRequest;
     private ICallGateProvider<int, string, object?>? _moodlesShare;
 
+
+
+        private readonly ApiController _apiController;
+        private readonly MareConfigService _mareConfigService;
+        private readonly IpcCallerChatTwo _chatTwoIpc;
+
     public MareMediator Mediator { get; init; }
 
     public IpcProvider(ILogger<IpcProvider> logger, IDalamudPluginInterface pi,
         DalamudUtilService dalamudUtil, PairManager  pairManager,
-        CharaDataManager charaDataManager, MareMediator mareMediator)
+        CharaDataManager charaDataManager, MareMediator mareMediator,
+        ApiController apiController, MareConfigService mareConfigService,
+        IpcCallerChatTwo chatTwoIpc)
     {
         _logger = logger;
         _pi = pi;
         _charaDataManager = charaDataManager;
         Mediator = mareMediator;
         _pairManager = pairManager;
+        _apiController = apiController;
+        _mareConfigService = mareConfigService;
+        _chatTwoIpc = chatTwoIpc;
 
         Mediator.Subscribe<GameObjectHandlerCreatedMessage>(this, (msg) =>
         {
@@ -64,6 +78,9 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
         _moodlesShare = _pi.GetIpcProvider<int, string, object?>("MareSynchronos.MoodlesShare");
         _moodlesShare.RegisterAction(ShareMoodles);
 
+        // Register ChatTwo IPC providers
+        _chatTwoIpc.RegisterProviders(_mareConfigService, _pairManager, _apiController);
+
         _logger.LogInformation("Started IpcProviderService");
         return Task.CompletedTask;
     }
@@ -81,6 +98,10 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
         _loadFileAsyncProvider?.UnregisterFunc();
         _handledGameAddresses?.UnregisterFunc();
         _applyStatusesToPairRequest?.UnregisterAction();
+
+        // Unregister ChatTwo IPC providers
+        _chatTwoIpc.UnregisterProviders();
+
         Mediator.UnsubscribeAll(this);
         return Task.CompletedTask;
     }
@@ -110,6 +131,8 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
     {
         return _activeGameObjectHandlers.Where(g => g.Address != nint.Zero).Select(g => g.Address).Distinct().ToList();
     }
+
+
 
         /// <summary>
     /// Handles the request from our clients moodles plugin to update another one of our pairs status.
