@@ -1007,10 +1007,17 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
 
         var port = _configService.Current.PortToChatGui;
-        if (ImGui.Checkbox("将聊天输出到游戏聊天框", ref port))
+        using (ImRaii.Disabled(_uiShared.ChatTwoExists))
         {
-            _configService.Current.PortToChatGui = port;
-            _configService.Save();
+            if (ImGui.Checkbox("将聊天输出到游戏聊天框", ref port))
+            {
+                _configService.Current.PortToChatGui = port;
+                _configService.Save();
+            }
+        }
+        if (_uiShared.ChatTwoExists)
+        {
+            UiSharedService.AttachToolTip("已检测到 ChatTwo，聊天将由 ChatTwo 处理，此选项已自动停用以避免重复输出。");
         }
 
         ImGui.Indent();

@@ -248,7 +248,25 @@ public partial class ApiController
 
     public Task Client_GroupChat(GroupChatDto groupChatDto)
     {
-        ExecuteSafely(() => Mediator.Publish(new ChatMessage(groupChatDto.User.UID, groupChatDto.GID, groupChatDto.Time, groupChatDto.Message)));
+        ExecuteSafely(() =>
+        {
+            // Mare 内置聊天 UI
+            Mediator.Publish(new ChatMessage(groupChatDto.User.UID, groupChatDto.GID, groupChatDto.Time, groupChatDto.Message));
+
+            // 若 ChatTwo 可用，推送为 MareLinkshell[i]
+            try
+            {
+                var sender = string.Equals(groupChatDto.User.UID, UID, StringComparison.Ordinal)
+                    ? DisplayName
+                    : _pairManager.GetPairByUID(groupChatDto.User.UID)?.UserData.AliasOrUID ?? groupChatDto.User.AliasOrUID;
+
+                _ipcManager.ChatTwo.PushGroupChatMessage(groupChatDto.GID, sender, groupChatDto.Message, groupChatDto.Time, _mareConfigService);
+            }
+            catch
+            {
+                // 忽略 ChatTwo 不存在的情况
+            }
+        });
         return Task.CompletedTask;
     }
 
