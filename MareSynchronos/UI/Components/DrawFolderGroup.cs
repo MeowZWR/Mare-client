@@ -167,6 +167,7 @@ public class DrawFolderGroup : DrawFolderBase
                 if (!ChatUi.JoinedGroups.Contains(_groupFullInfoDto.GID))
                 {
                     ChatUi.JoinedGroups.Add(_groupFullInfoDto.GID);
+                    _mareMediator.Publish(new JoinedGroupsChangedMessage());
                 }
 
                 _mareMediator.Publish(new OpenChatUi());

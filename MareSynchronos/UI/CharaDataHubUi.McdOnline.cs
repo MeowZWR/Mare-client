@@ -172,7 +172,7 @@ internal sealed partial class CharaDataHubUi
 
         UiSharedService.ScaledNextItemWidth(200);
         var dtoShareType = updateDto.ShareType;
-        if (ImGui.BeginCombo("Sharing", GetShareTypeString(dtoShareType)))
+        if (ImGui.BeginCombo("共享类型", GetShareTypeString(dtoShareType)))
         {
             foreach (var shareType in Enum.GetValues(typeof(ShareTypeDto)).Cast<ShareTypeDto>())
             {
@@ -567,10 +567,10 @@ internal sealed partial class CharaDataHubUi
     {
         _uiSharedService.BigText("在线MCD");
 
-        DrawHelpFoldout("In this tab you can create, view and edit your own Mare Character Data that is stored on the server." + Environment.NewLine + Environment.NewLine
-            + "Mare Character Data Online functions similar to the previous MCDF standard for exporting your character, except that you do not have to send a file to the other person but solely a code." + Environment.NewLine + Environment.NewLine
-            + "There would be a bit too much to explain here on what you can do here in its entirety, however, all elements in this tab have help texts attached what they are used for. Please review them carefully." + Environment.NewLine + Environment.NewLine
-            + "Be mindful that when you share your Character Data with other people there is a chance that, with the help of unsanctioned 3rd party plugins, your appearance could be stolen irreversibly, just like when using MCDF.");
+        DrawHelpFoldout("在此选项卡中，您可以创建、查看和编辑存储在服务器上的Mare角色数据。" + Environment.NewLine + Environment.NewLine
+            + "Mare在线角色数据的功能类似于之前用于导出角色的MCDF标准，不同之处在于您不必向其他人发送文件，而只需提供一个代码。" + Environment.NewLine + Environment.NewLine
+            + "这里要解释的内容太多，无法完整说明您在此处可以做的所有事情，但是此选项卡中的所有元素都附有帮助文本，说明它们的用途。请仔细查看。" + Environment.NewLine + Environment.NewLine
+            + "请注意，当您与其他人分享角色数据时，借助未经授权的第三方插件，您的外观可能会被不可逆地盗用，就像使用MCDF时一样。");
 
         ImGuiHelpers.ScaledDummy(5);
         using (ImRaii.Disabled((!_charaDataManager.GetAllDataTask?.IsCompleted ?? false)

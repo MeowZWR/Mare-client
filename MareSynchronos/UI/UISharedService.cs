@@ -53,6 +53,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     private readonly ITextureProvider _textureProvider;
     private readonly TokenProvider _tokenProvider;
     private bool _brioExists = false;
+    private bool _chatTwoExists = false;
     private bool _cacheDirectoryHasOtherFilesThanCache = false;
     private bool _cacheDirectoryIsValidPath = true;
     private bool _customizePlusExists = false;
@@ -107,6 +108,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
             _moodlesExists = _ipcManager.Moodles.APIAvailable;
             _petNamesExists = _ipcManager.PetNames.APIAvailable;
             _brioExists = _ipcManager.Brio.APIAvailable;
+            _chatTwoExists = _ipcManager.ChatTwo.APIAvailable;
         });
 
         UidFont = _pluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e =>
@@ -137,6 +139,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     public IFontHandle UidFont { get; init; }
     public Dictionary<ushort, string> WorldData => _dalamudUtil.WorldData.Value;
     public uint WorldId => _dalamudUtil.GetHomeWorldId();
+    public bool ChatTwoExists => _chatTwoExists;
 
     public static void AttachToolTip(string text)
     {
@@ -785,7 +788,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ColorText("Glamourer", GetBoolColor(_glamourerExists));
         AttachToolTip($"Glamourer目前" + (_glamourerExists ? "已为最新." : "未安装或需要更新."));
 
-        ImGui.TextUnformatted("Optional Plugins:");
+        ImGui.TextUnformatted("可选插件：");
         ImGui.SameLine(150);
         ColorText("SimpleHeels", GetBoolColor(_heelsExists));
         AttachToolTip($"SimpleHeels目前" + (_heelsExists ? "已为最新." : "未安装或需要更新."));
@@ -809,6 +812,10 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.SameLine();
         ColorText("Brio", GetBoolColor(_brioExists));
         AttachToolTip($"Brio目前" + (_brioExists ? "已为最新." : "未安装或需要更新."));
+
+        ImGui.SameLine();
+        ColorText("ChatTwo", GetBoolColor(_chatTwoExists));
+        AttachToolTip($"ChatTwo目前" + (_chatTwoExists ? "已为最新." : "未安装或需要更新."));
 
         if (!_penumbraExists || !_glamourerExists)
         {

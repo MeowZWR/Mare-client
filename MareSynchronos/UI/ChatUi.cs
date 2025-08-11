@@ -63,7 +63,8 @@ namespace MareSynchronos.UI
                 _chatLogs.RemoveAt(_chatLogs.FindIndex(x => x.Group == msg.Group));
             }
             _logger.LogDebug($"Received chat message: '{msg.Message}' from {msg.Sender} in group {msg.Group}");
-            if (_mareConfig.Current.PortToChatGui)
+            // 若 ChatTwo 已连接，则不再将聊天输出到默认聊天框，避免重复
+            if (_mareConfig.Current.PortToChatGui && !_uiSharedService.ChatTwoExists)
             {
                 var groupName = _idDisplayHandler
                     .GetGroupText(_pairManager.Groups.First(x => x.Key.GID == msg.Group).Value).text;
@@ -101,6 +102,7 @@ namespace MareSynchronos.UI
                         if (!IsOpen)
                         {
                             JoinedGroups.Remove(group);
+                            Mediator.Publish(new JoinedGroupsChangedMessage());
                             if (_lastActiveGroup == group)
                             {
                                 _lastActiveGroup = null;
