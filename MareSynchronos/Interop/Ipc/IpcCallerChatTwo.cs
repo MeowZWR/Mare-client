@@ -1,9 +1,11 @@
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using Microsoft.Extensions.Logging;
+using MareSynchronos.API.Data;
 using MareSynchronos.API.Dto.Group;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.PlayerData.Pairs;
+using MareSynchronos.Services.Mediator;
 using MareSynchronos.WebAPI;
 
 namespace MareSynchronos.Interop.Ipc;
@@ -15,6 +17,8 @@ public class IpcCallerChatTwo
 
     private ICallGateSubscriber<int, string, string, DateTime, object?>? _marePush;
     private ICallGateSubscriber<(int major, int minor)>? _chatTwoApiVersion;
+    private ICallGateSubscriber<object?>? _mareChannelsUpdated;
+    private System.Timers.Timer? _notifyTimer;
     
     // ChatTwo <-> Mare chat IPC providers
     private ICallGateProvider<Dictionary<int, string>>? _mareChatChannelInfos;
@@ -37,11 +41,16 @@ public class IpcCallerChatTwo
             _chatTwoApiVersion ??= _pi.GetIpcSubscriber<(int, int)>("ChatTwo.ApiVersion");
             var version = _chatTwoApiVersion.InvokeFunc();
             APIAvailable = version.Item1 == 1 && version.Item2 >= 0;
+            if (APIAvailable)
+            {
+                _mareChannelsUpdated = _pi.GetIpcSubscriber<object?>("ChatTwo.Mare.ChannelInfosUpdated");
+            }
         }
         catch
         {
             APIAvailable = false;
             _marePush = null;
+            _mareChannelsUpdated = null;
         }
     }
 
@@ -65,6 +74,9 @@ public class IpcCallerChatTwo
     {
         try
         {
+            // Ensure current ChatTwo API status
+            CheckAPI();
+
             // Provide ChatTwo IPC endpoints for Mare syncshell chat integration
             _mareChatChannelInfos = _pi.GetIpcProvider<Dictionary<int, string>>("MareChat.ChannelInfos");
             _mareChatChannelInfos.RegisterFunc(() => GetMareChatChannelInfos(mareConfigService, pairManager));
@@ -73,6 +85,13 @@ public class IpcCallerChatTwo
             _mareChatSendMessage.RegisterAction((index, message) => HandleMareChatSendMessage(index, message, mareConfigService, apiController));
             
             _logger.LogInformation("ChatTwo IPC providers registered successfully");
+
+            // Subscribe to runtime join/leave events to notify ChatTwo immediately
+            pairManager.Mediator.Subscribe<JoinedGroupsChangedMessage>(pairManager, _ => NotifyChatTwoChannelInfosUpdated());
+
+            // Also refresh on general UI refresh (e.g., groups/aliases loaded), debounced
+            pairManager.Mediator.Subscribe<RefreshUiMessage>(pairManager, _ => ScheduleNotify());
+            pairManager.Mediator.Subscribe<ConnectedMessage>(pairManager, _ => ScheduleNotify());
         }
         catch (Exception ex)
         {
@@ -87,14 +106,53 @@ public class IpcCallerChatTwo
     {
         try
         {
+            // Notify ChatTwo to clear stale channels before unregistering
+            NotifyChatTwoChannelInfosUpdated();
+
             _mareChatChannelInfos?.UnregisterFunc();
             _mareChatSendMessage?.UnregisterAction();
+            _mareChannelsUpdated = null;
+            _notifyTimer?.Stop();
+            _notifyTimer?.Dispose();
+            _notifyTimer = null;
             _logger.LogDebug("ChatTwo IPC providers unregistered");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to unregister ChatTwo IPC providers");
         }
+    }
+
+    private void NotifyChatTwoChannelInfosUpdated()
+    {
+        if (!APIAvailable || _mareChannelsUpdated == null) return;
+        try
+        {
+            _mareChannelsUpdated.InvokeAction();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to notify ChatTwo about Mare channel infos update");
+        }
+    }
+
+    private void ScheduleNotify()
+    {
+        if (!APIAvailable || _mareChannelsUpdated == null) return;
+        _notifyTimer ??= new System.Timers.Timer(800) { AutoReset = false };
+        _notifyTimer.Stop();
+        _notifyTimer.Elapsed -= OnNotifyTimerElapsed;
+        _notifyTimer.Elapsed += OnNotifyTimerElapsed;
+        _notifyTimer.Start();
+    }
+
+    private void OnNotifyTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        try
+        {
+            NotifyChatTwoChannelInfosUpdated();
+        }
+        catch { }
     }
 
     /// <summary>
@@ -105,13 +163,14 @@ public class IpcCallerChatTwo
         try
         {
             var result = new Dictionary<int, string>();
-            var auto = mareConfigService.Current.AutoJoinChats;
-            if (auto == null || auto.Count == 0) return result;
+            // Prefer runtime joined groups over config
+            var joined = MareSynchronos.UI.ChatUi.JoinedGroups;
+            if (joined == null || joined.Count == 0) return result;
 
-            // Map first 8 AutoJoinChats entries to indices 0..7
-            for (int i = 0; i < Math.Min(8, auto.Count); i++)
+            // Map first 8 joined groups to indices 0..7
+            for (int i = 0; i < Math.Min(8, joined.Count); i++)
             {
-                var gid = auto[i];
+                var gid = joined[i];
                 // Try resolve a friendly name
                 var friendly = gid;
                 try
@@ -144,12 +203,12 @@ public class IpcCallerChatTwo
         try
         {
             if (string.IsNullOrWhiteSpace(message)) return;
-            var auto = mareConfigService.Current.AutoJoinChats;
-            if (auto == null || index < 0 || index >= auto.Count) return;
-            var gid = auto[index];
+            var joined = MareSynchronos.UI.ChatUi.JoinedGroups;
+            if (joined == null || index < 0 || index >= joined.Count) return;
+            var gid = joined[index];
             if (string.IsNullOrEmpty(gid)) return;
 
-            var dto = new GroupChatDto(new API.Data.UserData(apiController.UID), new API.Data.GroupData(gid), DateTime.UtcNow, message);
+            var dto = new GroupChatDto(new UserData(apiController.UID), new GroupData(gid), DateTime.UtcNow, message);
             _ = apiController.GroupChatServer(dto);
         }
         catch (Exception e)
@@ -167,10 +226,10 @@ public class IpcCallerChatTwo
         
         try
         {
-            var auto = mareConfigService.Current.AutoJoinChats;
-            if (auto == null) return;
+            var joined = MareSynchronos.UI.ChatUi.JoinedGroups;
+            if (joined == null) return;
             
-            var idx = Math.Max(0, auto.FindIndex(g => string.Equals(g, gid, StringComparison.Ordinal)));
+            var idx = Math.Max(0, joined.FindIndex(g => string.Equals(g, gid, StringComparison.Ordinal)));
             if (idx > 7) idx = 7;
 
             _marePush.InvokeAction(idx, sender, message, time);

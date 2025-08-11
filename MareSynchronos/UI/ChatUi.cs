@@ -102,6 +102,7 @@ namespace MareSynchronos.UI
                         if (!IsOpen)
                         {
                             JoinedGroups.Remove(group);
+                            Mediator.Publish(new JoinedGroupsChangedMessage());
                             if (_lastActiveGroup == group)
                             {
                                 _lastActiveGroup = null;
