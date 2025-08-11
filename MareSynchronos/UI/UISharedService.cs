@@ -785,7 +785,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ColorText("Glamourer", GetBoolColor(_glamourerExists));
         AttachToolTip($"Glamourer目前" + (_glamourerExists ? "已为最新." : "未安装或需要更新."));
 
-        ImGui.TextUnformatted("Optional Plugins:");
+        ImGui.TextUnformatted("可选插件：");
         ImGui.SameLine(150);
         ColorText("SimpleHeels", GetBoolColor(_heelsExists));
         AttachToolTip($"SimpleHeels目前" + (_heelsExists ? "已为最新." : "未安装或需要更新."));
