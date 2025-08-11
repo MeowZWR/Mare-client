@@ -28,11 +28,7 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
     private ICallGateProvider<string, string, string, object?>? _applyStatusesToPairRequest;
     private ICallGateProvider<int, string, object?>? _moodlesShare;
 
-
-
-        private readonly ApiController _apiController;
-        private readonly MareConfigService _mareConfigService;
-        private readonly IpcCallerChatTwo _chatTwoIpc;
+    private readonly IpcCallerChatTwo _chatTwoIpc;
 
     public MareMediator Mediator { get; init; }
 
@@ -47,9 +43,9 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
         _charaDataManager = charaDataManager;
         Mediator = mareMediator;
         _pairManager = pairManager;
-        _apiController = apiController;
-        _mareConfigService = mareConfigService;
         _chatTwoIpc = chatTwoIpc;
+        // Initialize ChatTwo dependencies without retaining references here
+        _chatTwoIpc.Initialize(mareConfigService, _pairManager, apiController);
 
         Mediator.Subscribe<GameObjectHandlerCreatedMessage>(this, (msg) =>
         {
@@ -79,7 +75,7 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
         _moodlesShare.RegisterAction(ShareMoodles);
 
         // Register ChatTwo IPC providers
-        _chatTwoIpc.RegisterProviders(_mareConfigService, _pairManager, _apiController);
+        _chatTwoIpc.RegisterProviders();
 
         _logger.LogInformation("Started IpcProviderService");
         return Task.CompletedTask;
@@ -131,8 +127,6 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
     {
         return _activeGameObjectHandlers.Where(g => g.Address != nint.Zero).Select(g => g.Address).Distinct().ToList();
     }
-
-
 
         /// <summary>
     /// Handles the request from our clients moodles plugin to update another one of our pairs status.

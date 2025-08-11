@@ -10,7 +10,7 @@ using MareSynchronos.WebAPI;
 
 namespace MareSynchronos.Interop.Ipc;
 
-public class IpcCallerChatTwo
+public class IpcCallerChatTwo : IMediatorSubscriber
 {
     private readonly ILogger<IpcCallerChatTwo> _logger;
     private readonly IDalamudPluginInterface _pi;
@@ -20,9 +20,12 @@ public class IpcCallerChatTwo
     private ICallGateSubscriber<object?>? _mareChannelsUpdated;
     private System.Timers.Timer? _notifyTimer;
     
-    // ChatTwo <-> Mare chat IPC providers
     private ICallGateProvider<Dictionary<int, string>>? _mareChatChannelInfos;
     private ICallGateProvider<int, string, object?>? _mareChatSendMessage;
+
+    // Cached dependencies
+    private PairManager? _pairManager;
+    private ApiController? _apiController;
 
     public IpcCallerChatTwo(ILogger<IpcCallerChatTwo> logger, IDalamudPluginInterface pi)
     {
@@ -31,6 +34,7 @@ public class IpcCallerChatTwo
     }
 
     public bool APIAvailable { get; private set; }
+    public MareMediator Mediator => _pairManager?.Mediator ?? throw new InvalidOperationException("ChatTwo not initialized");
 
     public void CheckAPI()
     {
@@ -67,31 +71,31 @@ public class IpcCallerChatTwo
         }
     }
 
-    /// <summary>
-    /// 注册ChatTwo相关的IPC提供者端点
-    /// </summary>
-    public void RegisterProviders(MareConfigService mareConfigService, PairManager pairManager, ApiController apiController)
+    public void Initialize(MareConfigService mareConfigService, PairManager pairManager, ApiController apiController)
+    {
+        _pairManager ??= pairManager;
+        _apiController ??= apiController;
+    }
+
+    public void RegisterProviders()
     {
         try
         {
-            // Ensure current ChatTwo API status
+            if (_pairManager == null || _apiController == null)
+            {
+                throw new InvalidOperationException("ChatTwo not initialized");
+            }
             CheckAPI();
-
-            // Provide ChatTwo IPC endpoints for Mare syncshell chat integration
             _mareChatChannelInfos = _pi.GetIpcProvider<Dictionary<int, string>>("MareChat.ChannelInfos");
-            _mareChatChannelInfos.RegisterFunc(() => GetMareChatChannelInfos(mareConfigService, pairManager));
-            
+            _mareChatChannelInfos.RegisterFunc(GetMareChatChannelInfos);
+
             _mareChatSendMessage = _pi.GetIpcProvider<int, string, object?>("MareChat.SendMessage");
-            _mareChatSendMessage.RegisterAction((index, message) => HandleMareChatSendMessage(index, message, mareConfigService, apiController));
-            
+            _mareChatSendMessage.RegisterAction(HandleMareChatSendMessage);
+
             _logger.LogInformation("ChatTwo IPC providers registered successfully");
-
-            // Subscribe to runtime join/leave events to notify ChatTwo immediately
-            pairManager.Mediator.Subscribe<JoinedGroupsChangedMessage>(pairManager, _ => NotifyChatTwoChannelInfosUpdated());
-
-            // Also refresh on general UI refresh (e.g., groups/aliases loaded), debounced
-            pairManager.Mediator.Subscribe<RefreshUiMessage>(pairManager, _ => ScheduleNotify());
-            pairManager.Mediator.Subscribe<ConnectedMessage>(pairManager, _ => ScheduleNotify());
+            Mediator.Subscribe<JoinedGroupsChangedMessage>(this, _ => NotifyChatTwoChannelInfosUpdated());
+            Mediator.Subscribe<RefreshUiMessage>(this, _ => ScheduleNotify());
+            Mediator.Subscribe<ConnectedMessage>(this, _ => ScheduleNotify());
         }
         catch (Exception ex)
         {
@@ -99,14 +103,10 @@ public class IpcCallerChatTwo
         }
     }
 
-    /// <summary>
-    /// 注销ChatTwo相关的IPC提供者端点
-    /// </summary>
     public void UnregisterProviders()
     {
         try
         {
-            // Notify ChatTwo to clear stale channels before unregistering
             NotifyChatTwoChannelInfosUpdated();
 
             _mareChatChannelInfos?.UnregisterFunc();
@@ -115,6 +115,10 @@ public class IpcCallerChatTwo
             _notifyTimer?.Stop();
             _notifyTimer?.Dispose();
             _notifyTimer = null;
+            if (_pairManager != null)
+            {
+                try { Mediator.UnsubscribeAll(this); } catch { /* mediator may be disposed */ }
+            }
             _logger.LogDebug("ChatTwo IPC providers unregistered");
         }
         catch (Exception ex)
@@ -152,37 +156,26 @@ public class IpcCallerChatTwo
         {
             NotifyChatTwoChannelInfosUpdated();
         }
-        catch { }
+        catch { /* ignore timer callback errors */ }
     }
 
-    /// <summary>
-    /// 获取Mare聊天频道信息，映射到ChatTwo的频道索引
-    /// </summary>
-    private Dictionary<int, string> GetMareChatChannelInfos(MareConfigService mareConfigService, PairManager pairManager)
+    private Dictionary<int, string> GetMareChatChannelInfos()
     {
         try
         {
             var result = new Dictionary<int, string>();
-            // Prefer runtime joined groups over config
             var joined = MareSynchronos.UI.ChatUi.JoinedGroups;
             if (joined == null || joined.Count == 0) return result;
-
-            // Map first 8 joined groups to indices 0..7
             for (int i = 0; i < Math.Min(8, joined.Count); i++)
             {
                 var gid = joined[i];
-                // Try resolve a friendly name
                 var friendly = gid;
                 try
                 {
-                    // Look up group alias if available
-                    var group = pairManager.Groups.Keys.FirstOrDefault(g => string.Equals(g.GID, gid, StringComparison.Ordinal));
-                    if (group != null)
-                    {
-                        friendly = pairManager.Groups[group].GroupAliasOrGID;
-                    }
+                    var group = _pairManager!.Groups.Keys.FirstOrDefault(g => string.Equals(g.GID, gid, StringComparison.Ordinal));
+                    if (group != null) friendly = _pairManager.Groups[group].GroupAliasOrGID;
                 }
-                catch { /* ignore */ }
+                catch { /* ignore resolve errors */ }
 
                 result[i] = friendly;
             }
@@ -195,10 +188,7 @@ public class IpcCallerChatTwo
         }
     }
 
-    /// <summary>
-    /// 处理从ChatTwo发送到Mare的聊天消息
-    /// </summary>
-    private void HandleMareChatSendMessage(int index, string message, MareConfigService mareConfigService, ApiController apiController)
+    private void HandleMareChatSendMessage(int index, string message)
     {
         try
         {
@@ -208,8 +198,8 @@ public class IpcCallerChatTwo
             var gid = joined[index];
             if (string.IsNullOrEmpty(gid)) return;
 
-            var dto = new GroupChatDto(new UserData(apiController.UID), new GroupData(gid), DateTime.UtcNow, message);
-            _ = apiController.GroupChatServer(dto);
+            var dto = new GroupChatDto(new UserData(_apiController!.UID), new GroupData(gid), DateTime.UtcNow, message);
+            _ = _apiController.GroupChatServer(dto);
         }
         catch (Exception e)
         {
@@ -217,11 +207,9 @@ public class IpcCallerChatTwo
         }
     }
 
-    /// <summary>
-    /// 推送群聊消息到ChatTwo
-    /// </summary>
     public void PushGroupChatMessage(string gid, string sender, string message, DateTime time, MareConfigService mareConfigService)
     {
+        _ = mareConfigService;
         if (!APIAvailable || _marePush == null) return;
         
         try
