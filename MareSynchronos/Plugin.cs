@@ -166,7 +166,7 @@ public sealed class Plugin : IDalamudPlugin
                 s.GetRequiredService<IpcCallerChatTwo>()));
             collection.AddSingleton((s) => new NotificationService(s.GetRequiredService<ILogger<NotificationService>>(),
                 s.GetRequiredService<MareMediator>(), s.GetRequiredService<DalamudUtilService>(),
-                notificationManager, chatGui, s.GetRequiredService<MareConfigService>()));
+                notificationManager, s.GetRequiredService<ApiController>(), pluginInterface, chatGui, s.GetRequiredService<MareConfigService>()));
             collection.AddSingleton((s) =>
             {
                 var httpClient = new HttpClient();
