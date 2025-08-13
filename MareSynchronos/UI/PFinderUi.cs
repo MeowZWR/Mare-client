@@ -1,14 +1,17 @@
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Colors;
+using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using ImGuiNET;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Enum;
 using MareSynchronos.API.Dto.Group;
 using MareSynchronos.API.Dto.User;
-using MareSynchronos.FileCache;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.Utils;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
@@ -20,11 +23,11 @@ namespace MareSynchronos.UI
     {
 
         private readonly MareConfigService _configService;
-        private readonly CacheMonitor _cacheMonitor;
-        private readonly ServerConfigurationManager _serverConfigurationManager;
-        private readonly DalamudUtilService _dalamudUtilService;
         private readonly UiSharedService _uiShared;
         private readonly ApiController _apiController;
+        private readonly IChatGui _chatGui;
+        private readonly DalamudLinkPayload _pfinderChatLinkPayload;
+        private readonly ushort[] colors = new ushort[] { 1, 17, 25, 37, 43, 48, 524 };
 
         private readonly TimeSpan CoolDown = TimeSpan.FromSeconds(15);
 
@@ -35,17 +38,15 @@ namespace MareSynchronos.UI
         private bool Disable => _lastUpdate + CoolDown > DateTime.Now;
         private bool started = false;
 
-        public PFinderWindow(ILogger<PFinderWindow> logger, UiSharedService uiShared, MareConfigService configService,
-            CacheMonitor fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator,
-            PerformanceCollectorService performanceCollectorService, DalamudUtilService dalamudUtilService, ApiController apiController
-            ) : base(logger, mareMediator, "招募中心", performanceCollectorService)
+        public PFinderWindow(ILogger<PFinderWindow> logger, MareConfigService configService, MareMediator mareMediator,
+            PerformanceCollectorService performanceCollectorService, ApiController apiController, IChatGui chatGui,
+            IDalamudPluginInterface pluginInterface, UiSharedService uiShared) : base(logger, mareMediator, "招募中心", performanceCollectorService)
         {
-            _uiShared = uiShared;
             _configService = configService;
-            _cacheMonitor = fileCacheManager;
-            _serverConfigurationManager = serverConfigurationManager;
-            _dalamudUtilService = dalamudUtilService;
             _apiController = apiController;
+            _chatGui = chatGui;
+            _uiShared = uiShared;
+            _pfinderChatLinkPayload = pluginInterface.AddChatLinkHandler(1, OnPfinderLinkClicked);
             IsOpen = false;
             ShowCloseButton = true;
             RespectCloseHotkey = false;
@@ -58,7 +59,12 @@ namespace MareSynchronos.UI
                 MaximumSize = new Vector2(800, 2000),
             };
 
-            Mediator.Subscribe<DisconnectedMessage>(this, (_) => IsOpen = false);
+            Mediator.Subscribe<DisconnectedMessage>(this, (_) =>
+            {
+                started = false;
+                cts.Cancel();
+                cts = new CancellationTokenSource();
+            });
             Mediator.Subscribe<OpenPfinderWindowMessage>(this, (msg) =>
             {
                 IsOpen = true;
@@ -75,11 +81,58 @@ namespace MareSynchronos.UI
             started = true;
             while (!ct.IsCancellationRequested)
             {
-                if (_apiController.IsConnected)
+                try
                 {
+                    if (!_apiController.IsConnected)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(5), ct).ConfigureAwait(false);
+                        return;
+                    }
+
                     Pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
+                    if (Pfs is null || Pfs.Count <= 0) return;
+
+                    var prefix = $"\uE044月海招募中心有{Pfs.Count}条招募信息";
+                    if (!string.IsNullOrEmpty(_fliter))
+                    {
+                        var count = Pfs.Count(pf => string.Join("|", pf.Title, pf.Description, pf.Tags, pf.Group.AliasOrGID, pf.User.AliasOrUID).Contains(_fliter));
+                        if (count > 0)
+                        {
+                            prefix += $", 其中有{count}条符合当前筛选";
+                        }
+                    }
+                    prefix += " . ";
+
+                    var message = new SeString(
+                        new TextPayload(prefix),
+                        _pfinderChatLinkPayload,
+                        new UIForegroundPayload(colors[_configService.Current.ChatColor]),
+                        new TextPayload("[ 打开月海招募中心 ]"),
+                        new UIForegroundPayload(0),
+                        RawPayload.LinkTerminator
+                    );
+
+                    _chatGui.Print(new XivChatEntry { Message = message, Type = XivChatType.SystemMessage });
+                    await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);
                 }
-                await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);
+                catch (Exception ex)
+                {
+                    if (ex is TaskCanceledException) return;
+                    _logger.LogError(ex, "Failed to send PFinder notice: ");
+                }
+            }
+
+        }
+
+        private void OnPfinderLinkClicked(uint cmdId, SeString msg)
+        {
+            try
+            {
+                Mediator.Publish(new UiToggleMessage(typeof(PFinderWindow)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to open PFinder from chat link");
             }
         }
 
@@ -96,6 +149,7 @@ namespace MareSynchronos.UI
         protected override void Dispose(bool disposing)
         {
             cts.Cancel();
+            cts.Dispose();
         }
 
         protected override void DrawInternal()

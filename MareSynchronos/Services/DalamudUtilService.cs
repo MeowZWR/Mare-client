@@ -23,6 +23,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
+using Task = System.Threading.Tasks.Task;
 
 namespace MareSynchronos.Services;
 
@@ -137,8 +138,11 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         {
             unsafe
             {
-                var address = _sigScanner.GetStaticAddressFromSig("48 8B 0D ?? ?? ?? ?? 4C 8B CA");
-                return (uint)(address != nint.Zero ? (*(ulong**)address)[1] : 0u);
+                var result = FFXIVClientStructs.FFXIV.Client.System.Framework.GameWindow.Instance()->GetAid();
+#if DEBUG
+                _logger.LogWarning("Got Aid = {result}", result.ToString("X"));
+#endif
+                return (uint)result;
             }
         });
     }
@@ -348,6 +352,9 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
             var player = GetPlayerCharacter();
             if (player == null) return "UNK" + _aidCounter++;
             _aidCache[aid] = hash = unchecked((uint)(((((BattleChara*)player.Address)->Character.AccountId ^ aid) >> 31) ^ _aid.Value)).ToString().GetHash256();
+#if DEBUG
+            _logger.LogWarning("Logged player {playerName} with aid {aid}", ((BattleChara*)ptr)->Character.GetName().ExtractText(), unchecked((uint)(((((BattleChara*)player.Address)->Character.AccountId ^ aid) >> 31) ^ _aid.Value)).ToString("X"));
+#endif
         }
         return hash;
     }

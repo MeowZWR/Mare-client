@@ -1007,6 +1007,11 @@ public class SettingsUi : WindowMediatorSubscriberBase
 
 
         var port = _configService.Current.PortToChatGui;
+
+        ImGui.Separator();
+        ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.ParsedBlue);
+        _uiShared.BigText("国服特供");
+        ImGui.PopStyleColor();
         using (ImRaii.Disabled(_uiShared.ChatTwoExists))
         {
             if (ImGui.Checkbox("将聊天输出到游戏聊天框", ref port))
@@ -1045,6 +1050,8 @@ public class SettingsUi : WindowMediatorSubscriberBase
             _configService.Current.ShowChatWindowOnLogin = open;
             _configService.Save();
         }
+
+        ImGui.Separator();
 
 
         if (ImGui.Checkbox("启用游戏右键菜单", ref enableRightClickMenu))

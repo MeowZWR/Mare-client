@@ -29,6 +29,7 @@ namespace MareSynchronos.UI
         private string _newMessage = string.Empty;
         private static List<ChatMessage> _chatLogs = new();
         private string _lastActiveGroup;
+        public static string LastChatGroup = string.Empty;
 
         public ChatUi(ILogger<ChatUi> logger, MareMediator mediator, PerformanceCollectorService performanceCollectorService,
             UiSharedService uiSharedService, ApiController apiController, PairManager pairManager,IdDisplayHandler idDisplayHandler,
@@ -68,7 +69,7 @@ namespace MareSynchronos.UI
             {
                 var groupName = _idDisplayHandler
                     .GetGroupText(_pairManager.Groups.First(x => x.Key.GID == msg.Group).Value).text;
-                Mediator.Publish(new NotificationMessage(groupName, $"({GetName(msg)}): " + msg.Message, NotificationType.Chat));
+                Mediator.Publish(new NotificationMessage(groupName, $"<{GetName(msg)}> : " + msg.Message, NotificationType.Chat));
             }
         }
 
@@ -188,5 +189,6 @@ namespace MareSynchronos.UI
                 _apiController.DisplayName :
                 _idDisplayHandler.GetPlayerText(_pairManager.GetPairByUID(msg.Sender)).text;
         }
+
     }
 }

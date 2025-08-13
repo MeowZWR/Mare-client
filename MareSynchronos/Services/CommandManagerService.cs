@@ -1,5 +1,7 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
+using MareSynchronos.API.Data;
+using MareSynchronos.API.Dto.Group;
 using MareSynchronos.FileCache;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.MareConfiguration.Models;
@@ -43,7 +45,10 @@ public sealed class CommandManagerService : IDisposable
                 "\t /mare gpose - 打开Mare角色数据中心界面" + Environment.NewLine +
                 "\t /mare analyze - 打开Mare角色数据分析界面" + Environment.NewLine +
                 "\t /mare settings - 打开设置界面" + Environment.NewLine +
-                "\t /mare chat - 打开聊天窗口"
+                "\t /mare chat - 打开聊天窗口" + Environment.NewLine +
+                "\t /mare r - 回复上一个同步贝聊天" + Environment.NewLine +
+                "\t /mare 同步贝名 - 回复特定同步贝聊天" + Environment.NewLine +
+                "\t /mare pf - 打开招募中心"
         });
     }
 
@@ -54,7 +59,7 @@ public sealed class CommandManagerService : IDisposable
 
     private void OnCommand(string command, string args)
     {
-        var splitArgs = args.ToLowerInvariant().Trim().Split(" ", StringSplitOptions.RemoveEmptyEntries);
+        var splitArgs = args.ToLowerInvariant().Trim().Split(" ", 2, StringSplitOptions.RemoveEmptyEntries);
 
         if (splitArgs.Length == 0)
         {
@@ -126,6 +131,26 @@ public sealed class CommandManagerService : IDisposable
         else if (string.Equals(splitArgs[0], "chat", StringComparison.OrdinalIgnoreCase))
         {
             _mediator.Publish(new UiToggleMessage(typeof(ChatUi)));
+        }
+        else if (string.Equals(splitArgs[0], "r", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrEmpty(ChatUi.LastChatGroup))
+            {
+                _mediator.Publish(new NotificationMessage("错误", "未检测到上一次聊天的同步贝,请使用 '/mare 贝名称' 进行指定", NotificationType.Error, TimeSpan.FromSeconds(10)));
+                return;
+            }
+            var msg = new GroupChatDto(new UserData(_apiController.UID), new GroupData(ChatUi.LastChatGroup), DateTime.UtcNow, splitArgs[1]);
+            _ = _apiController.GroupChatServer(msg);
+        }
+        else if (_apiController.GroupsGetAll().Result.Exists(x => string.Equals(x.GroupAliasOrGID, splitArgs[0], StringComparison.OrdinalIgnoreCase)))
+        {
+            ChatUi.LastChatGroup = _apiController.GroupsGetAll().Result.First(x => string.Equals(x.GroupAliasOrGID, splitArgs[0], StringComparison.OrdinalIgnoreCase)).GID;
+            var msg = new GroupChatDto(new UserData(_apiController.UID), new GroupData(ChatUi.LastChatGroup), DateTime.UtcNow, splitArgs[1]);
+            _ = _apiController.GroupChatServer(msg);
+        }
+        else if (string.Equals(splitArgs[0], "pf", StringComparison.OrdinalIgnoreCase))
+        {
+            _mediator.Publish(new UiToggleMessage(typeof(PFinderWindow)));
         }
     }
 }
