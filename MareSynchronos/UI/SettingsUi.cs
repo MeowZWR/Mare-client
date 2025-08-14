@@ -1051,6 +1051,11 @@ public class SettingsUi : WindowMediatorSubscriberBase
             _configService.Save();
         }
 
+        if (ImGui.Button("打开功能介绍"))
+        {
+            Mediator.Publish(new UiToggleMessage(typeof(ChangelogUi)));
+        }
+
         ImGui.Separator();
 
 

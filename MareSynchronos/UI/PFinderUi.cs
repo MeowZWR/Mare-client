@@ -149,7 +149,6 @@ namespace MareSynchronos.UI
         protected override void Dispose(bool disposing)
         {
             cts.Cancel();
-            cts.Dispose();
         }
 
         protected override void DrawInternal()

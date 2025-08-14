@@ -4,6 +4,7 @@ using ImGuiNET;
 using MareSynchronos.API.Data;
 using MareSynchronos.API.Data.Enum;
 using MareSynchronos.API.Dto.Group;
+using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.WebAPI;
 using System.Globalization;
@@ -15,6 +16,7 @@ public class PFinderPopupHandler : IPopupHandler
 {
     private readonly ApiController _apiController;
     private readonly UiSharedService _uiSharedService;
+    private readonly PairManager _pairManager;
     private PFinderDto pf;
     private string pfTitle;
     string pfDescription;
@@ -29,10 +31,11 @@ public class PFinderPopupHandler : IPopupHandler
 
 
 
-    public PFinderPopupHandler(ApiController apiController, UiSharedService uiSharedService)
+    public PFinderPopupHandler(ApiController apiController, UiSharedService uiSharedService, PairManager pairManager)
     {
         _apiController = apiController;
         _uiSharedService = uiSharedService;
+        _pairManager = pairManager;
     }
 
     public Vector2 PopupSize => new(800, 600);
@@ -307,7 +310,7 @@ public class PFinderPopupHandler : IPopupHandler
         pfStartTime = pf.StartTime;
         pfEndTime = pf.EndTime;
         index = 0;
-        groups = _apiController.GroupsGetAll().Result
+        groups = _pairManager.Groups.Select(x => x.Value)
             .Where(x => (x.GroupUserInfo & GroupPairUserInfo.IsModerator) != 0 || x.OwnerUID == _apiController.UID)
             .ToArray();
         if (string.IsNullOrEmpty(pf.Group.GID))

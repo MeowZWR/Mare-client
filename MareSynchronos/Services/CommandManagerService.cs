@@ -5,6 +5,7 @@ using MareSynchronos.API.Dto.Group;
 using MareSynchronos.FileCache;
 using MareSynchronos.MareConfiguration;
 using MareSynchronos.MareConfiguration.Models;
+using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services.Mediator;
 using MareSynchronos.Services.ServerConfiguration;
 using MareSynchronos.UI;
@@ -21,13 +22,14 @@ public sealed class CommandManagerService : IDisposable
     private readonly ICommandManager _commandManager;
     private readonly MareMediator _mediator;
     private readonly MareConfigService _mareConfigService;
+    private readonly PairManager _pairManager;
     private readonly PerformanceCollectorService _performanceCollectorService;
     private readonly CacheMonitor _cacheMonitor;
     private readonly ServerConfigurationManager _serverConfigurationManager;
 
     public CommandManagerService(ICommandManager commandManager, PerformanceCollectorService performanceCollectorService,
         ServerConfigurationManager serverConfigurationManager, CacheMonitor periodicFileScanner,
-        ApiController apiController, MareMediator mediator, MareConfigService mareConfigService)
+        ApiController apiController, MareMediator mediator, MareConfigService mareConfigService, PairManager pairManager)
     {
         _commandManager = commandManager;
         _performanceCollectorService = performanceCollectorService;
@@ -36,6 +38,7 @@ public sealed class CommandManagerService : IDisposable
         _apiController = apiController;
         _mediator = mediator;
         _mareConfigService = mareConfigService;
+        _pairManager = pairManager;
         _commandManager.AddHandler(_commandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "打开Mare主UI" + Environment.NewLine + Environment.NewLine +
@@ -59,7 +62,7 @@ public sealed class CommandManagerService : IDisposable
 
     private void OnCommand(string command, string args)
     {
-        var splitArgs = args.ToLowerInvariant().Trim().Split(" ", 2, StringSplitOptions.RemoveEmptyEntries);
+        var splitArgs = args.Trim().Split(" ", 2, StringSplitOptions.RemoveEmptyEntries);
 
         if (splitArgs.Length == 0)
         {
@@ -142,9 +145,9 @@ public sealed class CommandManagerService : IDisposable
             var msg = new GroupChatDto(new UserData(_apiController.UID), new GroupData(ChatUi.LastChatGroup), DateTime.UtcNow, splitArgs[1]);
             _ = _apiController.GroupChatServer(msg);
         }
-        else if (_apiController.GroupsGetAll().Result.Exists(x => string.Equals(x.GroupAliasOrGID, splitArgs[0], StringComparison.OrdinalIgnoreCase)))
+        else if (_pairManager.Groups.Select(pair => pair.Key).Any(x => string.Equals(x.Alias, splitArgs[0], StringComparison.OrdinalIgnoreCase) || string.Equals(x.GID, splitArgs[0], StringComparison.OrdinalIgnoreCase)))
         {
-            ChatUi.LastChatGroup = _apiController.GroupsGetAll().Result.First(x => string.Equals(x.GroupAliasOrGID, splitArgs[0], StringComparison.OrdinalIgnoreCase)).GID;
+            ChatUi.LastChatGroup = _pairManager.Groups.Select(pair => pair.Key).First(x => string.Equals(x.Alias, splitArgs[0], StringComparison.OrdinalIgnoreCase) || string.Equals(x.GID, splitArgs[0], StringComparison.OrdinalIgnoreCase)).GID;
             var msg = new GroupChatDto(new UserData(_apiController.UID), new GroupData(ChatUi.LastChatGroup), DateTime.UtcNow, splitArgs[1]);
             _ = _apiController.GroupChatServer(msg);
         }

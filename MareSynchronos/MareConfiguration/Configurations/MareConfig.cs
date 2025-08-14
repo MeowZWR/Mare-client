@@ -67,4 +67,5 @@ public class MareConfig : IMareConfiguration
     public List<string> AutoJoinChats { get; set; } = new List<string>();
     public bool ShowChatWindowOnLogin { get; set; } = true;
     public int ChatColor { get; set; } = 0;
+    public string ChangeLogVersion { get; set; } = string.Empty;
 }
