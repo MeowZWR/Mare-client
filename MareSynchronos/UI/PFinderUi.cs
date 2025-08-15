@@ -16,6 +16,7 @@ using MareSynchronos.Utils;
 using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
+using System.Text.RegularExpressions;
 
 namespace MareSynchronos.UI
 {
@@ -37,6 +38,8 @@ namespace MareSynchronos.UI
         private string _fliter = "";
         private bool Disable => _lastUpdate + CoolDown > DateTime.Now;
         private bool started = false;
+
+        private readonly Regex _gamePfString = new(@"当前共有\d*个队伍正在招募队员");
 
         public PFinderWindow(ILogger<PFinderWindow> logger, MareConfigService configService, MareMediator mareMediator,
             PerformanceCollectorService performanceCollectorService, ApiController apiController, IChatGui chatGui,
@@ -63,6 +66,7 @@ namespace MareSynchronos.UI
             {
                 started = false;
                 cts.Cancel();
+                cts.Dispose();
                 cts = new CancellationTokenSource();
             });
             Mediator.Subscribe<OpenPfinderWindowMessage>(this, (msg) =>
@@ -74,11 +78,47 @@ namespace MareSynchronos.UI
             {
                 if (!started) _ = UpdatePFs(cts.Token);
             } );
+
+            chatGui.ChatMessage += ChatGuiOnChatMessage;
+        }
+
+        private void ChatGuiOnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled)
+        {
+            if ((uint)type != 72) return;
+            if (!_gamePfString.IsMatch(message.TextValue)) return;
+
+            PrintPFCount();
+        }
+
+        private void PrintPFCount()
+        {
+            var prefix = $"\uE044月海招募中心有{Pfs.Count}条招募信息";
+            if (!string.IsNullOrEmpty(_fliter))
+            {
+                var count = Pfs.Count(pf => string.Join("|", pf.Title, pf.Description, pf.Tags, pf.Group.AliasOrGID, pf.User.AliasOrUID).Contains(_fliter));
+                if (count > 0)
+                {
+                    prefix += $", 其中有{count}条符合当前筛选";
+                }
+            }
+            prefix += " . ";
+
+            var msg = new SeString(
+                new TextPayload(prefix),
+                _pfinderChatLinkPayload,
+                new UIForegroundPayload(colors[_configService.Current.ChatColor]),
+                new TextPayload("[ 打开月海招募中心 ]"),
+                new UIForegroundPayload(0),
+                RawPayload.LinkTerminator
+            );
+
+            _chatGui.Print(new XivChatEntry { Message = msg, Type = XivChatType.SystemMessage });
         }
 
         private async Task UpdatePFs(CancellationToken ct)
         {
             started = true;
+            var first = true;
             while (!ct.IsCancellationRequested)
             {
                 try
@@ -90,30 +130,14 @@ namespace MareSynchronos.UI
                     }
 
                     Pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
-                    if (Pfs is null || Pfs.Count <= 0) return;
 
-                    var prefix = $"\uE044月海招募中心有{Pfs.Count}条招募信息";
-                    if (!string.IsNullOrEmpty(_fliter))
+                    if (first)
                     {
-                        var count = Pfs.Count(pf => string.Join("|", pf.Title, pf.Description, pf.Tags, pf.Group.AliasOrGID, pf.User.AliasOrUID).Contains(_fliter));
-                        if (count > 0)
-                        {
-                            prefix += $", 其中有{count}条符合当前筛选";
-                        }
+                        first = false;
+                        PrintPFCount();
                     }
-                    prefix += " . ";
 
-                    var message = new SeString(
-                        new TextPayload(prefix),
-                        _pfinderChatLinkPayload,
-                        new UIForegroundPayload(colors[_configService.Current.ChatColor]),
-                        new TextPayload("[ 打开月海招募中心 ]"),
-                        new UIForegroundPayload(0),
-                        RawPayload.LinkTerminator
-                    );
-
-                    _chatGui.Print(new XivChatEntry { Message = message, Type = XivChatType.SystemMessage });
-                    await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMinutes(30), ct).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -149,6 +173,7 @@ namespace MareSynchronos.UI
         protected override void Dispose(bool disposing)
         {
             cts.Cancel();
+            _chatGui.ChatMessage -= ChatGuiOnChatMessage;
         }
 
         protected override void DrawInternal()

@@ -19,7 +19,7 @@ namespace MareSynchronos.UI
     public class ChangelogUi : WindowMediatorSubscriberBase
     {
 
-        private const string Version = "25-08-04";
+        private const string Version = "25-08-15";
 
         private readonly ILogger<ChangelogUi> _logger;
         private UiSharedService _uiSharedService;
@@ -55,6 +55,12 @@ namespace MareSynchronos.UI
         private float ButtonSize => _uiSharedService.GetIconTextButtonSize(FontAwesomeIcon.WindowClose, "关闭");
 
 
+        private void DrawNew()
+        {
+            UiSharedService.ColorTextWrapped("[ NEW! ]", ImGuiColors.DalamudOrange);
+            ImGui.SameLine();
+        }
+
         protected override void DrawInternal()
         {
 
@@ -73,6 +79,9 @@ namespace MareSynchronos.UI
                     DrawReadButton(0);
                     ImGui.TreePop();
                 }
+
+                DrawNew();
+                UiSharedService.TextWrapped("招募提示消息现在会跟随游戏原生招募提示同步出现(除登录首次)，请自行修改游戏提示间隔.");
 
                 ImGui.Separator();
 
