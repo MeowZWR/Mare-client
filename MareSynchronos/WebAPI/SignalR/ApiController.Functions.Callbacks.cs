@@ -251,7 +251,7 @@ public partial class ApiController
         ExecuteSafely(() =>
         {
             // Mare 内置聊天 UI
-            Mediator.Publish(new ChatMessage(groupChatDto.User.UID, groupChatDto.GID, groupChatDto.Time, groupChatDto.Message));
+            Mediator.Publish(new ChatMessage(groupChatDto.Group, groupChatDto.User, groupChatDto.Message, groupChatDto.Time));
 
             // 若 ChatTwo 可用，推送为 MareLinkshell[i]
             try

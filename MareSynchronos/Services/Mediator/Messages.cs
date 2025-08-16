@@ -99,7 +99,7 @@ public record GPoseLobbyReceiveWorldData(UserData UserData, WorldData WorldData)
 public record OpenCharaDataHubWithFilterMessage(UserData UserData) : MessageBase;
 public record UpdateSupportersMessage(SupporterDto SupporterDto) : MessageBase;
 
-public record ChatMessage(string Sender, string Group, DateTime Time, string Message) : MessageBase
+public record ChatMessage(GroupData Group, UserData Sender, string Message, DateTime Time) : MessageBase
 {
     public DateTime LocalTime => TimeZoneInfo.ConvertTimeFromUtc(Time, TimeZoneInfo.Local);
 };

@@ -145,15 +145,35 @@ public sealed class CommandManagerService : IDisposable
             var msg = new GroupChatDto(new UserData(_apiController.UID), new GroupData(ChatUi.LastChatGroup), DateTime.UtcNow, splitArgs[1]);
             _ = _apiController.GroupChatServer(msg);
         }
-        else if (_pairManager.Groups.Select(pair => pair.Key).Any(x => string.Equals(x.Alias, splitArgs[0], StringComparison.OrdinalIgnoreCase) || string.Equals(x.GID, splitArgs[0], StringComparison.OrdinalIgnoreCase)))
-        {
-            ChatUi.LastChatGroup = _pairManager.Groups.Select(pair => pair.Key).First(x => string.Equals(x.Alias, splitArgs[0], StringComparison.OrdinalIgnoreCase) || string.Equals(x.GID, splitArgs[0], StringComparison.OrdinalIgnoreCase)).GID;
-            var msg = new GroupChatDto(new UserData(_apiController.UID), new GroupData(ChatUi.LastChatGroup), DateTime.UtcNow, splitArgs[1]);
-            _ = _apiController.GroupChatServer(msg);
-        }
         else if (string.Equals(splitArgs[0], "pf", StringComparison.OrdinalIgnoreCase))
         {
             _mediator.Publish(new UiToggleMessage(typeof(PFinderWindow)));
         }
+        else if (GetGIDByName(splitArgs[0], out var gid))
+        {
+            ChatUi.LastChatGroup = gid;
+            var msg = new GroupChatDto(new UserData(_apiController.UID, _apiController.DisplayName), new GroupData(ChatUi.LastChatGroup), DateTime.UtcNow, splitArgs[1]);
+            _ = _apiController.GroupChatServer(msg);
+        }
+        else
+        {
+            _mediator.Publish(new NotificationMessage("错误", "输入的Mare命令有误, 请确认.", NotificationType.Error, TimeSpan.FromSeconds(5)));
+        }
+    }
+    private bool GetGIDByName(string name, out string gid)
+    {
+        if (name is "世界" or "MSS-GLOBAL")
+        {
+            gid = "MSS-GLOBAL";
+            return true;
+        }
+        var pairedgroup = _pairManager.Groups.Select(x => x.Value).FirstOrDefault(x => x.GroupAliasOrGID == name);
+        if (pairedgroup is null)
+        {
+            gid = string.Empty;
+            return false;
+        }
+        gid = pairedgroup.GroupAliasOrGID;
+        return true;
     }
 }

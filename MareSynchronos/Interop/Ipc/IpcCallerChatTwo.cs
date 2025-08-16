@@ -174,6 +174,7 @@ public class IpcCallerChatTwo : IMediatorSubscriber
                 {
                     var group = _pairManager!.Groups.Keys.FirstOrDefault(g => string.Equals(g.GID, gid, StringComparison.Ordinal));
                     if (group != null) friendly = _pairManager.Groups[group].GroupAliasOrGID;
+                    if (string.Equals(gid, "MSS-GLOBAL", StringComparison.OrdinalIgnoreCase)) friendly = "世界";
                 }
                 catch { /* ignore resolve errors */ }
 
@@ -198,7 +199,7 @@ public class IpcCallerChatTwo : IMediatorSubscriber
             var gid = joined[index];
             if (string.IsNullOrEmpty(gid)) return;
 
-            var dto = new GroupChatDto(new UserData(_apiController!.UID), new GroupData(gid), DateTime.UtcNow, message);
+            var dto = new GroupChatDto(new UserData(_apiController!.UID, _apiController!.DisplayName), new GroupData(gid), DateTime.UtcNow, message);
             _ = _apiController.GroupChatServer(dto);
         }
         catch (Exception e)
@@ -217,8 +218,9 @@ public class IpcCallerChatTwo : IMediatorSubscriber
             var joined = MareSynchronos.UI.ChatUi.JoinedGroups;
             if (joined == null) return;
             
-            var idx = Math.Max(0, joined.FindIndex(g => string.Equals(g, gid, StringComparison.Ordinal)));
-            if (idx > 7) idx = 7;
+            var idx = joined.FindIndex(g => string.Equals(g, gid, StringComparison.Ordinal));
+            if (idx < 0) return;
+            if (idx > 7) return;
 
             _marePush.InvokeAction(idx, sender, message, time);
         }
@@ -228,6 +230,3 @@ public class IpcCallerChatTwo : IMediatorSubscriber
         }
     }
 }
-
-
-

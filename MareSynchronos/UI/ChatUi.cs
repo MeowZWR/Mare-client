@@ -31,6 +31,8 @@ namespace MareSynchronos.UI
         private string _lastActiveGroup;
         public static string LastChatGroup = string.Empty;
 
+        private const string Global = "MSS-GLOBAL";
+
         public ChatUi(ILogger<ChatUi> logger, MareMediator mediator, PerformanceCollectorService performanceCollectorService,
             UiSharedService uiSharedService, ApiController apiController, PairManager pairManager,IdDisplayHandler idDisplayHandler,
             MareConfigService mareConfig, NotificationService notificationService) : base(logger, mediator, "同步贝聊天", performanceCollectorService)
@@ -57,18 +59,17 @@ namespace MareSynchronos.UI
 
         private void HandleChatMessage(ChatMessage msg)
         {
-            if (!JoinedGroups.Contains(msg.Group)) return;
+            if (!JoinedGroups.Contains(msg.Group.GID)) return;
             _chatLogs.Add(msg);
-            if (_chatLogs.Count(x => x.Group == msg.Group) > 50)
+            if (_chatLogs.Count(x => x.Group.GID == msg.Group.GID) > 50)
             {
-                _chatLogs.RemoveAt(_chatLogs.FindIndex(x => x.Group == msg.Group));
+                _chatLogs.RemoveAt(_chatLogs.FindIndex(x => x.Group.GID == msg.Group.GID));
             }
-            _logger.LogDebug($"Received chat message: '{msg.Message}' from {msg.Sender} in group {msg.Group}");
+            _logger.LogDebug($"Received chat message: '{msg.Message}' from {msg.Sender.AliasOrUID} in group {msg.Group.AliasOrGID}");
             // 若 ChatTwo 已连接，则不再将聊天输出到默认聊天框，避免重复
             if (_mareConfig.Current.PortToChatGui && !_uiSharedService.ChatTwoExists)
             {
-                var groupName = _idDisplayHandler
-                    .GetGroupText(_pairManager.Groups.First(x => x.Key.GID == msg.Group).Value).text;
+                var groupName = GetGroupName(msg.Group.GID);
                 Mediator.Publish(new NotificationMessage(groupName, $"<{GetName(msg)}> : " + msg.Message, NotificationType.Chat));
             }
         }
@@ -78,16 +79,21 @@ namespace MareSynchronos.UI
             if (!_apiController.IsConnected) return;
             using (_uiSharedService.GameFont.Push())
             {
-                if (ImGui.BeginTabBar("ChatLogs"))
+                if (JoinedGroups.Count == 0)
+                {
+                    ImGui.Text("你还没有加入任何同步贝聊天, 请先加入一个再尝试聊天.");
+                }
+                else if (ImGui.BeginTabBar("ChatLogs"))
                 {
 
                     var groups = new List<string>(JoinedGroups);
                     foreach (string group in groups)
                     {
-                        if (_pairManager.Groups.All(x => x.Key.GID != group)) continue;
+                        if (_pairManager.Groups.All(x => x.Key.GID != group)
+                            && !string.Equals(group, Global, StringComparison.OrdinalIgnoreCase)) continue;
                         var IsOpen = true;
-                        var groupName = _idDisplayHandler
-                            .GetGroupText(_pairManager.Groups.First(x => x.Key.GID == group).Value).text;
+
+                        var groupName = GetGroupName(group);
                         if (ImGui.BeginTabItem(groupName, ref IsOpen))
                         {
                             if (_lastActiveGroup != group)
@@ -117,6 +123,8 @@ namespace MareSynchronos.UI
             }
         }
 
+
+
         private void DrawChatLog(string group)
         {
             unsafe
@@ -128,16 +136,16 @@ namespace MareSynchronos.UI
                 // 设置聊天记录区域的高度，确保留出输入区域的空间
                 float totalInputAreaHeight = inputHeight * 2 + ImGui.GetStyle().ItemSpacing.Y * 2; // 输入框 + 分隔线 + 按钮
                 ImGui.BeginChild($"{group}##chatlog", new Vector2(0, -totalInputAreaHeight), true);
-                foreach (ChatMessage msg in _chatLogs.Where(x => x.Group == group))
+                foreach (ChatMessage msg in _chatLogs.Where(x => x.Group.GID == group))
                 {
-                    if (msg.Sender == "SYSTEM-INFO")
+                    if (msg.Sender.UID == "SYSTEM-INFO")
                     {
                         ImGui.TextWrapped($"[{msg.LocalTime:HH:mm:ss}] 系统信息: {msg.Message}");
                         continue;
                     }
 
                     var name = GetName(msg);
-                    var color = UiSharedService.IsSupporter(msg.Sender) ? ImGuiColors.ParsedGold : ImGuiColors.DalamudWhite2;
+                    var color = UiSharedService.IsSupporter(msg.Sender.UID) ? ImGuiColors.ParsedGold : ImGuiColors.DalamudWhite2;
                     ImGui.TextUnformatted($"[{msg.LocalTime:HH:mm:ss}]");
                     ImGui.SameLine();
                     UiSharedService.ColorText($"{name}", color);
@@ -175,7 +183,7 @@ namespace MareSynchronos.UI
                 {
                     if (!string.IsNullOrEmpty(_newMessage))
                     {
-                        var msg = new GroupChatDto(new UserData(_apiController.UID), new GroupData(group), DateTime.UtcNow, _newMessage);
+                        var msg = new GroupChatDto(new UserData(_apiController.UID, _apiController.DisplayName), new GroupData(group), DateTime.UtcNow, _newMessage);
                         _ = _apiController.GroupChatServer(msg);
                         _newMessage = string.Empty; // 清空输入框
                     }
@@ -185,9 +193,23 @@ namespace MareSynchronos.UI
 
         private string GetName(ChatMessage msg)
         {
-            return _apiController.UID == msg.Sender ?
-                _apiController.DisplayName :
-                _idDisplayHandler.GetPlayerText(_pairManager.GetPairByUID(msg.Sender)).text;
+            if (_apiController.UID == msg.Sender.UID)
+                return _apiController.DisplayName;
+
+            var pair = _pairManager.GetPairByUID(msg.Sender.UID);
+            if (pair is null)
+                return msg.Sender.AliasOrUID;
+            return _idDisplayHandler.GetPlayerText(pair).text;
+        }
+
+        private string GetGroupName(string group)
+        {
+            if (group == "MSS-GLOBAL") return "世界";
+            var pairedgroup = _pairManager.Groups.Select(x => x.Value).FirstOrDefault(x => x.GID == group);
+            if (pairedgroup is null) return group;
+            // return _idDisplayHandler
+            //     .GetGroupText(pairedgroup).text;
+            return pairedgroup.GroupAliasOrGID;
         }
 
     }

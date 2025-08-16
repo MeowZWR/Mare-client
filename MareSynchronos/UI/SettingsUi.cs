@@ -1056,6 +1056,15 @@ public class SettingsUi : WindowMediatorSubscriberBase
             Mediator.Publish(new UiToggleMessage(typeof(ChangelogUi)));
         }
 
+        if (ImGui.Button("加入世界频道(假的)"))
+        {
+            if (!ChatUi.JoinedGroups.Contains("MSS-GLOBAL"))
+            {
+                ChatUi.JoinedGroups.Add("MSS-GLOBAL");
+                Mediator.Publish(new JoinedGroupsChangedMessage());
+            }
+        }
+
         ImGui.Separator();
 
 

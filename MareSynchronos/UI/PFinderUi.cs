@@ -27,6 +27,7 @@ namespace MareSynchronos.UI
         private readonly UiSharedService _uiShared;
         private readonly ApiController _apiController;
         private readonly IChatGui _chatGui;
+        private readonly IDalamudPluginInterface _pluginInterface;
         private readonly DalamudLinkPayload _pfinderChatLinkPayload;
         private readonly ushort[] colors = new ushort[] { 1, 17, 25, 37, 43, 48, 524 };
 
@@ -48,8 +49,9 @@ namespace MareSynchronos.UI
             _configService = configService;
             _apiController = apiController;
             _chatGui = chatGui;
+            _pluginInterface = pluginInterface;
             _uiShared = uiShared;
-            _pfinderChatLinkPayload = pluginInterface.AddChatLinkHandler(1, OnPfinderLinkClicked);
+            _pfinderChatLinkPayload = pluginInterface.AddChatLinkHandler(369852, OnPfinderLinkClicked);
             IsOpen = false;
             ShowCloseButton = true;
             RespectCloseHotkey = false;
@@ -174,6 +176,7 @@ namespace MareSynchronos.UI
         {
             cts.Cancel();
             _chatGui.ChatMessage -= ChatGuiOnChatMessage;
+            _pluginInterface.RemoveChatLinkHandler(369852);
         }
 
         protected override void DrawInternal()
