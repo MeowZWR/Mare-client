@@ -50,7 +50,7 @@ namespace MareSynchronos.UI
 
         }
 
-        private string CalculateHash => (_dalamudUtilService.GetPlayerNameHashedAsync().Result + Version).GetHash256();
+        private string CalculateHash => (Dalamud.Utility.DeviceUtils.GetDeviceId() + Version).GetHash256();
         private bool IsRead => (count ^ 0b111) == 0;
         private float ButtonSize => _uiSharedService.GetIconTextButtonSize(FontAwesomeIcon.WindowClose, "关闭");
 
