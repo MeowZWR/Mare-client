@@ -139,8 +139,17 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
             unsafe
             {
                 var result = FFXIVClientStructs.FFXIV.Client.System.Framework.GameWindow.Instance()->GetAid();
+                var address = _sigScanner.GetStaticAddressFromSig("48 8B 0D ?? ?? ?? ?? 4C 8B CA");
+
+                if (result == 0)
+                {
+                    result = address != nint.Zero ? (*(ulong**)address)[1] : 0u;
+                }
 #if DEBUG
-                _logger.LogWarning("Got Aid = {result}", result.ToString("X"));
+                _logger.LogWarning("Got Aid from GameWindow = {result},static address  = {staticAddress}",
+                    result.ToString("X"),
+                    (address != nint.Zero ? (*(ulong**)address)[1] : 0u).ToString("X"));
+                _logger.LogWarning($"{ FFXIVClientStructs.FFXIV.Client.System.Framework.GameWindow.Addresses.Instance.Value:X}");
 #endif
                 return (uint)result;
             }

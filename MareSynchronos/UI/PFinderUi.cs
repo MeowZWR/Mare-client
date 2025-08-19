@@ -38,7 +38,7 @@ namespace MareSynchronos.UI
         CancellationTokenSource cts = new();
         private string _fliter = "";
         private bool Disable => _lastUpdate + CoolDown > DateTime.Now;
-        private bool started = false;
+        private Task? _pfinderUpdateTask;
 
         private readonly Regex _gamePfString = new(@"当前共有\d*个队伍正在招募队员");
 
@@ -66,10 +66,7 @@ namespace MareSynchronos.UI
 
             Mediator.Subscribe<DisconnectedMessage>(this, (_) =>
             {
-                started = false;
-                cts.Cancel();
-                cts.Dispose();
-                cts = new CancellationTokenSource();
+                cts?.Cancel();
             });
             Mediator.Subscribe<OpenPfinderWindowMessage>(this, (msg) =>
             {
@@ -78,7 +75,16 @@ namespace MareSynchronos.UI
             });
             Mediator.Subscribe<ConnectedMessage>(this, (msg) =>
             {
-                if (!started) _ = UpdatePFs(cts.Token);
+                if (_pfinderUpdateTask == null || _pfinderUpdateTask.IsCompleted)
+                {
+                    if (cts.IsCancellationRequested)
+                    {
+                        cts.Dispose();
+                        cts = new CancellationTokenSource();
+                    }
+
+                    _pfinderUpdateTask = UpdatePFs(cts.Token);
+                }
             } );
 
             chatGui.ChatMessage += ChatGuiOnChatMessage;
@@ -119,32 +125,36 @@ namespace MareSynchronos.UI
 
         private async Task UpdatePFs(CancellationToken ct)
         {
-            started = true;
             var first = true;
             while (!ct.IsCancellationRequested)
             {
                 try
                 {
+                    ct.ThrowIfCancellationRequested();
+
                     if (!_apiController.IsConnected)
                     {
                         await Task.Delay(TimeSpan.FromSeconds(5), ct).ConfigureAwait(false);
-                        return;
+                        continue;
                     }
 
-                    Pfs = _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).Result;
-
+                    Pfs = await _apiController.RefreshPFinderList(new UserDto(new UserData(_apiController.UID))).ConfigureAwait(false);
                     if (first)
                     {
                         first = false;
                         PrintPFCount();
                     }
 
-                    await Task.Delay(TimeSpan.FromMinutes(30), ct).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromSeconds(10), ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    if (ex is TaskCanceledException) return;
                     _logger.LogError(ex, "Failed to send PFinder notice: ");
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct).ConfigureAwait(false);
                 }
             }
 
@@ -174,9 +184,13 @@ namespace MareSynchronos.UI
 
         protected override void Dispose(bool disposing)
         {
-            cts.Cancel();
+            if (!cts.IsCancellationRequested)
+            {
+                cts.Cancel();
+            }
             _chatGui.ChatMessage -= ChatGuiOnChatMessage;
             _pluginInterface.RemoveChatLinkHandler(369852);
+            base.Dispose(disposing);
         }
 
         protected override void DrawInternal()
