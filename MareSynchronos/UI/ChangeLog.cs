@@ -136,9 +136,5 @@ namespace MareSynchronos.UI
             ImGui.EndDisabled();
         }
 
-        public override void OnClose()
-        {
-            IsOpen = !string.Equals(_mareConfig.Current.ChangeLogVersion, CalculateHash, StringComparison.OrdinalIgnoreCase);
-        }
     }
 }

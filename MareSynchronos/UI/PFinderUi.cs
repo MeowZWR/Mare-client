@@ -145,7 +145,7 @@ namespace MareSynchronos.UI
                         PrintPFCount();
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(10), ct).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMinutes(30), ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
