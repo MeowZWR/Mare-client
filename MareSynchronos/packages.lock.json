@@ -8,6 +8,41 @@
         "resolved": "12.0.0",
         "contentHash": "J5TJLV3f16T/E2H2P17ClWjtfEBPpq3yxvqW46eN36JCm6wR+EaoaYkqG9Rm5sHqs3/nK/vKjWWyvEs/jhKoXw=="
       },
+      "DeviceId": {
+        "type": "Direct",
+        "requested": "[6.9.0, )",
+        "resolved": "6.9.0",
+        "contentHash": "2nfdZxcEfXVKJSg6n0Cv9JdH1UmlEdIIplfRy5AGqhzzmOOy5lK/kPcP0dHky1ZbwxqGIlf4fMq2qYCtMtX+0A=="
+      },
+      "DeviceId.Linux": {
+        "type": "Direct",
+        "requested": "[6.9.0, )",
+        "resolved": "6.9.0",
+        "contentHash": "+n8CosDFVVbCuEQnGB+uihhWXjTiQcBtbe0hTSf0uBgDCc+lZfWrTgvBU4nxeX6zpnujaTPsnSfCyiwtVXqgQw==",
+        "dependencies": {
+          "DeviceId": "6.9.0",
+          "System.Text.Json": "9.0.3"
+        }
+      },
+      "DeviceId.Mac": {
+        "type": "Direct",
+        "requested": "[6.9.0, )",
+        "resolved": "6.9.0",
+        "contentHash": "xuRcWmO+XmVycUUUT1tOktAN2C6Hl8bod3WZAQsoWxfB1D8aedeJiItIYWtBWN9i81SL0A8PFp5w2vWu/Fpueg==",
+        "dependencies": {
+          "DeviceId": "6.9.0"
+        }
+      },
+      "DeviceId.Windows": {
+        "type": "Direct",
+        "requested": "[6.9.0, )",
+        "resolved": "6.9.0",
+        "contentHash": "6t172GxaXf7s5zn+S/HMT8eFBtuvUjn3mrvff3mjwVMQ68sZiMGvey8Mgw/ejkUjzDn+glifdV/GBxvAoaugUQ==",
+        "dependencies": {
+          "DeviceId": "6.9.0",
+          "Microsoft.Win32.Registry": "5.0.0"
+        }
+      },
       "DotNet.ReproducibleBuilds": {
         "type": "Direct",
         "requested": "[1.2.25, )",
@@ -137,6 +172,15 @@
         "dependencies": {
           "Microsoft.IdentityModel.JsonWebTokens": "8.7.0",
           "Microsoft.IdentityModel.Tokens": "8.7.0"
+        }
+      },
+      "System.Management": {
+        "type": "Direct",
+        "requested": "[9.0.8, )",
+        "resolved": "9.0.8",
+        "contentHash": "D7icHff0OpEEIOLsTgnPL+Ff1VmJ3tzA8y20LNKgv4hx1MFMA3XGAVlWMCkLQfBkyvEwib6rMG6nP27lf98KRA==",
+        "dependencies": {
+          "System.CodeDom": "9.0.8"
         }
       },
       "K4os.Compression.LZ4": {
@@ -503,6 +547,25 @@
         "resolved": "17.6.3",
         "contentHash": "N0ZIanl1QCgvUumEL1laasU0a7sOE5ZwLZVTn0pAePnfhq8P7SvTjF8Axq+CnavuQkmdQpGNXQ1efZtu5kDFbA=="
       },
+      "Microsoft.NETCore.Platforms": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "VyPlqzH2wavqquTcYpkIIAQ6WdenuKoFN0BdYBbCWsclXacSOHNQn66Gt4z5NBqEYW0FAPm5rlvki9ZiCij5xQ=="
+      },
+      "Microsoft.Win32.Registry": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "dDoKi0PnDz31yAyETfRntsLArTlVAVzUzCIvvEDsDsucrl33Dl8pIJG06ePTJTI3tGpeyHS9Cq7Foc/s4EeKcg==",
+        "dependencies": {
+          "System.Security.AccessControl": "5.0.0",
+          "System.Security.Principal.Windows": "5.0.0"
+        }
+      },
+      "System.CodeDom": {
+        "type": "Transitive",
+        "resolved": "9.0.8",
+        "contentHash": "kxg1TE/BMUAaMve/lPH9Bds+CFF4JPrN9WkQqHejc7UP6PO4KDAjZNF0uhvpZmoLR+EvHdRt232J++ZDI7aGqA=="
+      },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
         "resolved": "9.0.3",
@@ -512,6 +575,25 @@
         "type": "Transitive",
         "resolved": "9.0.3",
         "contentHash": "Vs/C2V27bjtwLqYag9ATzHilcUn8VQTICre4jSBMGFUeSTxEZffTjb+xZwjcmPsVAjmSZmBI5N7Ezq8UFvqQQg=="
+      },
+      "System.Security.AccessControl": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "dagJ1mHZO3Ani8GH0PHpPEe/oYO+rVdbQjvjJkBRNQkX4t0r1iaeGn8+/ybkSLEan3/slM0t59SVdHzuHf2jmw==",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "5.0.0",
+          "System.Security.Principal.Windows": "5.0.0"
+        }
+      },
+      "System.Security.Principal.Windows": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "t0MGLukB5WAVU9bO3MGzvlGnyJPgUlcwerXn1kzBRjwLKixT96XV0Uza41W49gVd8zEMFu9vQEFlv0IOrytICA=="
+      },
+      "System.Text.Json": {
+        "type": "Transitive",
+        "resolved": "9.0.3",
+        "contentHash": "r2JRkLjsYrq5Dpo7+y3Wa73OfirZPdVhxiTJWwZ+oJM7FOAe0LkM3GlH+pgkNRdd1G1kwUbmRCdmh4uoaWwu1g=="
       },
       "System.Threading.Channels": {
         "type": "Transitive",

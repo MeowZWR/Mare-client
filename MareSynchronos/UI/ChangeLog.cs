@@ -1,16 +1,10 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using ImGuiNET;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto.Group;
 using MareSynchronos.MareConfiguration;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.PlayerData.Pairs;
 using MareSynchronos.Services;
 using MareSynchronos.Services.Mediator;
-using MareSynchronos.UI.Handlers;
 using MareSynchronos.Utils;
-using MareSynchronos.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
 
@@ -50,7 +44,7 @@ namespace MareSynchronos.UI
 
         }
 
-        private string CalculateHash => (Dalamud.Utility.DeviceUtils.GetDeviceId() + Version).GetHash256();
+        private string CalculateHash => (DalamudUtilService.GetDeviceId() + Version).GetHash256();
         private bool IsRead => (count ^ 0b111) == 0;
         private float ButtonSize => _uiSharedService.GetIconTextButtonSize(FontAwesomeIcon.WindowClose, "关闭");
 

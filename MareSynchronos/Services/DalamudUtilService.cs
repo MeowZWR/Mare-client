@@ -27,7 +27,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace MareSynchronos.Services;
 
-public class DalamudUtilService : IHostedService, IMediatorSubscriber
+public partial class DalamudUtilService : IHostedService, IMediatorSubscriber
 {
     private readonly List<uint> _classJobIdsIgnoredForPets = [30];
     private readonly IClientState _clientState;
